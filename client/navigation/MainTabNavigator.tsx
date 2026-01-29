@@ -20,7 +20,7 @@ function CreateButton() {
   return (
     <View style={styles.createButtonContainer}>
       <Pressable
-        style={[styles.createButton, { backgroundColor: theme.accent }]}
+        style={[styles.createButton, { backgroundColor: Colors.light.accent }]}
         onPress={() => navigation.navigate("TypeSelector")}
         testID="fab-create"
       >
