@@ -11,22 +11,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function CreateReminderScreen() {
+export default function CreateCalendarReminderScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
 
   const [title, setTitle] = useState("");
-  const [cycleDayStart, setCycleDayStart] = useState(14);
-  const [cycleDayEnd, setCycleDayEnd] = useState(28);
-  const [cycleStartDate, setCycleStartDate] = useState<Date | null>(null);
   const [hasEndDate, setHasEndDate] = useState(false);
   const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -73,11 +70,8 @@ export default function CreateReminderScreen() {
     const reminderData = {
       title: title.trim(),
       notes: notes.trim() || null,
-      reminderType: "cycle",
+      reminderType: "calendar",
       reminderTime: timeString,
-      cycleIntervalDays: cycleDayEnd,
-      cycleDayStart,
-      cycleDayEnd,
       alarmType,
       isActive: true,
     };
@@ -130,17 +124,17 @@ export default function CreateReminderScreen() {
           />
         </View>
 
-        {/* Repeat on Days */}
+        {/* Add Repeats frequency */}
         <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.text }}>
-            Repeat on Day {cycleDayStart} to {cycleDayEnd}
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+            Add Repeats frequency
           </ThemedText>
         </Pressable>
 
-        {/* Add cycle start date */}
+        {/* Start today */}
         <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Add cycle start date
+          <ThemedText type="body" style={{ color: theme.text }}>
+            Start today
           </ThemedText>
         </Pressable>
 

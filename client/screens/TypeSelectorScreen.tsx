@@ -39,7 +39,11 @@ export default function TypeSelectorScreen() {
 
   const handleSelectType = (type: "cycle" | "calendar") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.replace("CreateReminder", { type });
+    if (type === "cycle") {
+      navigation.replace("CreateCycleReminder");
+    } else {
+      navigation.replace("CreateCalendarReminder");
+    }
   };
 
   return (

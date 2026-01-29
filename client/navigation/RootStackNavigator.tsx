@@ -6,6 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import TypeSelectorScreen from "@/screens/TypeSelectorScreen";
 import CreateReminderScreen from "@/screens/CreateReminderScreen";
+import CreateCalendarReminderScreen from "@/screens/CreateCalendarReminderScreen";
 import ReminderDetailScreen from "@/screens/ReminderDetailScreen";
 import MoreScreen from "@/screens/MoreScreen";
 import HistoryScreen from "@/screens/HistoryScreen";
@@ -18,7 +19,8 @@ import { useTheme } from "@/hooks/useTheme";
 export type RootStackParamList = {
   Main: undefined;
   TypeSelector: undefined;
-  CreateReminder: { type: "cycle" | "calendar" };
+  CreateCycleReminder: undefined;
+  CreateCalendarReminder: undefined;
   ReminderDetail: { reminderId: string };
   More: undefined;
   History: undefined;
@@ -55,8 +57,16 @@ export default function RootStackNavigator() {
         })}
       />
       <Stack.Screen
-        name="CreateReminder"
+        name="CreateCycleReminder"
         component={CreateReminderScreen}
+        options={{
+          headerShown: false,
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="CreateCalendarReminder"
+        component={CreateCalendarReminderScreen}
         options={{
           headerShown: false,
           presentation: "card",
