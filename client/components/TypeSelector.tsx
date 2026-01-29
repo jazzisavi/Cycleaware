@@ -74,7 +74,7 @@ export function TypeSelector({ onSelectType }: TypeSelectorProps) {
             Cycle-Based
           </ThemedText>
           <ThemedText type="small" style={[styles.optionDescription, { color: theme.textSecondary }]}>
-            Repeat every X days, like taking vitamins every 2 days or watering plants every 3 days.
+            On specific days of a repeating cycle. Examples: days 15–28 of a 28-day cycle.
           </ThemedText>
         </AnimatedPressable>
 

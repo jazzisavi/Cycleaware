@@ -85,7 +85,7 @@ export default function TypeSelectorScreen() {
               Cycle-Based
             </ThemedText>
             <ThemedText type="small" style={[styles.optionDescription, { color: theme.textSecondary }]}>
-              Repeat every X days. Perfect for vitamins, watering plants, or any task that happens on a regular interval.
+              On specific days of a repeating cycle. Examples: days 15–28 of a 28-day cycle.
             </ThemedText>
           </AnimatedPressable>
 
