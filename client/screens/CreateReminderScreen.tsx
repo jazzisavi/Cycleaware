@@ -297,13 +297,13 @@ export default function CreateReminderScreen() {
           </View>
         ))}
 
-        {/* Set another reminder */}
+        {/* Add reminder time */}
         <Pressable 
           style={[styles.row, { borderBottomColor: theme.border }]}
           onPress={() => handleOpenTimePicker(null)}
         >
           <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Set another reminder
+            Add reminder time
           </ThemedText>
         </Pressable>
 
