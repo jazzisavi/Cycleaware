@@ -96,11 +96,7 @@ export default function CreateReminderScreen() {
         <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
           <Feather name="x" size={24} color={theme.text} />
         </Pressable>
-        <View style={styles.headerCenter}>
-          <ThemedText type="body" style={{ fontWeight: "500" }}>
-            Cycle-based reminder
-          </ThemedText>
-        </View>
+        <View style={{ flex: 1 }} />
         <Pressable 
           onPress={handleSave}
           disabled={!title.trim() || createMutation.isPending}
@@ -263,10 +259,6 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: Spacing.xs,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
   },
   content: {
     paddingHorizontal: Spacing.lg,
