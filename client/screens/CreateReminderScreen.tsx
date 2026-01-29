@@ -34,6 +34,8 @@ export default function CreateReminderScreen() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [additionalTime, setAdditionalTime] = useState<Date | null>(null);
+  const [showAdditionalTimePicker, setShowAdditionalTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
 
@@ -68,6 +70,13 @@ export default function CreateReminderScreen() {
     setShowTimePicker(Platform.OS === "ios");
     if (selectedTime) {
       setTime(selectedTime);
+    }
+  };
+
+  const handleAdditionalTimeChange = (event: any, selectedTime?: Date) => {
+    setShowAdditionalTimePicker(Platform.OS === "ios");
+    if (selectedTime) {
+      setAdditionalTime(selectedTime);
     }
   };
 
@@ -239,11 +248,23 @@ export default function CreateReminderScreen() {
         )}
 
         {/* Set another reminder */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Set another reminder
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={() => setShowAdditionalTimePicker(true)}
+        >
+          <ThemedText type="body" style={{ color: additionalTime ? theme.text : theme.textSecondary }}>
+            {additionalTime ? `Additional reminder at ${formatTime(additionalTime)}` : "Set another reminder"}
           </ThemedText>
         </Pressable>
+
+        {showAdditionalTimePicker && (
+          <DateTimePicker
+            value={additionalTime || new Date(new Date().setHours(12, 0, 0, 0))}
+            mode="time"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleAdditionalTimeChange}
+          />
+        )}
 
         {/* Add medication notes */}
         <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
