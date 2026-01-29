@@ -1,18 +1,55 @@
 import React from "react";
+import { View, Pressable, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Platform, StyleSheet } from "react-native";
+import { Platform } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Haptics from "expo-haptics";
+
 import HomeStackNavigator from "@/navigation/HomeStackNavigator";
+import RemindersStackNavigator from "@/navigation/RemindersStackNavigator";
+import MoreStackNavigator from "@/navigation/MoreStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 export type MainTabParamList = {
   HomeTab: undefined;
+  RemindersTab: undefined;
+  CreateTab: undefined;
+  MoreTab: undefined;
   ProfileTab: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+function CreateTabButton() {
+  const { theme } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate("TypeSelector");
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.createButton, { backgroundColor: theme.primary, ...Shadows.lg }]}
+    >
+      <Feather name="plus" size={28} color={theme.buttonText} />
+    </Pressable>
+  );
+}
+
+function EmptyComponent() {
+  return null;
+}
 
 export default function MainTabNavigator() {
   const { theme, isDark } = useTheme();
@@ -31,6 +68,8 @@ export default function MainTabNavigator() {
           }),
           borderTopWidth: 0,
           elevation: 0,
+          height: 85,
+          paddingBottom: Platform.OS === "ios" ? 30 : 10,
         },
         tabBarBackground: () =>
           Platform.OS === "ios" ? (
@@ -41,6 +80,10 @@ export default function MainTabNavigator() {
             />
           ) : null,
         headerShown: false,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "500",
+        },
       }}
     >
       <Tab.Screen
@@ -50,6 +93,39 @@ export default function MainTabNavigator() {
           title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Feather name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="RemindersTab"
+        component={RemindersStackNavigator}
+        options={{
+          title: "Reminders",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="bell" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CreateTab"
+        component={EmptyComponent}
+        options={{
+          title: "",
+          tabBarButton: () => <CreateTabButton />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+          },
+        }}
+      />
+      <Tab.Screen
+        name="MoreTab"
+        component={MoreStackNavigator}
+        options={{
+          title: "More",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="menu" size={size} color={color} />
           ),
         }}
       />
@@ -66,3 +142,14 @@ export default function MainTabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  createButton: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -20,
+  },
+});

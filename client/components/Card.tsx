@@ -6,18 +6,20 @@ import Animated, {
   withSpring,
   WithSpringConfig,
 } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface CardProps {
-  elevation?: number;
+  elevation?: 1 | 2 | 3;
   title?: string;
   description?: string;
   children?: React.ReactNode;
   onPress?: () => void;
   style?: ViewStyle;
+  testID?: string;
 }
 
 const springConfig: WithSpringConfig = {
@@ -40,7 +42,7 @@ const getBackgroundColorForElevation = (
     case 3:
       return theme.backgroundTertiary;
     default:
-      return theme.backgroundRoot;
+      return theme.backgroundDefault;
   }
 };
 
@@ -53,6 +55,7 @@ export function Card({
   children,
   onPress,
   style,
+  testID,
 }: CardProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -64,22 +67,35 @@ export function Card({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, springConfig);
+    if (onPress) {
+      scale.value = withSpring(0.98, springConfig);
+    }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
+    if (onPress) {
+      scale.value = withSpring(1, springConfig);
+    }
+  };
+
+  const handlePress = () => {
+    if (onPress) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress();
+    }
   };
 
   return (
     <AnimatedPressable
-      onPress={onPress}
+      testID={testID}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[
         styles.card,
         {
           backgroundColor: cardBackgroundColor,
+          borderColor: theme.borderLight,
         },
         animatedStyle,
         style,
@@ -91,7 +107,7 @@ export function Card({
         </ThemedText>
       ) : null}
       {description ? (
-        <ThemedText type="small" style={styles.cardDescription}>
+        <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
           {description}
         </ThemedText>
       ) : null}
@@ -102,13 +118,14 @@ export function Card({
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius["2xl"],
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
   },
   cardTitle: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   cardDescription: {
-    opacity: 0.7,
+    marginTop: Spacing.xs,
   },
 });

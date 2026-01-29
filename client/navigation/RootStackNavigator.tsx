@@ -1,18 +1,28 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Pressable } from "react-native";
+import { Feather } from "@expo/vector-icons";
+
 import MainTabNavigator from "@/navigation/MainTabNavigator";
-import ModalScreen from "@/screens/ModalScreen";
+import TypeSelectorScreen from "@/screens/TypeSelectorScreen";
+import CreateReminderScreen from "@/screens/CreateReminderScreen";
+import ReminderDetailScreen from "@/screens/ReminderDetailScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { useTheme } from "@/hooks/useTheme";
 
 export type RootStackParamList = {
   Main: undefined;
-  Modal: undefined;
+  TypeSelector: undefined;
+  CreateReminder: { type: "cycle" | "calendar" };
+  ReminderDetail: { reminderId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
+  const opaqueScreenOptions = useScreenOptions({ transparent: false });
+  const { theme } = useTheme();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
@@ -22,12 +32,43 @@ export default function RootStackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Modal"
-        component={ModalScreen}
-        options={{
+        name="TypeSelector"
+        component={TypeSelectorScreen}
+        options={({ navigation }) => ({
           presentation: "modal",
-          headerTitle: "Modal",
-        }}
+          headerTitle: "New Reminder",
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="CreateReminder"
+        component={CreateReminderScreen}
+        options={({ navigation }) => ({
+          ...opaqueScreenOptions,
+          presentation: "card",
+          headerTitle: "Create Reminder",
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Feather name="arrow-left" size={24} color={theme.text} />
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="ReminderDetail"
+        component={ReminderDetailScreen}
+        options={({ navigation }) => ({
+          headerTitle: "Reminder Details",
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Feather name="arrow-left" size={24} color={theme.text} />
+            </Pressable>
+          ),
+        })}
       />
     </Stack.Navigator>
   );
