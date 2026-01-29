@@ -223,7 +223,7 @@ export default function CreateReminderScreen() {
         return `Ends on ${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
       }
     }
-    return "No end date";
+    return "Add end date";
   };
 
   return (
