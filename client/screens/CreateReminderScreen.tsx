@@ -32,11 +32,10 @@ export default function CreateReminderScreen() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [ends, setEnds] = useState<"never" | "on" | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
+  const [reminderTimes, setReminderTimes] = useState<Date[]>([new Date(new Date().setHours(9, 0, 0, 0))]);
+  const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
+  const [tempTime, setTempTime] = useState<Date>(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [additionalTimes, setAdditionalTimes] = useState<Date[]>([]);
-  const [tempAdditionalTime, setTempAdditionalTime] = useState<Date>(new Date(new Date().setHours(12, 0, 0, 0)));
-  const [showAdditionalTimePicker, setShowAdditionalTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
 
@@ -68,30 +67,39 @@ export default function CreateReminderScreen() {
   });
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
-    setShowTimePicker(Platform.OS === "ios");
-    if (selectedTime) {
-      setTime(selectedTime);
-    }
-  };
-
-  const handleAdditionalTimeChange = (event: any, selectedTime?: Date) => {
     if (Platform.OS !== "ios") {
-      setShowAdditionalTimePicker(false);
+      setShowTimePicker(false);
     }
     if (selectedTime) {
-      setTempAdditionalTime(selectedTime);
+      setTempTime(selectedTime);
     }
   };
 
-  const handleAddAdditionalTime = () => {
-    setAdditionalTimes([...additionalTimes, tempAdditionalTime]);
-    setTempAdditionalTime(new Date(new Date().setHours(12, 0, 0, 0)));
-    setShowAdditionalTimePicker(false);
+  const handleOpenTimePicker = (index: number | null) => {
+    if (index !== null && index < reminderTimes.length) {
+      setTempTime(reminderTimes[index]);
+    } else {
+      setTempTime(new Date(new Date().setHours(12, 0, 0, 0)));
+    }
+    setEditingTimeIndex(index);
+    setShowTimePicker(true);
+  };
+
+  const handleSaveTime = () => {
+    if (editingTimeIndex !== null && editingTimeIndex < reminderTimes.length) {
+      const newTimes = [...reminderTimes];
+      newTimes[editingTimeIndex] = tempTime;
+      setReminderTimes(newTimes);
+    } else {
+      setReminderTimes([...reminderTimes, tempTime]);
+    }
+    setShowTimePicker(false);
+    setEditingTimeIndex(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const handleRemoveAdditionalTime = (index: number) => {
-    setAdditionalTimes(additionalTimes.filter((_, i) => i !== index));
+  const handleRemoveTime = (index: number) => {
+    setReminderTimes(reminderTimes.filter((_, i) => i !== index));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
@@ -107,13 +115,11 @@ export default function CreateReminderScreen() {
       return;
     }
 
-    const timeString = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}`;
+    const reminderTimesArray: string[] = reminderTimes.map((t) => 
+      `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`
+    );
     
-    const reminderTimesArray: string[] = [timeString];
-    additionalTimes.forEach((additionalTime) => {
-      const additionalTimeString = `${additionalTime.getHours().toString().padStart(2, "0")}:${additionalTime.getMinutes().toString().padStart(2, "0")}`;
-      reminderTimesArray.push(additionalTimeString);
-    });
+    const primaryTimeString = reminderTimesArray[0] || "09:00";
 
     let cycleStartDateValue: Date;
     if (startsOn === "today") {
@@ -135,7 +141,7 @@ export default function CreateReminderScreen() {
       title: title.trim(),
       notes: notes.trim() || null,
       reminderType: "cycle",
-      reminderTime: timeString,
+      reminderTime: primaryTimeString,
       reminderTimes: reminderTimesArray,
       cycleIntervalDays: cycleDayEnd || 28,
       cycleDayStart: cycleDayStart || 14,
@@ -268,17 +274,40 @@ export default function CreateReminderScreen() {
           </ThemedText>
         </Pressable>
 
-        {/* Remind me at time */}
+        {/* Reminder times */}
+        {reminderTimes.map((reminderTime, index) => (
+          <View 
+            key={index}
+            style={[styles.row, styles.additionalTimeRow, { borderBottomColor: theme.border }]}
+          >
+            <Pressable 
+              style={{ flex: 1 }}
+              onPress={() => handleOpenTimePicker(index)}
+            >
+              <ThemedText type="body" style={{ color: theme.text }}>
+                Remind me at {formatTime(reminderTime)}
+              </ThemedText>
+            </Pressable>
+            <Pressable 
+              onPress={() => handleRemoveTime(index)}
+              style={styles.removeButton}
+            >
+              <Feather name="x" size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ))}
+
+        {/* Set another reminder */}
         <Pressable 
           style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => setShowTimePicker(true)}
+          onPress={() => handleOpenTimePicker(null)}
         >
-          <ThemedText type="body" style={{ color: theme.text }}>
-            Remind me at {formatTime(time)}
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+            Set another reminder
           </ThemedText>
         </Pressable>
 
-        {/* Primary Time Picker Modal */}
+        {/* Time Picker Modal */}
         <Modal
           visible={showTimePicker}
           transparent
@@ -297,13 +326,13 @@ export default function CreateReminderScreen() {
                 <View style={styles.webTimePickerContainer}>
                   <TextInput
                     style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border }]}
-                    value={`${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`}
+                    value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
                     onChangeText={(text) => {
                       const [hours, minutes] = text.split(":").map(Number);
                       if (!isNaN(hours) && !isNaN(minutes)) {
                         const newDate = new Date();
                         newDate.setHours(hours, minutes, 0, 0);
-                        setTime(newDate);
+                        setTempTime(newDate);
                       }
                     }}
                     placeholder="HH:MM"
@@ -317,7 +346,7 @@ export default function CreateReminderScreen() {
                 </View>
               ) : (
                 <DateTimePicker
-                  value={time}
+                  value={tempTime}
                   mode="time"
                   display="spinner"
                   onChange={handleTimeChange}
@@ -335,103 +364,7 @@ export default function CreateReminderScreen() {
                 </Pressable>
                 <Pressable 
                   style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                  onPress={() => setShowTimePicker(false)}
-                >
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                    Done
-                  </ThemedText>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Additional reminder times */}
-        {additionalTimes.map((additionalTime, index) => (
-          <View 
-            key={index}
-            style={[styles.row, styles.additionalTimeRow, { borderBottomColor: theme.border }]}
-          >
-            <ThemedText type="body" style={{ color: theme.text, flex: 1 }}>
-              Remind me at {formatTime(additionalTime)}
-            </ThemedText>
-            <Pressable 
-              onPress={() => handleRemoveAdditionalTime(index)}
-              style={styles.removeButton}
-            >
-              <Feather name="x" size={20} color={theme.textSecondary} />
-            </Pressable>
-          </View>
-        ))}
-
-        {/* Set another reminder */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => setShowAdditionalTimePicker(true)}
-        >
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Set another reminder
-          </ThemedText>
-        </Pressable>
-
-        {/* Time Picker Modal for Additional Reminders */}
-        <Modal
-          visible={showAdditionalTimePicker}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowAdditionalTimePicker(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-              <View style={styles.modalHeader}>
-                <ThemedText type="h3" style={{ fontWeight: "600" }}>
-                  Set reminder time
-                </ThemedText>
-              </View>
-              
-              {Platform.OS === "web" ? (
-                <View style={styles.webTimePickerContainer}>
-                  <TextInput
-                    style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border }]}
-                    value={`${String(tempAdditionalTime.getHours()).padStart(2, "0")}:${String(tempAdditionalTime.getMinutes()).padStart(2, "0")}`}
-                    onChangeText={(text) => {
-                      const [hours, minutes] = text.split(":").map(Number);
-                      if (!isNaN(hours) && !isNaN(minutes)) {
-                        const newDate = new Date();
-                        newDate.setHours(hours, minutes, 0, 0);
-                        setTempAdditionalTime(newDate);
-                      }
-                    }}
-                    placeholder="HH:MM"
-                    placeholderTextColor={theme.textTertiary}
-                    keyboardType="numbers-and-punctuation"
-                    maxLength={5}
-                  />
-                  <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-                    Enter time in 24-hour format (e.g., 14:30)
-                  </ThemedText>
-                </View>
-              ) : (
-                <DateTimePicker
-                  value={tempAdditionalTime}
-                  mode="time"
-                  display="spinner"
-                  onChange={handleAdditionalTimeChange}
-                />
-              )}
-              
-              <View style={styles.modalButtons}>
-                <Pressable 
-                  style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
-                  onPress={() => setShowAdditionalTimePicker(false)}
-                >
-                  <ThemedText type="body" style={{ color: theme.text }}>
-                    Cancel
-                  </ThemedText>
-                </Pressable>
-                <Pressable 
-                  style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                  onPress={handleAddAdditionalTime}
+                  onPress={handleSaveTime}
                 >
                   <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                     Done
