@@ -174,6 +174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: user.id,
         nextOccurrence,
+        cycleStartDate: req.body.cycleStartDate ? new Date(req.body.cycleStartDate) : null,
+        cycleEndDate: req.body.cycleEndDate ? new Date(req.body.cycleEndDate) : null,
       };
       
       const reminder = await storage.createReminder(reminderData);

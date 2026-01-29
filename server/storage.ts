@@ -68,9 +68,8 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(reminders.createdAt));
   }
 
-  async createReminder(insertReminder: InsertReminder): Promise<Reminder> {
-    // Calculate next occurrence
-    const nextOccurrence = this.calculateNextOccurrence(insertReminder);
+  async createReminder(insertReminder: InsertReminder & { nextOccurrence?: Date | null }): Promise<Reminder> {
+    const nextOccurrence = insertReminder.nextOccurrence ?? this.calculateNextOccurrence(insertReminder);
     
     const [reminder] = await db
       .insert(reminders)
