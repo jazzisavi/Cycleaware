@@ -263,14 +263,73 @@ export default function CreateReminderScreen() {
           </ThemedText>
         </Pressable>
 
-        {showTimePicker && (
-          <DateTimePicker
-            value={time}
-            mode="time"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={handleTimeChange}
-          />
-        )}
+        {/* Primary Time Picker Modal */}
+        <Modal
+          visible={showTimePicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowTimePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="h3" style={{ fontWeight: "600" }}>
+                  Set reminder time
+                </ThemedText>
+              </View>
+              
+              {Platform.OS === "web" ? (
+                <View style={styles.webTimePickerContainer}>
+                  <TextInput
+                    style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border }]}
+                    value={`${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`}
+                    onChangeText={(text) => {
+                      const [hours, minutes] = text.split(":").map(Number);
+                      if (!isNaN(hours) && !isNaN(minutes)) {
+                        const newDate = new Date();
+                        newDate.setHours(hours, minutes, 0, 0);
+                        setTime(newDate);
+                      }
+                    }}
+                    placeholder="HH:MM"
+                    placeholderTextColor={theme.textTertiary}
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={5}
+                  />
+                  <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                    Enter time in 24-hour format (e.g., 09:00)
+                  </ThemedText>
+                </View>
+              ) : (
+                <DateTimePicker
+                  value={time}
+                  mode="time"
+                  display="spinner"
+                  onChange={handleTimeChange}
+                />
+              )}
+              
+              <View style={styles.modalButtons}>
+                <Pressable 
+                  style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+                  onPress={() => setShowTimePicker(false)}
+                >
+                  <ThemedText type="body" style={{ color: theme.text }}>
+                    Cancel
+                  </ThemedText>
+                </Pressable>
+                <Pressable 
+                  style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                  onPress={() => setShowTimePicker(false)}
+                >
+                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                    Done
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Set another reminder */}
         <Pressable 
