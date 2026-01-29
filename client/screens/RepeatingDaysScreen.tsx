@@ -48,6 +48,10 @@ export default function RepeatingDaysScreen() {
   const handleDone = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("CreateCycleReminder", {
+      title: route.params?.title,
+      notes: route.params?.notes,
+      reminderTimes: route.params?.reminderTimes,
+      alarmType: route.params?.alarmType,
       dayStart,
       dayEnd,
       startsOn,

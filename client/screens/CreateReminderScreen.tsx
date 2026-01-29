@@ -41,6 +41,18 @@ export default function CreateReminderScreen() {
 
   useEffect(() => {
     if (route.params) {
+      if (route.params.title !== undefined) setTitle(route.params.title);
+      if (route.params.notes !== undefined) setNotes(route.params.notes);
+      if (route.params.alarmType !== undefined) setAlarmType(route.params.alarmType);
+      if (route.params.reminderTimes !== undefined) {
+        const times = route.params.reminderTimes.map((t) => {
+          const [hours, minutes] = t.split(":").map(Number);
+          const date = new Date();
+          date.setHours(hours, minutes, 0, 0);
+          return date;
+        });
+        if (times.length > 0) setReminderTimes(times);
+      }
       if (route.params.dayStart !== undefined) setCycleDayStart(route.params.dayStart);
       if (route.params.dayEnd !== undefined) setCycleDayEnd(route.params.dayEnd);
       if (route.params.startsOn !== undefined) setStartsOn(route.params.startsOn);
@@ -165,7 +177,14 @@ export default function CreateReminderScreen() {
 
   const handleOpenRepeatingDays = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const reminderTimesStrings = reminderTimes.map((t) => 
+      `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`
+    );
     navigation.navigate("RepeatingDays", {
+      title,
+      notes,
+      reminderTimes: reminderTimesStrings,
+      alarmType,
       dayStart: cycleDayStart || 14,
       dayEnd: cycleDayEnd || 28,
       startsOn: startsOn || "today",

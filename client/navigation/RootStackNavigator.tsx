@@ -21,6 +21,10 @@ export type RootStackParamList = {
   Main: undefined;
   TypeSelector: undefined;
   CreateCycleReminder: {
+    title?: string;
+    notes?: string;
+    reminderTimes?: string[];
+    alarmType?: "notification" | "alarm";
     dayStart?: number;
     dayEnd?: number;
     startsOn?: "today" | "tomorrow" | "on";
@@ -30,6 +34,10 @@ export type RootStackParamList = {
   } | undefined;
   CreateCalendarReminder: undefined;
   RepeatingDays: {
+    title?: string;
+    notes?: string;
+    reminderTimes?: string[];
+    alarmType?: "notification" | "alarm";
     dayStart?: number;
     dayEnd?: number;
     startsOn?: "today" | "tomorrow" | "on";
