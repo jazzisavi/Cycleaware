@@ -7,6 +7,7 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import TypeSelectorScreen from "@/screens/TypeSelectorScreen";
 import CreateReminderScreen from "@/screens/CreateReminderScreen";
 import ReminderDetailScreen from "@/screens/ReminderDetailScreen";
+import MoreScreen from "@/screens/MoreScreen";
 import HistoryScreen from "@/screens/HistoryScreen";
 import SnoozeSettingsScreen from "@/screens/SnoozeSettingsScreen";
 import AlarmSoundsScreen from "@/screens/AlarmSoundsScreen";
@@ -19,6 +20,7 @@ export type RootStackParamList = {
   TypeSelector: undefined;
   CreateReminder: { type: "cycle" | "calendar" };
   ReminderDetail: { reminderId: string };
+  More: undefined;
   History: undefined;
   SnoozeSettings: undefined;
   AlarmSounds: undefined;
@@ -71,6 +73,19 @@ export default function RootStackNavigator() {
         component={ReminderDetailScreen}
         options={({ navigation }) => ({
           headerTitle: "Reminder Details",
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Feather name="arrow-left" size={24} color={theme.text} />
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="More"
+        component={MoreScreen}
+        options={({ navigation }) => ({
+          ...opaqueScreenOptions,
+          headerTitle: "More",
           headerLeft: () => (
             <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
               <Feather name="arrow-left" size={24} color={theme.text} />

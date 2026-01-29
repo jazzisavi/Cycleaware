@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 import { useTheme } from "@/hooks/useTheme";
-import { Colors, Spacing, Typography } from "@/constants/theme";
+import { Colors, Spacing, Typography, BorderRadius } from "@/constants/theme";
 import Card from "@/components/Card";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -32,6 +32,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const { data: reminders = [] } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
@@ -72,37 +73,138 @@ export default function HomeScreen() {
     return date.toLocaleDateString("en-US", options);
   };
 
-  const hasNoReminders = reminders.length === 0;
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Top Navigation Bar */}
+      <View style={[styles.topNav, { paddingTop: insets.top + Spacing.sm }]}>
+        <View style={styles.logoContainer}>
+          <Text style={[styles.logoText, { color: theme.primary }]}>GoFlo</Text>
+        </View>
+        <Text style={[styles.navTitle, { color: theme.text }]}>Today</Text>
+        <Pressable 
+          style={styles.moreButton}
+          onPress={() => navigation.navigate("More")}
+          testID="button-more"
+        >
+          <Feather name="more-horizontal" size={24} color={theme.text} />
+        </Pressable>
+      </View>
+
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top + Spacing.xl,
             paddingBottom: tabBarHeight + 80,
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.appTitle, { color: theme.primary }]}>GoFlo</Text>
-        </View>
+        {/* Welcome Message Card */}
+        {showWelcome ? (
+          <View style={[styles.welcomeCard, { backgroundColor: theme.surface }]}>
+            <Pressable 
+              style={styles.closeButton}
+              onPress={() => setShowWelcome(false)}
+              testID="button-close-welcome"
+            >
+              <Feather name="x" size={18} color={theme.textTertiary} />
+            </Pressable>
+            <Text style={[styles.welcomeTitle, { color: theme.text }]}>
+              Welcome message
+            </Text>
+            <Text style={[styles.welcomeText, { color: theme.textSecondary }]}>
+              Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien is convallis
+            </Text>
+          </View>
+        ) : null}
 
-        {/* Welcome Message */}
-        <View style={styles.welcomeSection}>
-          <Text style={[styles.welcomeText, { color: theme.text }]}>
-            Welcome back!
+        {/* Create Reminder Button */}
+        <Pressable
+          style={[styles.createReminderButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          onPress={() => navigation.navigate("TypeSelector")}
+          testID="button-create-reminder"
+        >
+          <Text style={[styles.createReminderText, { color: theme.text }]}>
+            Create a reminder
           </Text>
-          <Text style={[styles.welcomeSubtext, { color: theme.textSecondary }]}>
-            Stay on track with your reminders
-          </Text>
-        </View>
+          <View style={[styles.plusIcon, { backgroundColor: theme.accent }]}>
+            <Feather name="plus" size={20} color="#FFFFFF" />
+          </View>
+        </Pressable>
 
-        {hasNoReminders ? (
-          /* Empty State */
+        {/* Today's Reminders */}
+        {todaysReminders.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Today's Reminders
+            </Text>
+            {todaysReminders.map((reminder) => (
+              <Card key={reminder.id} style={styles.reminderCard}>
+                <View style={styles.reminderContent}>
+                  <View
+                    style={[
+                      styles.typeIndicator,
+                      {
+                        backgroundColor:
+                          reminder.reminderType === "cycle"
+                            ? Colors.light.accent
+                            : Colors.light.mint,
+                      },
+                    ]}
+                  />
+                  <View style={styles.reminderInfo}>
+                    <Text style={[styles.reminderTitle, { color: theme.text }]}>
+                      {reminder.title}
+                    </Text>
+                    <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
+                      {formatTime(reminder.reminderTime)}
+                    </Text>
+                  </View>
+                  <Pressable style={styles.completeButton}>
+                    <Feather name="check-circle" size={24} color={theme.success} />
+                  </Pressable>
+                </View>
+              </Card>
+            ))}
+          </View>
+        ) : null}
+
+        {/* Upcoming Reminders */}
+        {upcomingReminders.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Upcoming
+            </Text>
+            {upcomingReminders.map((reminder) => (
+              <Card key={reminder.id} style={styles.reminderCard}>
+                <View style={styles.reminderContent}>
+                  <View
+                    style={[
+                      styles.typeIndicator,
+                      {
+                        backgroundColor:
+                          reminder.reminderType === "cycle"
+                            ? Colors.light.accent
+                            : Colors.light.mint,
+                      },
+                    ]}
+                  />
+                  <View style={styles.reminderInfo}>
+                    <Text style={[styles.reminderTitle, { color: theme.text }]}>
+                      {reminder.title}
+                    </Text>
+                    <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
+                      {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            ))}
+          </View>
+        ) : null}
+
+        {/* Empty State - only show if no reminders and welcome is dismissed */}
+        {reminders.length === 0 && !showWelcome ? (
           <View style={styles.emptyState}>
             <Image
               source={require("../../assets/images/empty-today.png")}
@@ -115,120 +217,8 @@ export default function HomeScreen() {
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
               Create your first reminder to get started
             </Text>
-            <Pressable
-              style={[styles.createButton, { backgroundColor: theme.accent }]}
-              onPress={() => navigation.navigate("TypeSelector")}
-            >
-              <Feather name="plus" size={20} color="#FFFFFF" />
-              <Text style={styles.createButtonText}>Create Reminder</Text>
-            </Pressable>
           </View>
-        ) : (
-          <>
-            {/* Today's Reminders */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Today's Reminders
-              </Text>
-              {todaysReminders.length > 0 ? (
-                todaysReminders.map((reminder) => (
-                  <Card key={reminder.id} style={styles.reminderCard}>
-                    <View style={styles.reminderContent}>
-                      <View
-                        style={[
-                          styles.typeIndicator,
-                          {
-                            backgroundColor:
-                              reminder.reminderType === "cycle"
-                                ? Colors.light.accent
-                                : Colors.light.mint,
-                          },
-                        ]}
-                      />
-                      <View style={styles.reminderInfo}>
-                        <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                          {reminder.title}
-                        </Text>
-                        <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
-                          {formatTime(reminder.reminderTime)}
-                        </Text>
-                      </View>
-                      <Pressable style={styles.completeButton}>
-                        <Feather name="check-circle" size={24} color={theme.success} />
-                      </Pressable>
-                    </View>
-                  </Card>
-                ))
-              ) : (
-                <Card style={styles.emptyCard}>
-                  <View style={styles.emptyCardContent}>
-                    <Feather name="sun" size={32} color={theme.textTertiary} />
-                    <Text style={[styles.emptyCardText, { color: theme.textSecondary }]}>
-                      All clear for today!
-                    </Text>
-                  </View>
-                </Card>
-              )}
-            </View>
-
-            {/* Upcoming Reminders */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Upcoming
-              </Text>
-              {upcomingReminders.length > 0 ? (
-                upcomingReminders.map((reminder) => (
-                  <Card key={reminder.id} style={styles.reminderCard}>
-                    <View style={styles.reminderContent}>
-                      <View
-                        style={[
-                          styles.typeIndicator,
-                          {
-                            backgroundColor:
-                              reminder.reminderType === "cycle"
-                                ? Colors.light.accent
-                                : Colors.light.mint,
-                          },
-                        ]}
-                      />
-                      <View style={styles.reminderInfo}>
-                        <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                          {reminder.title}
-                        </Text>
-                        <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
-                          {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
-                        </Text>
-                      </View>
-                    </View>
-                  </Card>
-                ))
-              ) : (
-                <Card style={styles.emptyCard}>
-                  <View style={styles.emptyCardContent}>
-                    <Feather name="calendar" size={32} color={theme.textTertiary} />
-                    <Text style={[styles.emptyCardText, { color: theme.textSecondary }]}>
-                      No upcoming reminders
-                    </Text>
-                  </View>
-                </Card>
-              )}
-            </View>
-
-            {/* Quick Create CTA */}
-            <Pressable
-              style={[styles.quickCreateCard, { backgroundColor: theme.primaryLight }]}
-              onPress={() => navigation.navigate("TypeSelector")}
-            >
-              <View style={styles.quickCreateContent}>
-                <Feather name="plus-circle" size={24} color={theme.primary} />
-                <Text style={[styles.quickCreateText, { color: theme.primary }]}>
-                  Create a new reminder
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={20} color={theme.primary} />
-            </Pressable>
-          </>
-        )}
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -238,60 +228,74 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: Spacing.lg,
-  },
-  header: {
-    marginBottom: Spacing.md,
-  },
-  appTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  welcomeSection: {
-    marginBottom: Spacing.xl,
-  },
-  welcomeText: {
-    fontSize: Typography.display,
-    fontWeight: "700",
-    marginBottom: Spacing.xs,
-  },
-  welcomeSubtext: {
-    fontSize: Typography.body,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingTop: Spacing.xxl,
-    paddingHorizontal: Spacing.lg,
-  },
-  emptyImage: {
-    width: 180,
-    height: 180,
-    marginBottom: Spacing.xl,
-  },
-  emptyTitle: {
-    fontSize: Typography.h2,
-    fontWeight: "600",
-    marginBottom: Spacing.sm,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: Typography.body,
-    textAlign: "center",
-    marginBottom: Spacing.xl,
-  },
-  createButton: {
+  topNav: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: 12,
-    gap: Spacing.sm,
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
-  createButtonText: {
-    color: "#FFFFFF",
-    fontSize: Typography.button,
+  logoContainer: {
+    width: 60,
+  },
+  logoText: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  navTitle: {
+    fontSize: Typography.h2,
     fontWeight: "600",
+  },
+  moreButton: {
+    width: 60,
+    alignItems: "flex-end",
+    padding: Spacing.xs,
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  welcomeCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.lg,
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: Spacing.md,
+    right: Spacing.md,
+    padding: Spacing.xs,
+  },
+  welcomeTitle: {
+    fontSize: Typography.h3,
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
+    paddingRight: Spacing.xl,
+  },
+  welcomeText: {
+    fontSize: Typography.body,
+    lineHeight: 22,
+  },
+  createReminderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.xl,
+  },
+  createReminderText: {
+    fontSize: Typography.body,
+    fontWeight: "500",
+  },
+  plusIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   section: {
     marginBottom: Spacing.xl,
@@ -331,31 +335,24 @@ const styles = StyleSheet.create({
   completeButton: {
     padding: Spacing.sm,
   },
-  emptyCard: {
-    paddingVertical: Spacing.xl,
-  },
-  emptyCardContent: {
+  emptyState: {
     alignItems: "center",
-    gap: Spacing.sm,
+    paddingTop: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
   },
-  emptyCardText: {
-    fontSize: Typography.body,
+  emptyImage: {
+    width: 160,
+    height: 160,
+    marginBottom: Spacing.xl,
   },
-  quickCreateCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: Spacing.lg,
-    borderRadius: 12,
-    marginTop: Spacing.md,
-  },
-  quickCreateContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  quickCreateText: {
-    fontSize: Typography.body,
+  emptyTitle: {
+    fontSize: Typography.h2,
     fontWeight: "600",
+    marginBottom: Spacing.sm,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: Typography.body,
+    textAlign: "center",
   },
 });

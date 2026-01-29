@@ -7,7 +7,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import HomeScreen from "@/screens/HomeScreen";
 import RemindersScreen from "@/screens/RemindersScreen";
-import MoreScreen from "@/screens/MoreScreen";
 import { Colors, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import type { RootStackParamList } from "./RootStackNavigator";
@@ -23,6 +22,7 @@ function CreateButton() {
       <Pressable
         style={[styles.createButton, { backgroundColor: theme.accent }]}
         onPress={() => navigation.navigate("TypeSelector")}
+        testID="fab-create"
       >
         <Feather name="plus" size={28} color="#FFFFFF" />
       </Pressable>
@@ -62,15 +62,6 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Reminders"
-        component={RemindersScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="bell" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
         name="Create"
         component={View}
         options={{
@@ -83,11 +74,11 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="More"
-        component={MoreScreen}
+        name="Reminders"
+        component={RemindersScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Feather name="more-horizontal" size={size} color={color} />
+            <Feather name="bell" size={size} color={color} />
           ),
         }}
       />

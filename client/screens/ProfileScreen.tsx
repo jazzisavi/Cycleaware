@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { StyleSheet, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
@@ -16,7 +15,6 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
-  const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
 
   const [email, setEmail] = useState("");
@@ -36,7 +34,7 @@ export default function ProfileScreen() {
           styles.content,
           {
             paddingTop: headerHeight + Spacing.xl,
-            paddingBottom: tabBarHeight + Spacing["2xl"],
+            paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
