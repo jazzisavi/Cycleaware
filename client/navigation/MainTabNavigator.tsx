@@ -24,7 +24,7 @@ function CreateButton() {
         onPress={() => navigation.navigate("TypeSelector")}
         testID="fab-create"
       >
-        <Feather name="plus" size={28} color="#FFFFFF" />
+        <Feather name="plus" size={28} color="#000000" />
       </Pressable>
     </View>
   );
