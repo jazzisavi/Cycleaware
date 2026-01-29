@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Pressable, Platform } from "react-native";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -9,12 +8,8 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
-import { TextInput } from "@/components/TextInput";
-import { Button } from "@/components/Button";
-import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
@@ -23,26 +18,24 @@ import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateReminder">;
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 export default function CreateReminderScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
 
   const reminderType = route.params?.type || "cycle";
-  const isCycle = reminderType === "cycle";
 
   const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
-  const [time, setTime] = useState(new Date());
+  const [cycleDayStart, setCycleDayStart] = useState(14);
+  const [cycleDayEnd, setCycleDayEnd] = useState(28);
+  const [cycleStartDate, setCycleStartDate] = useState<Date | null>(null);
+  const [hasEndDate, setHasEndDate] = useState(false);
+  const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [cycleInterval, setCycleInterval] = useState(1);
-  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([]);
-  const [errors, setErrors] = useState<{ title?: string }>({});
+  const [notes, setNotes] = useState("");
+  const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -67,37 +60,15 @@ export default function CreateReminderScreen() {
     }
   };
 
-  const toggleWeekday = (day: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedWeekdays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
-    );
-  };
-
-  const incrementCycle = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setCycleInterval((prev) => Math.min(prev + 1, 365));
-  };
-
-  const decrementCycle = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setCycleInterval((prev) => Math.max(prev - 1, 1));
-  };
-
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
+      hour: "2-digit",
       minute: "2-digit",
     });
   };
 
   const handleSave = () => {
     if (!title.trim()) {
-      setErrors({ title: "Please enter a reminder title" });
-      return;
-    }
-
-    if (!isCycle && selectedWeekdays.length === 0) {
       return;
     }
 
@@ -108,178 +79,170 @@ export default function CreateReminderScreen() {
       notes: notes.trim() || null,
       reminderType,
       reminderTime: timeString,
-      cycleIntervalDays: isCycle ? cycleInterval : null,
-      weeklyRepeatDays: !isCycle ? selectedWeekdays : null,
-      specificDates: null,
+      cycleIntervalDays: cycleDayEnd,
+      cycleDayStart,
+      cycleDayEnd,
+      alarmType,
       isActive: true,
     };
 
     createMutation.mutate(reminderData);
   };
 
-  const typeColor = isCycle ? theme.accentCoral : theme.accentMint;
-  const typeLabel = isCycle ? "Cycle-Based" : "Calendar-Based";
-  const typeIcon = isCycle ? "refresh-cw" : "calendar";
-
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAwareScrollViewCompat
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Feather name="x" size={24} color={theme.text} />
+        </Pressable>
+        <View style={{ flex: 1 }} />
+        <Pressable 
+          onPress={handleSave}
+          disabled={!title.trim() || createMutation.isPending}
+          style={styles.headerButton}
+        >
+          <ThemedText 
+            type="body" 
+            style={{ 
+              color: title.trim() ? theme.text : theme.textTertiary,
+              fontWeight: "500",
+            }}
+          >
+            Save
+          </ThemedText>
+        </Pressable>
+      </View>
+
+      <ScrollView
         contentContainerStyle={[
           styles.content,
-          {
-            paddingTop: headerHeight + Spacing.lg,
-            paddingBottom: insets.bottom + Spacing["2xl"],
-          },
+          { paddingBottom: insets.bottom + Spacing.xl },
         ]}
-        scrollIndicatorInsets={{ bottom: insets.bottom }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Type Badge */}
-        <View style={[styles.typeBadge, { backgroundColor: typeColor + "15" }]}>
-          <Feather name={typeIcon} size={16} color={typeColor} />
-          <ThemedText type="small" style={[styles.typeBadgeText, { color: typeColor }]}>
-            {typeLabel}
-          </ThemedText>
+        {/* Title Input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={[styles.titleInput, { color: theme.text }]}
+            placeholder="Add reminder title"
+            placeholderTextColor={theme.textTertiary}
+            value={title}
+            onChangeText={setTitle}
+            testID="input-title"
+          />
         </View>
 
-        {/* Title Input */}
-        <SectionHeader title="What do you need to remember?" />
-        <TextInput
-          placeholder="e.g., Take vitamins, Water plants..."
-          value={title}
-          onChangeText={(text) => {
-            setTitle(text);
-            setErrors({});
-          }}
-          error={errors.title}
-          testID="input-title"
-        />
-
-        {/* Notes Input */}
-        <TextInput
-          label="Notes (optional)"
-          placeholder="Add any helpful details..."
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-          numberOfLines={3}
-          style={styles.notesInput}
-          testID="input-notes"
-        />
-
-        {/* Time Selection */}
-        <SectionHeader title="When should we remind you?" />
-        <Pressable
-          onPress={() => setShowTimePicker(true)}
-          style={[styles.timeButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.borderLight }]}
-        >
-          <View style={[styles.timeIconContainer, { backgroundColor: theme.primary + "15" }]}>
-            <Feather name="clock" size={20} color={theme.primary} />
-          </View>
-          <View style={styles.timeContent}>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              Reminder time
-            </ThemedText>
-            <ThemedText type="h3">
-              {formatTime(time)}
-            </ThemedText>
-          </View>
-          <Feather name="chevron-right" size={20} color={theme.textTertiary} />
+        {/* Repeat on Days */}
+        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
+          <ThemedText type="body" style={{ color: theme.text }}>
+            Repeat on Day {cycleDayStart} to {cycleDayEnd}
+          </ThemedText>
         </Pressable>
 
-        {(showTimePicker || Platform.OS === "ios") && (
+        {/* Add cycle start date */}
+        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+            Add cycle start date
+          </ThemedText>
+        </Pressable>
+
+        {/* No end date */}
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={() => setHasEndDate(!hasEndDate)}
+        >
+          <ThemedText type="body" style={{ color: theme.text }}>
+            {hasEndDate ? "Has end date" : "No end date"}
+          </ThemedText>
+        </Pressable>
+
+        {/* Remind me at time */}
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={() => setShowTimePicker(true)}
+        >
+          <ThemedText type="body" style={{ color: theme.text }}>
+            Remind me at {formatTime(time)}
+          </ThemedText>
+        </Pressable>
+
+        {showTimePicker && (
           <DateTimePicker
             value={time}
             mode="time"
             display={Platform.OS === "ios" ? "spinner" : "default"}
             onChange={handleTimeChange}
-            style={styles.timePicker}
           />
         )}
 
-        {/* Repeat Configuration */}
-        <SectionHeader title={isCycle ? "How often?" : "Which days?"} />
-        
-        {isCycle ? (
-          <View style={styles.cycleSection}>
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              Repeat every
-            </ThemedText>
-            <View style={styles.cycleControl}>
-              <Pressable
-                onPress={decrementCycle}
-                style={[styles.cycleButton, { backgroundColor: theme.backgroundSecondary }]}
-                disabled={cycleInterval <= 1}
-              >
-                <Feather name="minus" size={20} color={cycleInterval <= 1 ? theme.textTertiary : theme.text} />
-              </Pressable>
-              <View style={[styles.cycleValue, { backgroundColor: theme.backgroundDefault, borderColor: theme.primary }]}>
-                <ThemedText type="h1">{cycleInterval}</ThemedText>
-              </View>
-              <Pressable
-                onPress={incrementCycle}
-                style={[styles.cycleButton, { backgroundColor: theme.backgroundSecondary }]}
-                disabled={cycleInterval >= 365}
-              >
-                <Feather name="plus" size={20} color={cycleInterval >= 365 ? theme.textTertiary : theme.text} />
-              </Pressable>
-            </View>
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              day{cycleInterval > 1 ? "s" : ""}
-            </ThemedText>
-          </View>
-        ) : (
-          <View style={styles.weekdaysSection}>
-            <ThemedText type="body" style={[styles.weekdaysLabel, { color: theme.textSecondary }]}>
-              Select the days for this reminder
-            </ThemedText>
-            <View style={styles.weekdaysRow}>
-              {WEEKDAYS.map((day, index) => {
-                const isSelected = selectedWeekdays.includes(index);
-                return (
-                  <Pressable
-                    key={day}
-                    onPress={() => toggleWeekday(index)}
-                    style={[
-                      styles.weekdayButton,
-                      {
-                        backgroundColor: isSelected ? theme.primary : theme.backgroundSecondary,
-                        borderColor: isSelected ? theme.primary : theme.borderLight,
-                      },
-                    ]}
-                  >
-                    <ThemedText
-                      type="small"
-                      style={{
-                        color: isSelected ? theme.buttonText : theme.text,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {day}
-                    </ThemedText>
-                  </Pressable>
-                );
-              })}
-            </View>
-            {selectedWeekdays.length === 0 && (
-              <ThemedText type="caption" style={[styles.weekdaysHint, { color: theme.textTertiary }]}>
-                Tap to select at least one day
-              </ThemedText>
-            )}
-          </View>
-        )}
+        {/* Set another reminder */}
+        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+            Set another reminder
+          </ThemedText>
+        </Pressable>
 
-        {/* Save Button */}
-        <View style={styles.saveSection}>
-          <Button
-            onPress={handleSave}
-            loading={createMutation.isPending}
-            disabled={!title.trim() || (!isCycle && selectedWeekdays.length === 0)}
-            testID="button-save-reminder"
+        {/* Add medication notes */}
+        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+            Add medication notes
+          </ThemedText>
+        </Pressable>
+
+        {/* Alarm type */}
+        <View style={styles.alarmSection}>
+          <ThemedText type="body" style={[styles.alarmTitle, { color: theme.text }]}>
+            Alarm type
+          </ThemedText>
+
+          <Pressable 
+            style={styles.radioRow}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAlarmType("notification");
+            }}
           >
-            Create Reminder
-          </Button>
+            <View style={[
+              styles.radio,
+              { borderColor: theme.text },
+              alarmType === "notification" && { borderColor: theme.primary },
+            ]}>
+              {alarmType === "notification" ? (
+                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
+              ) : null}
+            </View>
+            <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
+              Notification
+            </ThemedText>
+          </Pressable>
+
+          <Pressable 
+            style={styles.radioRow}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setAlarmType("alarm");
+            }}
+          >
+            <View style={styles.playIcon}>
+              <Feather name="play" size={12} color={theme.primary} />
+            </View>
+            <View style={[
+              styles.radio,
+              { borderColor: theme.text },
+              alarmType === "alarm" && { borderColor: theme.primary },
+            ]}>
+              {alarmType === "alarm" ? (
+                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
+              ) : null}
+            </View>
+            <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
+              Alarm
+            </ThemedText>
+          </Pressable>
         </View>
-      </KeyboardAwareScrollViewCompat>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -288,99 +251,56 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  headerButton: {
+    padding: Spacing.xs,
+  },
   content: {
     paddingHorizontal: Spacing.lg,
   },
-  typeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    marginBottom: Spacing.xl,
-    gap: Spacing.xs,
+  inputContainer: {
+    paddingVertical: Spacing.xl,
+    marginBottom: Spacing.md,
   },
-  typeBadgeText: {
+  titleInput: {
+    fontSize: 24,
     fontWeight: "600",
   },
-  notesInput: {
-    height: 80,
-    textAlignVertical: "top",
-    paddingTop: Spacing.md,
+  row: {
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
   },
-  timeButton: {
+  alarmSection: {
+    paddingTop: Spacing.xl,
+  },
+  alarmTitle: {
+    fontWeight: "500",
+    marginBottom: Spacing.lg,
+  },
+  radioRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
+    paddingVertical: Spacing.md,
   },
-  timeIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.md,
-  },
-  timeContent: {
-    flex: 1,
-  },
-  timePicker: {
-    marginTop: Spacing.sm,
-  },
-  cycleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.md,
-    paddingVertical: Spacing.xl,
-  },
-  cycleControl: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  cycleButton: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cycleValue: {
-    width: 80,
-    height: 64,
-    borderRadius: BorderRadius.lg,
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },
-  weekdaysSection: {
-    paddingVertical: Spacing.lg,
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
-  weekdaysLabel: {
-    marginBottom: Spacing.lg,
-    textAlign: "center",
-  },
-  weekdaysRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  weekdayButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  weekdaysHint: {
-    textAlign: "center",
-    marginTop: Spacing.md,
-  },
-  saveSection: {
-    marginTop: Spacing["3xl"],
+  playIcon: {
+    marginRight: Spacing.sm,
   },
 });

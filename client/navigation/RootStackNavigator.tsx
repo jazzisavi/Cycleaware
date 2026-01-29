@@ -57,16 +57,10 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="CreateReminder"
         component={CreateReminderScreen}
-        options={({ navigation }) => ({
-          ...opaqueScreenOptions,
+        options={{
+          headerShown: false,
           presentation: "card",
-          headerTitle: "Create Reminder",
-          headerLeft: () => (
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Feather name="arrow-left" size={24} color={theme.text} />
-            </Pressable>
-          ),
-        })}
+        }}
       />
       <Stack.Screen
         name="ReminderDetail"
