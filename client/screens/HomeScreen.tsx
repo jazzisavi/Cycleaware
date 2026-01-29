@@ -20,7 +20,7 @@ import { Card } from "@/components/Card";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface Reminder {
-  id: string;
+  id: number;
   title: string;
   reminderType: "cycle" | "calendar";
   nextOccurrence: string;
@@ -139,32 +139,38 @@ export default function HomeScreen() {
               Today's Reminders
             </Text>
             {todaysReminders.map((reminder) => (
-              <Card key={reminder.id} style={styles.reminderCard}>
-                <View style={styles.reminderContent}>
-                  <View
-                    style={[
-                      styles.typeIndicator,
-                      {
-                        backgroundColor:
-                          reminder.reminderType === "cycle"
-                            ? Colors.light.accent
-                            : Colors.light.mint,
-                      },
-                    ]}
-                  />
-                  <View style={styles.reminderInfo}>
-                    <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                      {reminder.title}
-                    </Text>
-                    <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
-                      {formatTime(reminder.reminderTime)}
-                    </Text>
+              <Pressable
+                key={reminder.id}
+                onPress={() => navigation.navigate("CreateCycleReminder", { reminderId: reminder.id })}
+                testID={`reminder-${reminder.id}`}
+              >
+                <Card style={styles.reminderCard}>
+                  <View style={styles.reminderContent}>
+                    <View
+                      style={[
+                        styles.typeIndicator,
+                        {
+                          backgroundColor:
+                            reminder.reminderType === "cycle"
+                              ? Colors.light.accent
+                              : Colors.light.mint,
+                        },
+                      ]}
+                    />
+                    <View style={styles.reminderInfo}>
+                      <Text style={[styles.reminderTitle, { color: theme.text }]}>
+                        {reminder.title}
+                      </Text>
+                      <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
+                        {formatTime(reminder.reminderTime)}
+                      </Text>
+                    </View>
+                    <Pressable style={styles.completeButton}>
+                      <Feather name="check-circle" size={24} color={theme.success} />
+                    </Pressable>
                   </View>
-                  <Pressable style={styles.completeButton}>
-                    <Feather name="check-circle" size={24} color={theme.success} />
-                  </Pressable>
-                </View>
-              </Card>
+                </Card>
+              </Pressable>
             ))}
           </View>
         ) : null}
@@ -176,29 +182,35 @@ export default function HomeScreen() {
               Upcoming
             </Text>
             {upcomingReminders.map((reminder) => (
-              <Card key={reminder.id} style={styles.reminderCard}>
-                <View style={styles.reminderContent}>
-                  <View
-                    style={[
-                      styles.typeIndicator,
-                      {
-                        backgroundColor:
-                          reminder.reminderType === "cycle"
-                            ? Colors.light.accent
-                            : Colors.light.mint,
-                      },
-                    ]}
-                  />
-                  <View style={styles.reminderInfo}>
-                    <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                      {reminder.title}
-                    </Text>
-                    <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
-                      {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
-                    </Text>
+              <Pressable
+                key={reminder.id}
+                onPress={() => navigation.navigate("CreateCycleReminder", { reminderId: reminder.id })}
+                testID={`reminder-${reminder.id}`}
+              >
+                <Card style={styles.reminderCard}>
+                  <View style={styles.reminderContent}>
+                    <View
+                      style={[
+                        styles.typeIndicator,
+                        {
+                          backgroundColor:
+                            reminder.reminderType === "cycle"
+                              ? Colors.light.accent
+                              : Colors.light.mint,
+                        },
+                      ]}
+                    />
+                    <View style={styles.reminderInfo}>
+                      <Text style={[styles.reminderTitle, { color: theme.text }]}>
+                        {reminder.title}
+                      </Text>
+                      <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
+                        {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </Card>
+                </Card>
+              </Pressable>
             ))}
           </View>
         ) : null}

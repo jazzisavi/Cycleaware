@@ -21,6 +21,7 @@ export type RootStackParamList = {
   Main: undefined;
   TypeSelector: undefined;
   CreateCycleReminder: {
+    reminderId?: number;
     title?: string;
     notes?: string;
     reminderTimes?: string[];

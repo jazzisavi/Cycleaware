@@ -6,12 +6,12 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, Colors } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -24,6 +24,9 @@ export default function CreateReminderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
+
+  const reminderId = route.params?.reminderId;
+  const isEditMode = !!reminderId;
 
   const [title, setTitle] = useState("");
   const [cycleDayStart, setCycleDayStart] = useState<number | null>(14);
@@ -38,9 +41,56 @@ export default function CreateReminderScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  // Fetch reminder data when editing
+  const { data: reminderData } = useQuery({
+    queryKey: ["/api/reminders", reminderId],
+    enabled: isEditMode && !isLoaded,
+  });
+
+  // Populate form with existing reminder data
   useEffect(() => {
-    if (route.params) {
+    if (reminderData && isEditMode && !isLoaded) {
+      setTitle(reminderData.title || "");
+      setNotes(reminderData.notes || "");
+      setAlarmType(reminderData.alarmType || "notification");
+      setCycleDayStart(reminderData.cycleDayStart || 14);
+      setCycleDayEnd(reminderData.cycleDayEnd || 28);
+      
+      // Parse reminder times
+      if (reminderData.reminderTimes && reminderData.reminderTimes.length > 0) {
+        const times = reminderData.reminderTimes.map((t: string) => {
+          const [hours, minutes] = t.split(":").map(Number);
+          const date = new Date();
+          date.setHours(hours, minutes, 0, 0);
+          return date;
+        });
+        setReminderTimes(times);
+      }
+
+      // Parse cycle start date
+      if (reminderData.cycleStartDate) {
+        const cycleStart = new Date(reminderData.cycleStartDate);
+        setStartsOn("on");
+        setStartDate(cycleStart);
+      }
+
+      // Parse cycle end date
+      if (reminderData.cycleEndDate) {
+        setEnds("on");
+        setEndDate(new Date(reminderData.cycleEndDate));
+      } else {
+        setEnds("never");
+      }
+
+      setIsLoaded(true);
+    }
+  }, [reminderData, isEditMode, isLoaded]);
+
+  // Handle params from RepeatingDays screen
+  useEffect(() => {
+    if (route.params && !isEditMode) {
       if (route.params.title !== undefined) setTitle(route.params.title);
       if (route.params.notes !== undefined) setNotes(route.params.notes);
       if (route.params.alarmType !== undefined) setAlarmType(route.params.alarmType);
@@ -60,7 +110,7 @@ export default function CreateReminderScreen() {
       if (route.params.ends !== undefined) setEnds(route.params.ends);
       if (route.params.endDate !== undefined) setEndDate(new Date(route.params.endDate));
     }
-  }, [route.params]);
+  }, [route.params, isEditMode]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -74,6 +124,37 @@ export default function CreateReminderScreen() {
     },
     onError: (error) => {
       console.error("Failed to create reminder:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("PUT", `/api/reminders/${reminderId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.popToTop();
+    },
+    onError: (error) => {
+      console.error("Failed to update reminder:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/reminders/${reminderId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.popToTop();
+    },
+    onError: (error) => {
+      console.error("Failed to delete reminder:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     },
   });
@@ -157,7 +238,7 @@ export default function CreateReminderScreen() {
       cycleStartDateValue.setHours(0, 0, 0, 0);
     }
 
-    const reminderData = {
+    const reminderDataPayload = {
       title: title.trim(),
       notes: notes.trim() || null,
       reminderType: "cycle",
@@ -172,7 +253,16 @@ export default function CreateReminderScreen() {
       isActive: true,
     };
 
-    createMutation.mutate(reminderData);
+    if (isEditMode) {
+      updateMutation.mutate(reminderDataPayload);
+    } else {
+      createMutation.mutate(reminderDataPayload);
+    }
+  };
+
+  const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    deleteMutation.mutate();
   };
 
   const handleOpenRepeatingDays = () => {
@@ -479,6 +569,20 @@ export default function CreateReminderScreen() {
             </ThemedText>
           </Pressable>
         </View>
+
+        {/* Delete Button - only shown in edit mode */}
+        {isEditMode ? (
+          <Pressable
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            disabled={deleteMutation.isPending}
+            testID="button-delete-reminder"
+          >
+            <ThemedText type="body" style={{ color: Colors.light.error, fontWeight: "500" }}>
+              Delete Reminder
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </ThemedView>
   );
@@ -611,5 +715,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
+  },
+  deleteButton: {
+    marginTop: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    alignItems: "center",
   },
 });
