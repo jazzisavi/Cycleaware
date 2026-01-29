@@ -93,15 +93,40 @@ export default function CreateReminderScreen() {
     }
 
     const timeString = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}`;
+    
+    const reminderTimesArray: string[] = [timeString];
+    if (additionalTime) {
+      const additionalTimeString = `${additionalTime.getHours().toString().padStart(2, "0")}:${additionalTime.getMinutes().toString().padStart(2, "0")}`;
+      reminderTimesArray.push(additionalTimeString);
+    }
+
+    let cycleStartDateValue: Date;
+    if (startsOn === "today") {
+      cycleStartDateValue = new Date();
+      cycleStartDateValue.setHours(0, 0, 0, 0);
+    } else if (startsOn === "tomorrow") {
+      cycleStartDateValue = new Date();
+      cycleStartDateValue.setDate(cycleStartDateValue.getDate() + 1);
+      cycleStartDateValue.setHours(0, 0, 0, 0);
+    } else if (startsOn === "on" && startDate) {
+      cycleStartDateValue = new Date(startDate);
+      cycleStartDateValue.setHours(0, 0, 0, 0);
+    } else {
+      cycleStartDateValue = new Date();
+      cycleStartDateValue.setHours(0, 0, 0, 0);
+    }
 
     const reminderData = {
       title: title.trim(),
       notes: notes.trim() || null,
       reminderType: "cycle",
       reminderTime: timeString,
+      reminderTimes: reminderTimesArray,
       cycleIntervalDays: cycleDayEnd || 28,
       cycleDayStart: cycleDayStart || 14,
       cycleDayEnd: cycleDayEnd || 28,
+      cycleStartDate: cycleStartDateValue.toISOString(),
+      cycleEndDate: ends === "on" && endDate ? endDate.toISOString() : null,
       alarmType,
       isActive: true,
     };

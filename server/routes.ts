@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertReminderSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
+import { checkCycleDay, getNextNotificationTimes } from "./utils/cycleCalculator";
 
 // Simple session store (in production, use Redis or database sessions)
 const sessions = new Map<string, string>();
@@ -149,9 +150,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await getOrCreateDemoUser();
       
+      let nextOccurrence: Date | null = null;
+      
+      if (req.body.reminderType === "cycle" && req.body.cycleDayStart && req.body.cycleDayEnd && req.body.cycleStartDate) {
+        const cycleConfig = {
+          cycleDayStart: req.body.cycleDayStart,
+          cycleDayEnd: req.body.cycleDayEnd,
+          cycleStartDate: new Date(req.body.cycleStartDate),
+          cycleEndDate: req.body.cycleEndDate ? new Date(req.body.cycleEndDate) : null,
+        };
+        
+        const reminderTimes = req.body.reminderTimes || [req.body.reminderTime];
+        const nextTimes = getNextNotificationTimes(cycleConfig, reminderTimes);
+        
+        if (nextTimes.length > 0) {
+          nextOccurrence = nextTimes.reduce((earliest, current) => 
+            current < earliest ? current : earliest
+          );
+        }
+      }
+      
       const reminderData = {
         ...req.body,
         userId: user.id,
+        nextOccurrence,
       };
       
       const reminder = await storage.createReminder(reminderData);
@@ -194,7 +216,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Reminder not found" });
       }
       
-      // Create notification history entry
       await storage.createNotificationHistory({
         reminderId: reminder.id,
         userId: user.id,
@@ -204,15 +225,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedAt: new Date(),
       });
       
-      // Calculate next occurrence
-      let nextDate = new Date();
-      const [hours, minutes] = (reminder.reminderTime || "09:00").split(":").map(Number);
+      let nextOccurrence: Date | null = null;
       
-      if (reminder.reminderType === "cycle" && reminder.cycleIntervalDays) {
-        nextDate.setDate(nextDate.getDate() + reminder.cycleIntervalDays);
-        nextDate.setHours(hours, minutes, 0, 0);
+      if (reminder.reminderType === "cycle" && reminder.cycleDayStart && reminder.cycleDayEnd && reminder.cycleStartDate) {
+        const cycleConfig = {
+          cycleDayStart: reminder.cycleDayStart,
+          cycleDayEnd: reminder.cycleDayEnd,
+          cycleStartDate: new Date(reminder.cycleStartDate),
+          cycleEndDate: reminder.cycleEndDate ? new Date(reminder.cycleEndDate) : null,
+        };
+        
+        const reminderTimes = (reminder.reminderTimes as string[]) || [reminder.reminderTime];
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const nextTimes = getNextNotificationTimes(cycleConfig, reminderTimes, tomorrow);
+        
+        if (nextTimes.length > 0) {
+          nextOccurrence = nextTimes.reduce((earliest, current) => 
+            current < earliest ? current : earliest
+          );
+        }
       } else if (reminder.reminderType === "calendar" && reminder.weeklyRepeatDays) {
+        const [hours, minutes] = (reminder.reminderTime || "09:00").split(":").map(Number);
         const weekdays = reminder.weeklyRepeatDays as number[];
+        const nextDate = new Date();
         const currentDay = nextDate.getDay();
         
         for (let i = 1; i <= 7; i++) {
@@ -220,19 +258,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (weekdays.includes(checkDay)) {
             nextDate.setDate(nextDate.getDate() + i);
             nextDate.setHours(hours, minutes, 0, 0);
+            nextOccurrence = nextDate;
             break;
           }
         }
       }
       
       const updatedReminder = await storage.updateReminder(reminder.id, {
-        nextOccurrence: nextDate,
+        nextOccurrence,
       });
       
       res.json(updatedReminder);
     } catch (error) {
       console.error("Complete reminder error:", error);
       res.status(500).json({ message: "Failed to complete reminder" });
+    }
+  });
+
+  app.get("/api/reminders/:id/cycle-status", async (req: Request, res: Response) => {
+    try {
+      const reminder = await storage.getReminder(req.params.id);
+      
+      if (!reminder) {
+        return res.status(404).json({ message: "Reminder not found" });
+      }
+      
+      if (reminder.reminderType !== "cycle" || !reminder.cycleDayStart || !reminder.cycleDayEnd || !reminder.cycleStartDate) {
+        return res.status(400).json({ message: "Not a cycle-based reminder" });
+      }
+      
+      const cycleConfig = {
+        cycleDayStart: reminder.cycleDayStart,
+        cycleDayEnd: reminder.cycleDayEnd,
+        cycleStartDate: new Date(reminder.cycleStartDate),
+        cycleEndDate: reminder.cycleEndDate ? new Date(reminder.cycleEndDate) : null,
+      };
+      
+      const cycleStatus = checkCycleDay(cycleConfig);
+      const reminderTimes = (reminder.reminderTimes as string[]) || [reminder.reminderTime];
+      const nextNotifications = getNextNotificationTimes(cycleConfig, reminderTimes);
+      
+      res.json({
+        ...cycleStatus,
+        reminderTimes,
+        nextNotifications: nextNotifications.map(d => d.toISOString()),
+        cycleLength: reminder.cycleDayEnd,
+        activeDays: `Day ${reminder.cycleDayStart} to ${reminder.cycleDayEnd}`,
+      });
+    } catch (error) {
+      console.error("Get cycle status error:", error);
+      res.status(500).json({ message: "Failed to get cycle status" });
     }
   });
 
