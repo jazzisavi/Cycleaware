@@ -192,33 +192,56 @@ export default function CreateCalendarReminderScreen() {
           animationType="fade"
           onRequestClose={() => setShowAdditionalTimePicker(false)}
         >
-          <Pressable 
-            style={styles.modalOverlay}
-            onPress={() => setShowAdditionalTimePicker(false)}
-          >
-            <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
               <View style={styles.modalHeader}>
-                <ThemedText type="body" style={{ fontWeight: "600" }}>
+                <ThemedText type="h3" style={{ fontWeight: "600" }}>
                   Set reminder time
                 </ThemedText>
               </View>
-              <DateTimePicker
-                value={additionalTime || new Date(new Date().setHours(12, 0, 0, 0))}
-                mode="time"
-                display="spinner"
-                onChange={handleAdditionalTimeChange}
-              />
+              
+              {Platform.OS === "web" ? (
+                <View style={styles.webTimePickerContainer}>
+                  <TextInput
+                    style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border }]}
+                    value={`${String((additionalTime || new Date()).getHours()).padStart(2, "0")}:${String((additionalTime || new Date()).getMinutes()).padStart(2, "0")}`}
+                    onChangeText={(text) => {
+                      const [hours, minutes] = text.split(":").map(Number);
+                      if (!isNaN(hours) && !isNaN(minutes)) {
+                        const newDate = new Date();
+                        newDate.setHours(hours, minutes, 0, 0);
+                        setAdditionalTime(newDate);
+                      }
+                    }}
+                    placeholder="HH:MM"
+                    placeholderTextColor={theme.textTertiary}
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={5}
+                  />
+                  <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                    Enter time in 24-hour format (e.g., 14:30)
+                  </ThemedText>
+                </View>
+              ) : (
+                <DateTimePicker
+                  value={additionalTime || new Date(new Date().setHours(12, 0, 0, 0))}
+                  mode="time"
+                  display="spinner"
+                  onChange={handleAdditionalTimeChange}
+                />
+              )}
+              
               <View style={styles.modalButtons}>
                 <Pressable 
-                  style={styles.modalButton}
+                  style={[styles.modalButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
                   onPress={() => setShowAdditionalTimePicker(false)}
                 >
-                  <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                  <ThemedText type="body" style={{ color: theme.text }}>
                     Cancel
                   </ThemedText>
                 </Pressable>
                 <Pressable 
-                  style={styles.modalButton}
+                  style={[styles.modalButton, { backgroundColor: theme.primary }]}
                   onPress={() => {
                     if (!additionalTime) {
                       setAdditionalTime(new Date(new Date().setHours(12, 0, 0, 0)));
@@ -226,13 +249,13 @@ export default function CreateCalendarReminderScreen() {
                     setShowAdditionalTimePicker(false);
                   }}
                 >
-                  <ThemedText type="body" style={{ color: theme.primary, fontWeight: "600" }}>
+                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                     Done
                   </ThemedText>
                 </Pressable>
               </View>
             </View>
-          </Pressable>
+          </View>
         </Modal>
 
         {/* Add medication notes */}
@@ -366,21 +389,45 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     borderRadius: 16,
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     width: "85%",
     maxWidth: 340,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalHeader: {
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  webTimePickerContainer: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
+  },
+  webTimeInput: {
+    fontSize: 32,
+    fontWeight: "600",
+    textAlign: "center",
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    minWidth: 150,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: Spacing.md,
+    marginTop: Spacing.xl,
+    gap: Spacing.md,
   },
   modalButton: {
-    paddingVertical: Spacing.sm,
+    flex: 1,
+    paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
   },
 });
