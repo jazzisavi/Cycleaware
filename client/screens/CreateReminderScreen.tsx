@@ -134,10 +134,10 @@ export default function CreateReminderScreen() {
 
   const getStartDateText = () => {
     if (hasStartDateSet) {
-      if (startsOn === "today") return "Starts today";
-      if (startsOn === "tomorrow") return "Starts tomorrow";
+      if (startsOn === "today") return "Cycle starts today";
+      if (startsOn === "tomorrow") return "Cycle starts tomorrow";
       if (startsOn === "on" && startDate) {
-        return `Starts on ${startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+        return `Cycle starts ${startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
       }
     }
     return "Add cycle start date";
