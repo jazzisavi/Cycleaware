@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput } from "react-native";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -27,6 +27,8 @@ export default function CreateCalendarReminderScreen() {
   const [hasEndDate, setHasEndDate] = useState(false);
   const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [additionalTime, setAdditionalTime] = useState<Date | null>(null);
+  const [showAdditionalTimePicker, setShowAdditionalTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
 
@@ -50,6 +52,12 @@ export default function CreateCalendarReminderScreen() {
     setShowTimePicker(Platform.OS === "ios");
     if (selectedTime) {
       setTime(selectedTime);
+    }
+  };
+
+  const handleAdditionalTimeChange = (event: any, selectedTime?: Date) => {
+    if (selectedTime) {
+      setAdditionalTime(selectedTime);
     }
   };
 
@@ -168,11 +176,64 @@ export default function CreateCalendarReminderScreen() {
         )}
 
         {/* Set another reminder */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Set another reminder
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={() => setShowAdditionalTimePicker(true)}
+        >
+          <ThemedText type="body" style={{ color: additionalTime ? theme.text : theme.textSecondary }}>
+            {additionalTime ? `Additional reminder at ${formatTime(additionalTime)}` : "Set another reminder"}
           </ThemedText>
         </Pressable>
+
+        {/* Time Picker Modal */}
+        <Modal
+          visible={showAdditionalTimePicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowAdditionalTimePicker(false)}
+        >
+          <Pressable 
+            style={styles.modalOverlay}
+            onPress={() => setShowAdditionalTimePicker(false)}
+          >
+            <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+              <View style={styles.modalHeader}>
+                <ThemedText type="body" style={{ fontWeight: "600" }}>
+                  Set reminder time
+                </ThemedText>
+              </View>
+              <DateTimePicker
+                value={additionalTime || new Date(new Date().setHours(12, 0, 0, 0))}
+                mode="time"
+                display="spinner"
+                onChange={handleAdditionalTimeChange}
+              />
+              <View style={styles.modalButtons}>
+                <Pressable 
+                  style={styles.modalButton}
+                  onPress={() => setShowAdditionalTimePicker(false)}
+                >
+                  <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                    Cancel
+                  </ThemedText>
+                </Pressable>
+                <Pressable 
+                  style={styles.modalButton}
+                  onPress={() => {
+                    if (!additionalTime) {
+                      setAdditionalTime(new Date(new Date().setHours(12, 0, 0, 0)));
+                    }
+                    setShowAdditionalTimePicker(false);
+                  }}
+                >
+                  <ThemedText type="body" style={{ color: theme.primary, fontWeight: "600" }}>
+                    Done
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Modal>
 
         {/* Add medication notes */}
         <View style={[styles.row, { borderBottomColor: theme.border }]}>
@@ -296,5 +357,30 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: Spacing.lg,
+    width: "85%",
+    maxWidth: 340,
+  },
+  modalHeader: {
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: Spacing.md,
+  },
+  modalButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
   },
 });
