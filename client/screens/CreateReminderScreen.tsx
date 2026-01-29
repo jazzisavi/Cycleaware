@@ -330,7 +330,7 @@ export default function CreateReminderScreen() {
               
               <View style={styles.modalButtons}>
                 <Pressable 
-                  style={[styles.modalButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                  style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
                   onPress={() => setShowAdditionalTimePicker(false)}
                 >
                   <ThemedText type="body" style={{ color: theme.text }}>
