@@ -128,7 +128,7 @@ export default function HomeScreen() {
             Create a reminder
           </Text>
           <View style={[styles.plusIcon, { backgroundColor: theme.accent }]}>
-            <Feather name="plus" size={20} color="#FFFFFF" />
+            <Feather name="plus" size={20} color="#000000" />
           </View>
         </Pressable>
 
