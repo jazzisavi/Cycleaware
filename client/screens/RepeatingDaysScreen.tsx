@@ -123,7 +123,7 @@ export default function RepeatingDaysScreen() {
         {/* Starts on Section */}
         <View style={styles.section}>
           <ThemedText type="body" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            Starts on
+            Cycle starts
           </ThemedText>
 
           <Pressable
