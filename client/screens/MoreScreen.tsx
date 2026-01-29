@@ -13,9 +13,9 @@ import { SettingsRow } from "@/components/SettingsRow";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import type { MoreStackParamList } from "@/navigation/MoreStackNavigator";
+import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-type NavigationProp = NativeStackNavigationProp<MoreStackParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
@@ -36,6 +36,8 @@ export default function MoreScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
+        <ThemedText type="h1" style={styles.screenTitle}>More</ThemedText>
+
         <SectionHeader title="Settings" />
         <SettingsRow
           icon="clock"
@@ -78,8 +80,16 @@ export default function MoreScreen() {
         </View>
 
         <SettingsRow
-          icon="mail"
+          icon="user"
           iconColor={theme.primary}
+          title="Profile"
+          subtitle="Manage your account"
+          onPress={() => navigation.navigate("Profile")}
+          testID="row-profile"
+        />
+        <SettingsRow
+          icon="mail"
+          iconColor={theme.textSecondary}
           title="Email"
           value="Not set"
           onPress={() => navigation.navigate("Profile")}
@@ -113,6 +123,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
+  },
+  screenTitle: {
+    marginBottom: Spacing.lg,
   },
   subscriptionCard: {
     padding: Spacing.lg,

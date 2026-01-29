@@ -1,117 +1,80 @@
 import React from "react";
-import { View, Pressable, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { Platform } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import HomeStackNavigator from "@/navigation/HomeStackNavigator";
-import RemindersStackNavigator from "@/navigation/RemindersStackNavigator";
-import MoreStackNavigator from "@/navigation/MoreStackNavigator";
-import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
+import HomeScreen from "@/screens/HomeScreen";
+import RemindersScreen from "@/screens/RemindersScreen";
+import MoreScreen from "@/screens/MoreScreen";
+import { Colors, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import type { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { RootStackParamList } from "./RootStackNavigator";
 
-export type MainTabParamList = {
-  HomeTab: undefined;
-  RemindersTab: undefined;
-  CreateTab: undefined;
-  MoreTab: undefined;
-  ProfileTab: undefined;
-};
+const Tab = createBottomTabNavigator();
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-function CreateTabButton() {
+function CreateButton() {
   const { theme } = useTheme();
-  const navigation = useNavigation<NavigationProp>();
-
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("TypeSelector");
-  };
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
-    <Pressable
-      onPress={handlePress}
-      style={[styles.createButton, { backgroundColor: theme.primary, ...Shadows.lg }]}
-    >
-      <Feather name="plus" size={28} color={theme.buttonText} />
-    </Pressable>
+    <View style={styles.createButtonContainer}>
+      <Pressable
+        style={[styles.createButton, { backgroundColor: theme.accent }]}
+        onPress={() => navigation.navigate("TypeSelector")}
+      >
+        <Feather name="plus" size={28} color="#FFFFFF" />
+      </Pressable>
+    </View>
   );
 }
 
-function EmptyComponent() {
-  return null;
-}
-
 export default function MainTabNavigator() {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <Tab.Navigator
-      initialRouteName="HomeTab"
       screenOptions={{
-        tabBarActiveTintColor: theme.tabIconSelected,
-        tabBarInactiveTintColor: theme.tabIconDefault,
-        tabBarStyle: {
-          position: "absolute",
-          backgroundColor: Platform.select({
-            ios: "transparent",
-            android: theme.backgroundRoot,
-          }),
-          borderTopWidth: 0,
-          elevation: 0,
-          height: 85,
-          paddingBottom: Platform.OS === "ios" ? 30 : 10,
-        },
-        tabBarBackground: () =>
-          Platform.OS === "ios" ? (
-            <BlurView
-              intensity={100}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
-          ) : null,
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
+          height: 85,
+          paddingBottom: 25,
+          paddingTop: 10,
+        },
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: "500",
         },
       }}
     >
       <Tab.Screen
-        name="HomeTab"
-        component={HomeStackNavigator}
+        name="Home"
+        component={HomeScreen}
         options={{
-          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Feather name="home" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="RemindersTab"
-        component={RemindersStackNavigator}
+        name="Reminders"
+        component={RemindersScreen}
         options={{
-          title: "Reminders",
           tabBarIcon: ({ color, size }) => (
             <Feather name="bell" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="CreateTab"
-        component={EmptyComponent}
+        name="Create"
+        component={View}
         options={{
-          title: "",
-          tabBarButton: () => <CreateTabButton />,
+          tabBarButton: () => <CreateButton />,
         }}
         listeners={{
           tabPress: (e) => {
@@ -120,22 +83,11 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="MoreTab"
-        component={MoreStackNavigator}
+        name="More"
+        component={MoreScreen}
         options={{
-          title: "More",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="menu" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStackNavigator}
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size} color={color} />
+            <Feather name="more-horizontal" size={size} color={color} />
           ),
         }}
       />
@@ -144,12 +96,22 @@ export default function MainTabNavigator() {
 }
 
 const styles = StyleSheet.create({
+  createButtonContainer: {
+    position: "relative",
+    top: -15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   createButton: {
     width: 56,
     height: 56,
-    borderRadius: BorderRadius.full,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

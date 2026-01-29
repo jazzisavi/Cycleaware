@@ -34,6 +34,7 @@ export default function CreateReminderScreen() {
   const queryClient = useQueryClient();
 
   const reminderType = route.params?.type || "cycle";
+  const isCycle = reminderType === "cycle";
 
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -51,7 +52,7 @@ export default function CreateReminderScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
+      navigation.popToTop();
     },
     onError: (error) => {
       console.error("Failed to create reminder:", error);
@@ -96,6 +97,10 @@ export default function CreateReminderScreen() {
       return;
     }
 
+    if (!isCycle && selectedWeekdays.length === 0) {
+      return;
+    }
+
     const timeString = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}`;
 
     const reminderData = {
@@ -103,8 +108,8 @@ export default function CreateReminderScreen() {
       notes: notes.trim() || null,
       reminderType,
       reminderTime: timeString,
-      cycleIntervalDays: reminderType === "cycle" ? cycleInterval : null,
-      weeklyRepeatDays: reminderType === "calendar" ? selectedWeekdays : null,
+      cycleIntervalDays: isCycle ? cycleInterval : null,
+      weeklyRepeatDays: !isCycle ? selectedWeekdays : null,
       specificDates: null,
       isActive: true,
     };
@@ -112,33 +117,34 @@ export default function CreateReminderScreen() {
     createMutation.mutate(reminderData);
   };
 
+  const typeColor = isCycle ? theme.accentCoral : theme.accentMint;
+  const typeLabel = isCycle ? "Cycle-Based" : "Calendar-Based";
+  const typeIcon = isCycle ? "refresh-cw" : "calendar";
+
   return (
     <ThemedView style={styles.container}>
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: headerHeight + Spacing.lg,
             paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <View style={[styles.typeIndicator, { backgroundColor: reminderType === "cycle" ? theme.accentCoral + "20" : theme.accentMint + "20" }]}>
-          <Feather
-            name={reminderType === "cycle" ? "refresh-cw" : "calendar"}
-            size={16}
-            color={reminderType === "cycle" ? theme.accentCoral : theme.accentMint}
-          />
-          <ThemedText type="small" style={{ color: reminderType === "cycle" ? theme.accentCoral : theme.accentMint, marginLeft: Spacing.xs }}>
-            {reminderType === "cycle" ? "Cycle-Based Reminder" : "Calendar-Based Reminder"}
+        {/* Type Badge */}
+        <View style={[styles.typeBadge, { backgroundColor: typeColor + "15" }]}>
+          <Feather name={typeIcon} size={16} color={typeColor} />
+          <ThemedText type="small" style={[styles.typeBadgeText, { color: typeColor }]}>
+            {typeLabel}
           </ThemedText>
         </View>
 
-        <SectionHeader title="Details" />
+        {/* Title Input */}
+        <SectionHeader title="What do you need to remember?" />
         <TextInput
-          label="Reminder Title"
-          placeholder="Enter reminder title"
+          placeholder="e.g., Take vitamins, Water plants..."
           value={title}
           onChangeText={(text) => {
             setTitle(text);
@@ -147,9 +153,11 @@ export default function CreateReminderScreen() {
           error={errors.title}
           testID="input-title"
         />
+
+        {/* Notes Input */}
         <TextInput
-          label="Notes (Optional)"
-          placeholder="Add any additional notes"
+          label="Notes (optional)"
+          placeholder="Add any helpful details..."
           value={notes}
           onChangeText={setNotes}
           multiline
@@ -158,16 +166,23 @@ export default function CreateReminderScreen() {
           testID="input-notes"
         />
 
-        <SectionHeader title="Time" />
+        {/* Time Selection */}
+        <SectionHeader title="When should we remind you?" />
         <Pressable
           onPress={() => setShowTimePicker(true)}
           style={[styles.timeButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.borderLight }]}
         >
-          <Feather name="clock" size={20} color={theme.primary} />
-          <ThemedText type="h3" style={{ marginLeft: Spacing.md }}>
-            {formatTime(time)}
-          </ThemedText>
-          <View style={{ flex: 1 }} />
+          <View style={[styles.timeIconContainer, { backgroundColor: theme.primary + "15" }]}>
+            <Feather name="clock" size={20} color={theme.primary} />
+          </View>
+          <View style={styles.timeContent}>
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              Reminder time
+            </ThemedText>
+            <ThemedText type="h3">
+              {formatTime(time)}
+            </ThemedText>
+          </View>
           <Feather name="chevron-right" size={20} color={theme.textTertiary} />
         </Pressable>
 
@@ -181,8 +196,10 @@ export default function CreateReminderScreen() {
           />
         )}
 
-        <SectionHeader title="Repeat" />
-        {reminderType === "cycle" ? (
+        {/* Repeat Configuration */}
+        <SectionHeader title={isCycle ? "How often?" : "Which days?"} />
+        
+        {isCycle ? (
           <View style={styles.cycleSection}>
             <ThemedText type="body" style={{ color: theme.textSecondary }}>
               Repeat every
@@ -191,17 +208,19 @@ export default function CreateReminderScreen() {
               <Pressable
                 onPress={decrementCycle}
                 style={[styles.cycleButton, { backgroundColor: theme.backgroundSecondary }]}
+                disabled={cycleInterval <= 1}
               >
-                <Feather name="minus" size={20} color={theme.text} />
+                <Feather name="minus" size={20} color={cycleInterval <= 1 ? theme.textTertiary : theme.text} />
               </Pressable>
-              <View style={[styles.cycleValue, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
-                <ThemedText type="h2">{cycleInterval}</ThemedText>
+              <View style={[styles.cycleValue, { backgroundColor: theme.backgroundDefault, borderColor: theme.primary }]}>
+                <ThemedText type="h1">{cycleInterval}</ThemedText>
               </View>
               <Pressable
                 onPress={incrementCycle}
                 style={[styles.cycleButton, { backgroundColor: theme.backgroundSecondary }]}
+                disabled={cycleInterval >= 365}
               >
-                <Feather name="plus" size={20} color={theme.text} />
+                <Feather name="plus" size={20} color={cycleInterval >= 365 ? theme.textTertiary : theme.text} />
               </Pressable>
             </View>
             <ThemedText type="body" style={{ color: theme.textSecondary }}>
@@ -211,47 +230,50 @@ export default function CreateReminderScreen() {
         ) : (
           <View style={styles.weekdaysSection}>
             <ThemedText type="body" style={[styles.weekdaysLabel, { color: theme.textSecondary }]}>
-              Select days of the week
+              Select the days for this reminder
             </ThemedText>
             <View style={styles.weekdaysRow}>
-              {WEEKDAYS.map((day, index) => (
-                <Pressable
-                  key={day}
-                  onPress={() => toggleWeekday(index)}
-                  style={[
-                    styles.weekdayButton,
-                    {
-                      backgroundColor: selectedWeekdays.includes(index)
-                        ? theme.primary
-                        : theme.backgroundSecondary,
-                      borderColor: selectedWeekdays.includes(index)
-                        ? theme.primary
-                        : theme.borderLight,
-                    },
-                  ]}
-                >
-                  <ThemedText
-                    type="small"
-                    style={{
-                      color: selectedWeekdays.includes(index)
-                        ? theme.buttonText
-                        : theme.text,
-                      fontWeight: "600",
-                    }}
+              {WEEKDAYS.map((day, index) => {
+                const isSelected = selectedWeekdays.includes(index);
+                return (
+                  <Pressable
+                    key={day}
+                    onPress={() => toggleWeekday(index)}
+                    style={[
+                      styles.weekdayButton,
+                      {
+                        backgroundColor: isSelected ? theme.primary : theme.backgroundSecondary,
+                        borderColor: isSelected ? theme.primary : theme.borderLight,
+                      },
+                    ]}
                   >
-                    {day}
-                  </ThemedText>
-                </Pressable>
-              ))}
+                    <ThemedText
+                      type="small"
+                      style={{
+                        color: isSelected ? theme.buttonText : theme.text,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {day}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
             </View>
+            {selectedWeekdays.length === 0 && (
+              <ThemedText type="caption" style={[styles.weekdaysHint, { color: theme.textTertiary }]}>
+                Tap to select at least one day
+              </ThemedText>
+            )}
           </View>
         )}
 
+        {/* Save Button */}
         <View style={styles.saveSection}>
           <Button
             onPress={handleSave}
             loading={createMutation.isPending}
-            disabled={!title.trim()}
+            disabled={!title.trim() || (!isCycle && selectedWeekdays.length === 0)}
             testID="button-save-reminder"
           >
             Create Reminder
@@ -269,14 +291,18 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
   },
-  typeIndicator: {
+  typeBadge: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
+    gap: Spacing.xs,
+  },
+  typeBadgeText: {
+    fontWeight: "600",
   },
   notesInput: {
     height: 80,
@@ -286,9 +312,20 @@ const styles = StyleSheet.create({
   timeButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
+  },
+  timeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  timeContent: {
+    flex: 1,
   },
   timePicker: {
     marginTop: Spacing.sm,
@@ -298,7 +335,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.md,
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
   cycleControl: {
     flexDirection: "row",
@@ -306,17 +343,17 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   cycleButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
   cycleValue: {
     width: 80,
-    height: 60,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    height: 64,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -324,7 +361,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
   },
   weekdaysLabel: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     textAlign: "center",
   },
   weekdaysRow: {
@@ -338,6 +375,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+  },
+  weekdaysHint: {
+    textAlign: "center",
+    marginTop: Spacing.md,
   },
   saveSection: {
     marginTop: Spacing["3xl"],
