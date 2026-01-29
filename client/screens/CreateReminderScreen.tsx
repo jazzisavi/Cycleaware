@@ -202,7 +202,7 @@ export default function CreateReminderScreen() {
     if (hasRepeatingDaysSet) {
       return `Repeat on Day ${cycleDayStart} to ${cycleDayEnd}`;
     }
-    return "Repeat on Day 14 to 28";
+    return "Add days of cycle";
   };
 
   const getStartDateText = () => {
