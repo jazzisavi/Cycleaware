@@ -26,11 +26,11 @@ export default function CreateReminderScreen() {
   const queryClient = useQueryClient();
 
   const [title, setTitle] = useState("");
-  const [cycleDayStart, setCycleDayStart] = useState<number | null>(null);
-  const [cycleDayEnd, setCycleDayEnd] = useState<number | null>(null);
-  const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on" | null>(null);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [ends, setEnds] = useState<"never" | "on" | null>(null);
+  const [cycleDayStart, setCycleDayStart] = useState<number | null>(14);
+  const [cycleDayEnd, setCycleDayEnd] = useState<number | null>(28);
+  const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on" | null>("today");
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [ends, setEnds] = useState<"never" | "on" | null>("never");
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [reminderTimes, setReminderTimes] = useState<Date[]>([new Date(new Date().setHours(9, 0, 0, 0))]);
   const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
