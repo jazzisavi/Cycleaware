@@ -175,11 +175,17 @@ export default function CreateCalendarReminderScreen() {
         </Pressable>
 
         {/* Add medication notes */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Add medication notes
-          </ThemedText>
-        </Pressable>
+        <View style={[styles.row, { borderBottomColor: theme.border }]}>
+          <TextInput
+            style={[styles.notesInput, { color: theme.text }]}
+            placeholder="Add medication notes"
+            placeholderTextColor={theme.textSecondary}
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            testID="input-notes"
+          />
+        </View>
 
         {/* Alarm type */}
         <View style={styles.alarmSection}>
@@ -257,6 +263,10 @@ const styles = StyleSheet.create({
   titleInput: {
     fontSize: 24,
     fontWeight: "600",
+  },
+  notesInput: {
+    fontSize: 16,
+    minHeight: 24,
   },
   row: {
     paddingVertical: Spacing.lg,
