@@ -30,7 +30,11 @@ export const reminders = pgTable("reminders", {
   reminderType: text("reminder_type").notNull(), // cycle or calendar
   
   // For cycle-based reminders
-  cycleIntervalDays: integer("cycle_interval_days"),
+  cycleIntervalDays: integer("cycle_interval_days"), // Total cycle length (e.g., 28 or 35)
+  cycleDayStart: integer("cycle_day_start"), // Day to start reminders (e.g., 14)
+  cycleDayEnd: integer("cycle_day_end"), // Day to end reminders (e.g., 28)
+  cycleStartDate: timestamp("cycle_start_date"), // When the cycle begins
+  cycleEndDate: timestamp("cycle_end_date"), // Optional: when to stop the cycle entirely
   
   // For calendar-based reminders (weekly repeat)
   weeklyRepeatDays: jsonb("weekly_repeat_days").$type<number[]>(), // 0-6 for Sun-Sat
@@ -38,8 +42,12 @@ export const reminders = pgTable("reminders", {
   // For calendar-based reminders (specific dates)
   specificDates: jsonb("specific_dates").$type<string[]>(), // ISO date strings
   
-  // Time settings
-  reminderTime: text("reminder_time").notNull(), // HH:MM format
+  // Time settings - supports multiple times per day
+  reminderTime: text("reminder_time").notNull(), // Primary time HH:MM format
+  reminderTimes: jsonb("reminder_times").$type<string[]>(), // Additional times ["HH:MM", "HH:MM"]
+  
+  // Alarm settings
+  alarmType: text("alarm_type").default("notification"), // notification or alarm
   
   // Next occurrence
   nextOccurrence: timestamp("next_occurrence"),
