@@ -9,22 +9,26 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/hooks/useTheme";
 import { Colors, Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { Card } from "@/components/Card";
+import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface Reminder {
   id: number;
   title: string;
+  notes?: string;
   reminderType: "cycle" | "calendar";
   nextOccurrence: string;
   reminderTime: string;
+  reminderTimes?: string[];
 }
 
 export default function HomeScreen() {
@@ -32,11 +36,28 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const queryClient = useQueryClient();
   const [showWelcome, setShowWelcome] = useState(true);
+  const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
 
   const { data: reminders = [] } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
   });
+
+  const completeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("POST", `/api/reminders/${id}/complete`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+    },
+  });
+
+  const handleComplete = (id: number) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCompletedIds(prev => new Set(prev).add(id));
+    completeMutation.mutate(id);
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -138,13 +159,10 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Today's Reminders
             </Text>
-            {todaysReminders.map((reminder) => (
-              <Pressable
-                key={reminder.id}
-                onPress={() => navigation.navigate("CreateCycleReminder", { reminderId: reminder.id })}
-                testID={`reminder-${reminder.id}`}
-              >
-                <Card style={styles.reminderCard}>
+            {todaysReminders.map((reminder) => {
+              const isCompleted = completedIds.has(reminder.id);
+              return (
+                <Card key={reminder.id} style={styles.reminderCard}>
                   <View style={styles.reminderContent}>
                     <View
                       style={[
@@ -162,16 +180,36 @@ export default function HomeScreen() {
                         {reminder.title}
                       </Text>
                       <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
-                        {formatTime(reminder.reminderTime)}
+                        {formatTime(reminder.reminderTime)} today
+                      </Text>
+                      {reminder.notes ? (
+                        <Text 
+                          style={[styles.reminderNotes, { color: theme.textSecondary }]}
+                          numberOfLines={2}
+                        >
+                          {reminder.notes}
+                        </Text>
+                      ) : null}
+                      <Text style={[styles.reminderStatus, { color: theme.textTertiary }]}>
+                        Status: Active
                       </Text>
                     </View>
-                    <Pressable style={styles.completeButton}>
-                      <Feather name="check-circle" size={24} color={theme.success} />
+                    <Pressable 
+                      style={styles.completeButton}
+                      onPress={() => handleComplete(reminder.id)}
+                      disabled={isCompleted || completeMutation.isPending}
+                      testID={`button-complete-${reminder.id}`}
+                    >
+                      <Feather 
+                        name={isCompleted ? "check-circle" : "circle"} 
+                        size={28} 
+                        color={isCompleted ? theme.success : theme.border} 
+                      />
                     </Pressable>
                   </View>
                 </Card>
-              </Pressable>
-            ))}
+              );
+            })}
           </View>
         ) : null}
 
@@ -182,37 +220,57 @@ export default function HomeScreen() {
               Upcoming
             </Text>
             {upcomingReminders.map((reminder) => (
-              <Pressable
-                key={reminder.id}
-                onPress={() => navigation.navigate("CreateCycleReminder", { reminderId: reminder.id })}
-                testID={`reminder-${reminder.id}`}
-              >
-                <Card style={styles.reminderCard}>
-                  <View style={styles.reminderContent}>
-                    <View
-                      style={[
-                        styles.typeIndicator,
-                        {
-                          backgroundColor:
-                            reminder.reminderType === "cycle"
-                              ? Colors.light.accent
-                              : Colors.light.mint,
-                        },
-                      ]}
-                    />
-                    <View style={styles.reminderInfo}>
-                      <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                        {reminder.title}
+              <Card key={reminder.id} style={styles.reminderCard}>
+                <View style={styles.reminderContent}>
+                  <View
+                    style={[
+                      styles.typeIndicator,
+                      {
+                        backgroundColor:
+                          reminder.reminderType === "cycle"
+                            ? Colors.light.accent
+                            : Colors.light.mint,
+                      },
+                    ]}
+                  />
+                  <View style={styles.reminderInfo}>
+                    <Text style={[styles.reminderTitle, { color: theme.text }]}>
+                      {reminder.title}
+                    </Text>
+                    <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
+                      {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
+                    </Text>
+                    {reminder.notes ? (
+                      <Text 
+                        style={[styles.reminderNotes, { color: theme.textSecondary }]}
+                        numberOfLines={2}
+                      >
+                        {reminder.notes}
                       </Text>
-                      <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
-                        {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
-                      </Text>
-                    </View>
+                    ) : null}
                   </View>
-                </Card>
-              </Pressable>
+                </View>
+              </Card>
             ))}
           </View>
+        ) : null}
+
+        {/* Check out your History Banner */}
+        {reminders.length > 0 ? (
+          <Pressable 
+            style={[styles.historyBanner, { backgroundColor: theme.surface }]}
+            onPress={() => navigation.navigate("MainTabs", { screen: "History" })}
+            testID="button-view-history"
+          >
+            <View style={styles.historyContent}>
+              <Text style={[styles.historyTitle, { color: theme.text }]}>
+                Check out your History
+              </Text>
+              <Text style={[styles.historyText, { color: theme.textSecondary }]}>
+                You have several unresolved reminders, check out your history to make sure you're on track
+              </Text>
+            </View>
+          </Pressable>
         ) : null}
 
         {/* Empty State - only show if no reminders and welcome is dismissed */}
@@ -344,8 +402,36 @@ const styles = StyleSheet.create({
   reminderMeta: {
     fontSize: Typography.bodySmall,
   },
+  reminderNotes: {
+    fontSize: Typography.bodySmall,
+    marginTop: Spacing.xs,
+    lineHeight: 18,
+  },
+  reminderStatus: {
+    fontSize: Typography.caption,
+    marginTop: Spacing.sm,
+  },
   completeButton: {
     padding: Spacing.sm,
+  },
+  historyBanner: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.light.primary,
+  },
+  historyContent: {
+    flex: 1,
+  },
+  historyTitle: {
+    fontSize: Typography.h3,
+    fontWeight: "600",
+    marginBottom: Spacing.xs,
+  },
+  historyText: {
+    fontSize: Typography.bodySmall,
+    lineHeight: 20,
   },
   emptyState: {
     alignItems: "center",

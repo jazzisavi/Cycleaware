@@ -33,7 +33,7 @@ export type RootStackParamList = {
     ends?: "never" | "on";
     endDate?: string;
   } | undefined;
-  CreateCalendarReminder: undefined;
+  CreateCalendarReminder: { reminderId?: number } | undefined;
   RepeatingDays: {
     title?: string;
     notes?: string;

@@ -32,11 +32,16 @@ export default function RemindersScreen() {
   const activeReminders = reminders.filter((r) => r.isActive);
 
   const handleReminderPress = (reminder: Reminder) => {
-    navigation.navigate("ReminderDetail", { reminderId: reminder.id });
+    // Navigate to edit form based on reminder type
+    if (reminder.reminderType === "cycle") {
+      navigation.navigate("CreateCycleReminder", { reminderId: reminder.id });
+    } else {
+      navigation.navigate("CreateCalendarReminder", { reminderId: reminder.id });
+    }
   };
 
   const handleCreatePress = () => {
-    navigation.navigate("CreateReminder");
+    navigation.navigate("TypeSelector");
   };
 
   const renderEmpty = () => (
