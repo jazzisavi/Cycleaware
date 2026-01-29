@@ -13,14 +13,30 @@ import HistoryScreen from "@/screens/HistoryScreen";
 import SnoozeSettingsScreen from "@/screens/SnoozeSettingsScreen";
 import AlarmSoundsScreen from "@/screens/AlarmSoundsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import RepeatingDaysScreen from "@/screens/RepeatingDaysScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 
 export type RootStackParamList = {
   Main: undefined;
   TypeSelector: undefined;
-  CreateCycleReminder: undefined;
+  CreateCycleReminder: {
+    dayStart?: number;
+    dayEnd?: number;
+    startsOn?: "today" | "tomorrow" | "on";
+    startDate?: string;
+    ends?: "never" | "on";
+    endDate?: string;
+  } | undefined;
   CreateCalendarReminder: undefined;
+  RepeatingDays: {
+    dayStart?: number;
+    dayEnd?: number;
+    startsOn?: "today" | "tomorrow" | "on";
+    startDate?: string;
+    ends?: "never" | "on";
+    endDate?: string;
+  } | undefined;
   ReminderDetail: { reminderId: string };
   More: undefined;
   History: undefined;
@@ -67,6 +83,14 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="CreateCalendarReminder"
         component={CreateCalendarReminderScreen}
+        options={{
+          headerShown: false,
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="RepeatingDays"
+        component={RepeatingDaysScreen}
         options={{
           headerShown: false,
           presentation: "card",

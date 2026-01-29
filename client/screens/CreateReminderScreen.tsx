@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -11,27 +11,42 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteProps = RouteProp<RootStackParamList, "CreateCycleReminder">;
 
 export default function CreateReminderScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
 
   const [title, setTitle] = useState("");
-  const [cycleDayStart, setCycleDayStart] = useState(14);
-  const [cycleDayEnd, setCycleDayEnd] = useState(28);
-  const [cycleStartDate, setCycleStartDate] = useState<Date | null>(null);
-  const [hasEndDate, setHasEndDate] = useState(false);
+  const [cycleDayStart, setCycleDayStart] = useState<number | null>(null);
+  const [cycleDayEnd, setCycleDayEnd] = useState<number | null>(null);
+  const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on" | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [ends, setEnds] = useState<"never" | "on" | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
+
+  useEffect(() => {
+    if (route.params) {
+      if (route.params.dayStart !== undefined) setCycleDayStart(route.params.dayStart);
+      if (route.params.dayEnd !== undefined) setCycleDayEnd(route.params.dayEnd);
+      if (route.params.startsOn !== undefined) setStartsOn(route.params.startsOn);
+      if (route.params.startDate !== undefined) setStartDate(new Date(route.params.startDate));
+      if (route.params.ends !== undefined) setEnds(route.params.ends);
+      if (route.params.endDate !== undefined) setEndDate(new Date(route.params.endDate));
+    }
+  }, [route.params]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -75,14 +90,58 @@ export default function CreateReminderScreen() {
       notes: notes.trim() || null,
       reminderType: "cycle",
       reminderTime: timeString,
-      cycleIntervalDays: cycleDayEnd,
-      cycleDayStart,
-      cycleDayEnd,
+      cycleIntervalDays: cycleDayEnd || 28,
+      cycleDayStart: cycleDayStart || 14,
+      cycleDayEnd: cycleDayEnd || 28,
       alarmType,
       isActive: true,
     };
 
     createMutation.mutate(reminderData);
+  };
+
+  const handleOpenRepeatingDays = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("RepeatingDays", {
+      dayStart: cycleDayStart || 14,
+      dayEnd: cycleDayEnd || 28,
+      startsOn: startsOn || "today",
+      startDate: startDate?.toISOString() || new Date().toISOString(),
+      ends: ends || "never",
+      endDate: endDate?.toISOString() || new Date().toISOString(),
+    });
+  };
+
+  const hasRepeatingDaysSet = cycleDayStart !== null && cycleDayEnd !== null;
+  const hasStartDateSet = startsOn !== null;
+  const hasEndDateSet = ends !== null;
+
+  const getRepeatText = () => {
+    if (hasRepeatingDaysSet) {
+      return `Repeat on Day ${cycleDayStart} to ${cycleDayEnd}`;
+    }
+    return "Repeat on Day 14 to 28";
+  };
+
+  const getStartDateText = () => {
+    if (hasStartDateSet) {
+      if (startsOn === "today") return "Starts today";
+      if (startsOn === "tomorrow") return "Starts tomorrow";
+      if (startsOn === "on" && startDate) {
+        return `Starts on ${startDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+      }
+    }
+    return "Add cycle start date";
+  };
+
+  const getEndDateText = () => {
+    if (hasEndDateSet) {
+      if (ends === "never") return "No end date";
+      if (ends === "on" && endDate) {
+        return `Ends on ${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+      }
+    }
+    return "No end date";
   };
 
   return (
@@ -130,27 +189,33 @@ export default function CreateReminderScreen() {
           />
         </View>
 
-        {/* Repeat on Days */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.text }}>
-            Repeat on Day {cycleDayStart} to {cycleDayEnd}
-          </ThemedText>
-        </Pressable>
-
-        {/* Add cycle start date */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Add cycle start date
-          </ThemedText>
-        </Pressable>
-
-        {/* No end date */}
+        {/* Repeat on Days - navigates to RepeatingDays screen */}
         <Pressable 
           style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => setHasEndDate(!hasEndDate)}
+          onPress={handleOpenRepeatingDays}
         >
-          <ThemedText type="body" style={{ color: theme.text }}>
-            {hasEndDate ? "Has end date" : "No end date"}
+          <ThemedText type="body" style={{ color: hasRepeatingDaysSet ? theme.text : theme.textSecondary }}>
+            {getRepeatText()}
+          </ThemedText>
+        </Pressable>
+
+        {/* Add cycle start date - navigates to RepeatingDays screen */}
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={handleOpenRepeatingDays}
+        >
+          <ThemedText type="body" style={{ color: hasStartDateSet ? theme.text : theme.textSecondary }}>
+            {getStartDateText()}
+          </ThemedText>
+        </Pressable>
+
+        {/* No end date - navigates to RepeatingDays screen */}
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={handleOpenRepeatingDays}
+        >
+          <ThemedText type="body" style={{ color: hasEndDateSet ? theme.text : theme.textSecondary }}>
+            {getEndDateText()}
           </ThemedText>
         </Pressable>
 
