@@ -225,9 +225,6 @@ export default function CreateReminderScreen() {
               setAlarmType("alarm");
             }}
           >
-            <View style={styles.playIcon}>
-              <Feather name="play" size={12} color={theme.primary} />
-            </View>
             <View style={[
               styles.radio,
               { borderColor: theme.text },
@@ -299,8 +296,5 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-  },
-  playIcon: {
-    marginRight: Spacing.sm,
   },
 });
