@@ -113,7 +113,7 @@ export default function TypeSelectorScreen() {
               Calendar-Based
             </ThemedText>
             <ThemedText type="small" style={[styles.optionDescription, { color: theme.textSecondary }]}>
-              Set specific days of the week. Ideal for recurring meetings, gym days, or weekly routines.
+              Examples: every 2 days, Mondays and Thursdays.
             </ThemedText>
           </AnimatedPressable>
         </View>

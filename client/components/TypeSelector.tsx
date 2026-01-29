@@ -102,7 +102,7 @@ export function TypeSelector({ onSelectType }: TypeSelectorProps) {
             Calendar-Based
           </ThemedText>
           <ThemedText type="small" style={[styles.optionDescription, { color: theme.textSecondary }]}>
-            Set a regular schedule like every Monday, Wednesday, and Friday.
+            Examples: every 2 days, Mondays and Thursdays.
           </ThemedText>
         </AnimatedPressable>
       </View>
