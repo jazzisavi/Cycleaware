@@ -110,8 +110,16 @@ export default function CreateReminderScreen() {
     });
   };
 
+  const canSave = 
+    title.trim() && 
+    cycleDayStart !== null && 
+    cycleDayEnd !== null && 
+    startsOn !== null && 
+    ends !== null && 
+    reminderTimes.length > 0;
+
   const handleSave = () => {
-    if (!title.trim()) {
+    if (!canSave) {
       return;
     }
 
@@ -209,13 +217,13 @@ export default function CreateReminderScreen() {
         <View style={{ flex: 1 }} />
         <Pressable 
           onPress={handleSave}
-          disabled={!title.trim() || createMutation.isPending}
+          disabled={!canSave || createMutation.isPending}
           style={styles.headerButton}
         >
           <ThemedText 
             type="body" 
             style={{ 
-              color: title.trim() ? theme.text : theme.textTertiary,
+              color: canSave ? theme.text : theme.textTertiary,
               fontWeight: "500",
             }}
           >
