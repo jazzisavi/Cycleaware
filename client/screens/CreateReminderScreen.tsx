@@ -271,68 +271,84 @@ export default function CreateReminderScreen() {
           />
         </View>
 
-        {/* Repeat on Days - navigates to RepeatingDays screen */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={handleOpenRepeatingDays}
-        >
-          <ThemedText type="body" style={{ color: hasRepeatingDaysSet ? theme.text : theme.textSecondary }}>
-            {getRepeatText()}
-          </ThemedText>
-        </Pressable>
-
-        {/* Add cycle start date - navigates to RepeatingDays screen */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={handleOpenRepeatingDays}
-        >
-          <ThemedText type="body" style={{ color: hasStartDateSet ? theme.text : theme.textSecondary }}>
-            {getStartDateText()}
-          </ThemedText>
-        </Pressable>
-
-        {/* No end date - navigates to RepeatingDays screen */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={handleOpenRepeatingDays}
-        >
-          <ThemedText type="body" style={{ color: hasEndDateSet ? theme.text : theme.textSecondary }}>
-            {getEndDateText()}
-          </ThemedText>
-        </Pressable>
-
-        {/* Reminder times */}
-        {reminderTimes.map((reminderTime, index) => (
-          <View 
-            key={index}
-            style={[styles.row, styles.additionalTimeRow, { borderBottomColor: theme.border }]}
-          >
+        {/* Cycle Settings Group */}
+        <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
+          <View style={styles.groupIconContainer}>
+            <Feather name="refresh-cw" size={20} color={theme.textSecondary} />
+          </View>
+          <View style={styles.groupContent}>
+            {/* Repeat on Days */}
             <Pressable 
-              style={{ flex: 1 }}
-              onPress={() => handleOpenTimePicker(index)}
+              style={styles.groupRow}
+              onPress={handleOpenRepeatingDays}
             >
-              <ThemedText type="body" style={{ color: theme.text }}>
-                Remind me at {formatTime(reminderTime)}
+              <ThemedText type="body" style={{ color: hasRepeatingDaysSet ? theme.text : theme.textSecondary }}>
+                {getRepeatText()}
               </ThemedText>
             </Pressable>
+
+            {/* Add cycle start date */}
             <Pressable 
-              onPress={() => handleRemoveTime(index)}
-              style={styles.removeButton}
+              style={styles.groupRow}
+              onPress={handleOpenRepeatingDays}
             >
-              <Feather name="x" size={20} color={theme.textSecondary} />
+              <ThemedText type="body" style={{ color: hasStartDateSet ? theme.text : theme.textSecondary }}>
+                {getStartDateText()}
+              </ThemedText>
+            </Pressable>
+
+            {/* End date */}
+            <Pressable 
+              style={styles.groupRow}
+              onPress={handleOpenRepeatingDays}
+            >
+              <ThemedText type="body" style={{ color: hasEndDateSet ? theme.text : theme.textSecondary }}>
+                {getEndDateText()}
+              </ThemedText>
             </Pressable>
           </View>
-        ))}
+        </View>
 
-        {/* Add reminder time */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => handleOpenTimePicker(null)}
-        >
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Add reminder time
-          </ThemedText>
-        </Pressable>
+        {/* Reminder Times Group */}
+        <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
+          <View style={styles.groupIconContainer}>
+            <Feather name="bell" size={20} color={theme.textSecondary} />
+          </View>
+          <View style={styles.groupContent}>
+            {/* Existing reminder times */}
+            {reminderTimes.map((reminderTime, index) => (
+              <View 
+                key={index}
+                style={[styles.groupRow, styles.timeRow]}
+              >
+                <Pressable 
+                  style={{ flex: 1 }}
+                  onPress={() => handleOpenTimePicker(index)}
+                >
+                  <ThemedText type="body" style={{ color: theme.text }}>
+                    Remind me at {formatTime(reminderTime)}
+                  </ThemedText>
+                </Pressable>
+                <Pressable 
+                  onPress={() => handleRemoveTime(index)}
+                  style={styles.removeButton}
+                >
+                  <Feather name="x" size={20} color={theme.textSecondary} />
+                </Pressable>
+              </View>
+            ))}
+
+            {/* Add reminder time */}
+            <Pressable 
+              style={styles.groupRow}
+              onPress={() => handleOpenTimePicker(null)}
+            >
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Add reminder time
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
 
         {/* Time Picker Modal */}
         <Modal
@@ -500,7 +516,22 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
   },
-  additionalTimeRow: {
+  groupContainer: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    paddingVertical: Spacing.md,
+  },
+  groupIconContainer: {
+    width: 32,
+    paddingTop: Spacing.sm,
+  },
+  groupContent: {
+    flex: 1,
+  },
+  groupRow: {
+    paddingVertical: Spacing.sm,
+  },
+  timeRow: {
     flexDirection: "row",
     alignItems: "center",
   },
