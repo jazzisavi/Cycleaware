@@ -34,7 +34,8 @@ export default function CreateReminderScreen() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [time, setTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [additionalTime, setAdditionalTime] = useState<Date | null>(null);
+  const [additionalTimes, setAdditionalTimes] = useState<Date[]>([]);
+  const [tempAdditionalTime, setTempAdditionalTime] = useState<Date>(new Date(new Date().setHours(12, 0, 0, 0)));
   const [showAdditionalTimePicker, setShowAdditionalTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
@@ -74,10 +75,24 @@ export default function CreateReminderScreen() {
   };
 
   const handleAdditionalTimeChange = (event: any, selectedTime?: Date) => {
-    setShowAdditionalTimePicker(Platform.OS === "ios");
-    if (selectedTime) {
-      setAdditionalTime(selectedTime);
+    if (Platform.OS !== "ios") {
+      setShowAdditionalTimePicker(false);
     }
+    if (selectedTime) {
+      setTempAdditionalTime(selectedTime);
+    }
+  };
+
+  const handleAddAdditionalTime = () => {
+    setAdditionalTimes([...additionalTimes, tempAdditionalTime]);
+    setTempAdditionalTime(new Date(new Date().setHours(12, 0, 0, 0)));
+    setShowAdditionalTimePicker(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleRemoveAdditionalTime = (index: number) => {
+    setAdditionalTimes(additionalTimes.filter((_, i) => i !== index));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const formatTime = (date: Date) => {
@@ -95,10 +110,10 @@ export default function CreateReminderScreen() {
     const timeString = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}`;
     
     const reminderTimesArray: string[] = [timeString];
-    if (additionalTime) {
+    additionalTimes.forEach((additionalTime) => {
       const additionalTimeString = `${additionalTime.getHours().toString().padStart(2, "0")}:${additionalTime.getMinutes().toString().padStart(2, "0")}`;
       reminderTimesArray.push(additionalTimeString);
-    }
+    });
 
     let cycleStartDateValue: Date;
     if (startsOn === "today") {
@@ -331,17 +346,35 @@ export default function CreateReminderScreen() {
           </View>
         </Modal>
 
+        {/* Additional reminder times */}
+        {additionalTimes.map((additionalTime, index) => (
+          <View 
+            key={index}
+            style={[styles.row, styles.additionalTimeRow, { borderBottomColor: theme.border }]}
+          >
+            <ThemedText type="body" style={{ color: theme.text, flex: 1 }}>
+              Remind me at {formatTime(additionalTime)}
+            </ThemedText>
+            <Pressable 
+              onPress={() => handleRemoveAdditionalTime(index)}
+              style={styles.removeButton}
+            >
+              <Feather name="x" size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ))}
+
         {/* Set another reminder */}
         <Pressable 
           style={[styles.row, { borderBottomColor: theme.border }]}
           onPress={() => setShowAdditionalTimePicker(true)}
         >
-          <ThemedText type="body" style={{ color: additionalTime ? theme.text : theme.textSecondary }}>
-            {additionalTime ? `Additional reminder at ${formatTime(additionalTime)}` : "Set another reminder"}
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+            Set another reminder
           </ThemedText>
         </Pressable>
 
-        {/* Time Picker Modal */}
+        {/* Time Picker Modal for Additional Reminders */}
         <Modal
           visible={showAdditionalTimePicker}
           transparent
@@ -360,13 +393,13 @@ export default function CreateReminderScreen() {
                 <View style={styles.webTimePickerContainer}>
                   <TextInput
                     style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border }]}
-                    value={`${String((additionalTime || new Date()).getHours()).padStart(2, "0")}:${String((additionalTime || new Date()).getMinutes()).padStart(2, "0")}`}
+                    value={`${String(tempAdditionalTime.getHours()).padStart(2, "0")}:${String(tempAdditionalTime.getMinutes()).padStart(2, "0")}`}
                     onChangeText={(text) => {
                       const [hours, minutes] = text.split(":").map(Number);
                       if (!isNaN(hours) && !isNaN(minutes)) {
                         const newDate = new Date();
                         newDate.setHours(hours, minutes, 0, 0);
-                        setAdditionalTime(newDate);
+                        setTempAdditionalTime(newDate);
                       }
                     }}
                     placeholder="HH:MM"
@@ -380,7 +413,7 @@ export default function CreateReminderScreen() {
                 </View>
               ) : (
                 <DateTimePicker
-                  value={additionalTime || new Date(new Date().setHours(12, 0, 0, 0))}
+                  value={tempAdditionalTime}
                   mode="time"
                   display="spinner"
                   onChange={handleAdditionalTimeChange}
@@ -398,12 +431,7 @@ export default function CreateReminderScreen() {
                 </Pressable>
                 <Pressable 
                   style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                  onPress={() => {
-                    if (!additionalTime) {
-                      setAdditionalTime(new Date(new Date().setHours(12, 0, 0, 0)));
-                    }
-                    setShowAdditionalTimePicker(false);
-                  }}
+                  onPress={handleAddAdditionalTime}
                 >
                   <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                     Done
@@ -511,6 +539,13 @@ const styles = StyleSheet.create({
   row: {
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
+  },
+  additionalTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  removeButton: {
+    padding: Spacing.xs,
   },
   alarmSection: {
     paddingTop: Spacing.xl,
