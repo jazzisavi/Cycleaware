@@ -16,7 +16,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 import { useTheme } from "@/hooks/useTheme";
 import { Colors, Spacing, Typography, BorderRadius } from "@/constants/theme";
-import Card from "@/components/Card";
+import { Card } from "@/components/Card";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface Reminder {
