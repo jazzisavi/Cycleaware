@@ -336,7 +336,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Spacing.md,
     right: Spacing.md,
-    padding: Spacing.xs,
+    padding: Spacing.sm,
+    zIndex: 10,
   },
   welcomeTitle: {
     fontSize: Typography.h3,
