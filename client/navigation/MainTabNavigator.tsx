@@ -20,11 +20,11 @@ function CreateButton() {
   return (
     <View style={styles.createButtonContainer}>
       <Pressable
-        style={[styles.createButton, { backgroundColor: Colors.light.accent }]}
+        style={[styles.createButton, { backgroundColor: theme.primary }]}
         onPress={() => navigation.navigate("TypeSelector")}
         testID="fab-create"
       >
-        <Feather name="plus" size={28} color="#000000" />
+        <Feather name="plus" size={28} color="#FFFFFF" />
       </Pressable>
     </View>
   );
