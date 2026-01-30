@@ -95,7 +95,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: "#FFFFFF" }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Top Navigation Bar */}
       <View style={[styles.topNav, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.logoContainer}>
