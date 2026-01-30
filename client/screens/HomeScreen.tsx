@@ -141,7 +141,7 @@ export default function HomeScreen() {
 
         {/* Create Reminder Button */}
         <Pressable
-          style={[styles.createReminderButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+          style={[styles.createReminderButton, { backgroundColor: "#FFFFFF", borderColor: theme.border }]}
           onPress={() => navigation.navigate("TypeSelector")}
           testID="button-create-reminder"
         >
