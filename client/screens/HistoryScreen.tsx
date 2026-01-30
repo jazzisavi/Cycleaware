@@ -83,7 +83,7 @@ export default function HistoryScreen() {
           {item.title}
         </ThemedText>
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          {formatTime(item.scheduledAt)}
+          {formatTime(item.scheduledAt)} · {formatDate(item.scheduledAt)}
         </ThemedText>
       </View>
       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + "20" }]}>
