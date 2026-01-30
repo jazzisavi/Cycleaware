@@ -88,7 +88,7 @@ export default function CreateCalendarReminderScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: "#FFFFFF" }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
