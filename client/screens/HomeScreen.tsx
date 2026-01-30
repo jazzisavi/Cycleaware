@@ -122,7 +122,7 @@ export default function HomeScreen() {
       >
         {/* Welcome Message Card */}
         {showWelcome ? (
-          <View style={[styles.welcomeCard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.welcomeCard, { backgroundColor: "#FFFFFF" }]}>
             <Pressable 
               style={styles.closeButton}
               onPress={() => setShowWelcome(false)}
