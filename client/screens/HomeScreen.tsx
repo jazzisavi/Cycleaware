@@ -258,8 +258,8 @@ export default function HomeScreen() {
         {/* Check out your History Banner */}
         {reminders.length > 0 ? (
           <Pressable 
-            style={[styles.historyBanner, { backgroundColor: theme.surface }]}
-            onPress={() => navigation.navigate("MainTabs", { screen: "History" })}
+            style={[styles.historyBanner, { backgroundColor: "#FFFFFF" }]}
+            onPress={() => navigation.navigate("History")}
             testID="button-view-history"
           >
             <View style={styles.historyContent}>
@@ -270,6 +270,7 @@ export default function HomeScreen() {
                 You have several unresolved reminders, check out your history to make sure you're on track
               </Text>
             </View>
+            <Feather name="chevron-right" size={24} color={theme.textSecondary} />
           </Pressable>
         ) : null}
 
@@ -415,11 +416,11 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
   },
   historyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.xl,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.light.primary,
   },
   historyContent: {
     flex: 1,
