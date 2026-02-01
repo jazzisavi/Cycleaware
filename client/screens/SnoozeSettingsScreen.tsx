@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
@@ -13,23 +15,54 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 const SNOOZE_OPTIONS = [10, 20, 30, 40, 50, 60, 90, 120];
+const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
+const DEFAULT_SNOOZE_DURATION = 60;
 
 export default function SnoozeSettingsScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
-  const [selectedDuration, setSelectedDuration] = useState(10);
+  const navigation = useNavigation();
+  const [selectedDuration, setSelectedDuration] = useState(DEFAULT_SNOOZE_DURATION);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    const loadSavedDuration = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(SNOOZE_DURATION_KEY);
+        if (saved) {
+          const duration = parseInt(saved, 10);
+          if (SNOOZE_OPTIONS.includes(duration)) {
+            setSelectedDuration(duration);
+          }
+        }
+      } catch (error) {
+        console.log("Error loading snooze duration:", error);
+      }
+    };
+    loadSavedDuration();
+  }, []);
 
   const handleSelect = (duration: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedDuration(duration);
+    setIsSaved(false);
   };
 
   const handleSave = async () => {
     setIsLoading(true);
-    // Save logic will be implemented in Phase 2
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      await AsyncStorage.setItem(SNOOZE_DURATION_KEY, selectedDuration.toString());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setIsSaved(true);
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error saving snooze duration:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatDuration = (minutes: number) => {
@@ -79,6 +112,7 @@ export default function SnoozeSettingsScreen() {
                     selectedDuration === duration ? theme.primary : theme.borderLight,
                 },
               ]}
+              testID={`snooze-option-${duration}`}
             >
               <ThemedText
                 type="h4"
@@ -122,6 +156,21 @@ export default function SnoozeSettingsScreen() {
       </KeyboardAwareScrollViewCompat>
     </ThemedView>
   );
+}
+
+export async function getSnoozeDuration(): Promise<number> {
+  try {
+    const saved = await AsyncStorage.getItem(SNOOZE_DURATION_KEY);
+    if (saved) {
+      const duration = parseInt(saved, 10);
+      if (SNOOZE_OPTIONS.includes(duration)) {
+        return duration;
+      }
+    }
+  } catch (error) {
+    console.log("Error reading snooze duration:", error);
+  }
+  return DEFAULT_SNOOZE_DURATION;
 }
 
 const styles = StyleSheet.create({

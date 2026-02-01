@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -13,6 +13,11 @@ import { queryClient } from "@/lib/query-client";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { 
+  setupNotificationCategories, 
+  setupNotificationResponseListener,
+  handleNotificationAction 
+} from "@/services/notifications";
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -20,6 +25,29 @@ export default function App() {
     ...Ionicons.font,
     ...MaterialIcons.font,
   });
+
+  useEffect(() => {
+    setupNotificationCategories();
+    
+    let cleanup: (() => void) | null = null;
+    
+    const setupListener = async () => {
+      cleanup = await setupNotificationResponseListener(
+        async (actionId, reminderId, reminderTitle) => {
+          const result = await handleNotificationAction(actionId, reminderId, reminderTitle);
+          if (result.success && result.message) {
+            console.log(result.message);
+          }
+        }
+      );
+    };
+    
+    setupListener();
+    
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, []);
 
   if (!fontsLoaded) {
     return (
