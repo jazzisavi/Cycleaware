@@ -266,7 +266,7 @@ export default function RemindersScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: Spacing.lg,
+            paddingTop: insets.top + Spacing.lg,
             paddingBottom: tabBarHeight + Spacing["5xl"],
             flex: reminders.length === 0 ? 1 : undefined,
           },

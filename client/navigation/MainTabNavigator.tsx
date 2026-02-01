@@ -77,11 +77,6 @@ export default function MainTabNavigator() {
         name="Reminders"
         component={RemindersScreen}
         options={{
-          headerShown: true,
-          headerTitle: "Reminders",
-          headerStyle: {
-            backgroundColor: theme.backgroundRoot,
-          },
           tabBarIcon: ({ color, size }) => (
             <Feather name="bell" size={size} color={color} />
           ),
