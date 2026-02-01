@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp, ActivityIndicator } from "react-native";
+import { StyleSheet, Pressable, ViewStyle, StyleProp, ActivityIndicator, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,6 +7,7 @@ import Animated, {
   WithSpringConfig,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -22,6 +23,7 @@ interface ButtonProps {
   loading?: boolean;
   variant?: ButtonVariant;
   testID?: string;
+  icon?: keyof typeof Feather.glyphMap;
 }
 
 const springConfig: WithSpringConfig = {
@@ -42,6 +44,7 @@ export function Button({
   loading = false,
   variant = "primary",
   testID,
+  icon,
 }: ButtonProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -127,12 +130,17 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={getTextColor()} size="small" />
       ) : (
-        <ThemedText
-          type="button"
-          style={[styles.buttonText, { color: getTextColor() }]}
-        >
-          {children}
-        </ThemedText>
+        <View style={styles.content}>
+          {icon ? (
+            <Feather name={icon} size={18} color={getTextColor()} style={styles.icon} />
+          ) : null}
+          <ThemedText
+            type="button"
+            style={[styles.buttonText, { color: getTextColor() }]}
+          >
+            {children}
+          </ThemedText>
+        </View>
       )}
     </AnimatedPressable>
   );
@@ -145,6 +153,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing["2xl"],
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  icon: {
+    marginRight: Spacing.xs,
   },
   buttonText: {
     fontWeight: "600",

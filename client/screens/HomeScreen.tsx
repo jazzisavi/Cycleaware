@@ -19,6 +19,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { Card } from "@/components/Card";
 import { AppHeader } from "@/components/AppHeader";
+import { Button } from "@/components/Button";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -143,18 +144,13 @@ export default function HomeScreen() {
 
         {/* Create Reminder Button - only show when no active reminders */}
         {reminders.length === 0 ? (
-          <Pressable
-            style={[styles.createReminderButton, { backgroundColor: "#FFFFFF", borderColor: theme.border }]}
+          <Button
             onPress={() => navigation.navigate("TypeSelector")}
             testID="button-create-reminder"
+            icon="plus"
           >
-            <Text style={[styles.createReminderText, { color: theme.text }]}>
-              Create a reminder
-            </Text>
-            <View style={[styles.plusIcon, { backgroundColor: theme.primary }]}>
-              <Feather name="plus" size={20} color="#FFFFFF" />
-            </View>
-          </Pressable>
+            Create Reminder
+          </Button>
         ) : null}
 
         {/* Today's Reminders */}
@@ -333,26 +329,6 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 16,
     lineHeight: 22,
-  },
-  createReminderButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    marginBottom: Spacing.xl,
-  },
-  createReminderText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  plusIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
   },
   section: {
     marginBottom: Spacing.xl,
