@@ -418,6 +418,7 @@ export default function CreateReminderScreen() {
                 <Pressable 
                   style={{ flex: 1 }}
                   onPress={() => handleOpenTimePicker(index)}
+                  testID={`time-row-${index}`}
                 >
                   <ThemedText type="body" style={{ color: theme.text }}>
                     Remind me at {formatTime(reminderTime)}
@@ -425,9 +426,11 @@ export default function CreateReminderScreen() {
                 </Pressable>
                 <Pressable 
                   onPress={() => handleRemoveTime(index)}
-                  style={styles.removeButton}
+                  style={[styles.removeButton, { backgroundColor: theme.backgroundSecondary, borderRadius: 12 }]}
+                  testID={`remove-time-${index}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <Feather name="x" size={20} color={theme.textSecondary} />
+                  <Feather name="x" size={18} color={theme.textSecondary} />
                 </Pressable>
               </View>
             ))}
@@ -644,7 +647,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   removeButton: {
-    padding: Spacing.xs,
+    padding: Spacing.sm,
+    marginLeft: Spacing.sm,
   },
   alarmSection: {
     paddingTop: Spacing.xl,
