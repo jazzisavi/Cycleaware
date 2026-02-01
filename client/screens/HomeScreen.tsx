@@ -16,7 +16,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/hooks/useTheme";
-import { Colors, Spacing, Typography, BorderRadius } from "@/constants/theme";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { Card } from "@/components/Card";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -95,7 +95,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       {/* Top Navigation Bar */}
       <View style={[styles.topNav, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.logoContainer}>
@@ -170,8 +170,8 @@ export default function HomeScreen() {
                         {
                           backgroundColor:
                             reminder.reminderType === "cycle"
-                              ? Colors.light.accent
-                              : Colors.light.mint,
+                              ? Colors.light.accentCoral
+                              : Colors.light.accentMint,
                         },
                       ]}
                     />
@@ -228,8 +228,8 @@ export default function HomeScreen() {
                       {
                         backgroundColor:
                           reminder.reminderType === "cycle"
-                            ? Colors.light.accent
-                            : Colors.light.mint,
+                            ? Colors.light.accentCoral
+                            : Colors.light.accentMint,
                       },
                     ]}
                   />
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   navTitle: {
-    fontSize: Typography.h2,
+    fontSize: 20,
     fontWeight: "600",
   },
   moreButton: {
@@ -340,13 +340,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   welcomeTitle: {
-    fontSize: Typography.h3,
+    fontSize: 18,
     fontWeight: "600",
     marginBottom: Spacing.sm,
     paddingRight: Spacing.xl,
   },
   welcomeText: {
-    fontSize: Typography.body,
+    fontSize: 16,
     lineHeight: 22,
   },
   createReminderButton: {
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   createReminderText: {
-    fontSize: Typography.body,
+    fontSize: 16,
     fontWeight: "500",
   },
   plusIcon: {
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    fontSize: Typography.h2,
+    fontSize: 20,
     fontWeight: "600",
     marginBottom: Spacing.md,
   },
@@ -394,23 +394,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reminderTitle: {
-    fontSize: Typography.h3,
+    fontSize: 18,
     fontWeight: "600",
     marginBottom: 2,
   },
   reminderTime: {
-    fontSize: Typography.bodySmall,
+    fontSize: 14,
   },
   reminderMeta: {
-    fontSize: Typography.bodySmall,
+    fontSize: 14,
   },
   reminderNotes: {
-    fontSize: Typography.bodySmall,
+    fontSize: 14,
     marginTop: Spacing.xs,
     lineHeight: 18,
   },
   reminderStatus: {
-    fontSize: Typography.caption,
+    fontSize: 12,
     marginTop: Spacing.sm,
   },
   completeButton: {
@@ -427,12 +427,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   historyTitle: {
-    fontSize: Typography.h3,
+    fontSize: 18,
     fontWeight: "600",
     marginBottom: Spacing.xs,
   },
   historyText: {
-    fontSize: Typography.bodySmall,
+    fontSize: 14,
     lineHeight: 20,
   },
   emptyState: {
@@ -446,13 +446,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   emptyTitle: {
-    fontSize: Typography.h2,
+    fontSize: 20,
     fontWeight: "600",
     marginBottom: Spacing.sm,
     textAlign: "center",
   },
   emptySubtitle: {
-    fontSize: Typography.body,
+    fontSize: 16,
     textAlign: "center",
   },
 });
