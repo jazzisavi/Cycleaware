@@ -164,7 +164,20 @@ export default function CreateReminderScreen() {
   });
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
-    if (selectedTime) {
+    if (Platform.OS === "android") {
+      setShowTimePicker(false);
+      if (event.type === "set" && selectedTime) {
+        if (editingTimeIndex !== null && editingTimeIndex < reminderTimes.length) {
+          const newTimes = [...reminderTimes];
+          newTimes[editingTimeIndex] = selectedTime;
+          setReminderTimes(newTimes);
+        } else {
+          setReminderTimes([...reminderTimes, selectedTime]);
+        }
+        setEditingTimeIndex(null);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } else if (selectedTime) {
       setTempTime(selectedTime);
     }
   };
@@ -444,9 +457,19 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
-        {/* Time Picker Modal */}
+        {/* Time Picker - Android uses native picker, iOS/web use modal */}
+        {showTimePicker && Platform.OS === "android" && (
+          <DateTimePicker
+            value={tempTime}
+            mode="time"
+            display="default"
+            onChange={handleTimeChange}
+          />
+        )}
+
+        {/* Time Picker Modal for iOS and Web */}
         <Modal
-          visible={showTimePicker}
+          visible={showTimePicker && Platform.OS !== "android"}
           transparent
           animationType="fade"
           onRequestClose={() => setShowTimePicker(false)}
