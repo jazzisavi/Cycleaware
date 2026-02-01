@@ -6,7 +6,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
 interface EmptyStateProps {
-  image: ImageSourcePropType;
+  image?: ImageSourcePropType;
   title: string;
   description?: string;
   action?: React.ReactNode;
@@ -17,7 +17,9 @@ export function EmptyState({ image, title, description, action }: EmptyStateProp
 
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} resizeMode="contain" />
+      {image ? (
+        <Image source={image} style={styles.image} resizeMode="contain" />
+      ) : null}
       <ThemedText type="h3" style={styles.title}>
         {title}
       </ThemedText>
