@@ -42,7 +42,7 @@ export default function CreateCalendarReminderScreen() {
 
   const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval || 1);
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
-  const [selectedDays, setSelectedDays] = useState<string[]>(params.selectedDays || []);
+  const [selectedDays, setSelectedDays] = useState<string[]>(params.selectedDays || ["mon", "thu"]);
   const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on">(params.startsOn || "today");
   const [startDate, setStartDate] = useState<string>(params.startDate || new Date().toISOString());
   const [ends, setEnds] = useState<"never" | "on" | "after">(params.ends || "never");
