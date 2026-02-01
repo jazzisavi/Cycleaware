@@ -28,17 +28,37 @@ export default function CreateCalendarReminderScreen() {
   const queryClient = useQueryClient();
   const { requestPermissionIfNeeded } = useNotificationPermission();
 
-  const reminderId = route.params?.reminderId;
+  const params = route.params || {};
+  const reminderId = params.reminderId;
   const isEditMode = !!reminderId;
 
   const [title, setTitle] = useState("");
-  const [hasEndDate, setHasEndDate] = useState(false);
   const [reminderTimes, setReminderTimes] = useState<Date[]>([new Date(new Date().setHours(9, 0, 0, 0))]);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempTime, setTempTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
+
+  const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval || 1);
+  const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
+  const [selectedDays, setSelectedDays] = useState<string[]>(params.selectedDays || []);
+  const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on">(params.startsOn || "today");
+  const [startDate, setStartDate] = useState<string>(params.startDate || new Date().toISOString());
+  const [ends, setEnds] = useState<"never" | "on" | "after">(params.ends || "never");
+  const [endDate, setEndDate] = useState<string>(params.endDate || new Date().toISOString());
+  const [occurrences, setOccurrences] = useState(params.occurrences || 1);
+
+  useEffect(() => {
+    if (params.repeatInterval !== undefined) setRepeatInterval(params.repeatInterval);
+    if (params.repeatUnit !== undefined) setRepeatUnit(params.repeatUnit);
+    if (params.selectedDays !== undefined) setSelectedDays(params.selectedDays);
+    if (params.startsOn !== undefined) setStartsOn(params.startsOn);
+    if (params.startDate !== undefined) setStartDate(params.startDate);
+    if (params.ends !== undefined) setEnds(params.ends);
+    if (params.endDate !== undefined) setEndDate(params.endDate);
+    if (params.occurrences !== undefined) setOccurrences(params.occurrences);
+  }, [params]);
 
   const { data: existingReminder } = useQuery<Reminder>({
     queryKey: ["/api/reminders", reminderId],
@@ -165,6 +185,58 @@ export default function CreateCalendarReminderScreen() {
     });
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const DAY_NAMES: Record<string, string> = {
+    mon: "Mon",
+    tue: "Tue",
+    wed: "Wed",
+    thu: "Thu",
+    fri: "Fri",
+    sat: "Sat",
+    sun: "Sun",
+  };
+
+  const getRepeatFrequencyDisplay = () => {
+    const unit = repeatUnit === "week" ? "week" : "day";
+    const plural = repeatInterval > 1 ? "s" : "";
+    let display = `Every ${repeatInterval} ${unit}${plural}`;
+    
+    if (repeatUnit === "week" && selectedDays.length > 0) {
+      const dayNames = selectedDays.map(d => DAY_NAMES[d] || d).join(", ");
+      display += ` on ${dayNames}`;
+    }
+    
+    return display;
+  };
+
+  const getStartDateDisplay = () => {
+    if (startsOn === "today") {
+      return "Starts today";
+    } else if (startsOn === "tomorrow") {
+      return "Starts tomorrow";
+    } else {
+      return `Starts on ${formatDate(startDate)}`;
+    }
+  };
+
+  const getEndDateDisplay = () => {
+    if (ends === "never") {
+      return "No end date";
+    } else if (ends === "on") {
+      return `Ends on ${formatDate(endDate)}`;
+    } else {
+      return `Ends after ${occurrences} occurrence${occurrences > 1 ? "s" : ""}`;
+    }
+  };
+
   const handleSave = () => {
     if (!title.trim() || reminderTimes.length === 0) {
       return;
@@ -244,27 +316,72 @@ export default function CreateCalendarReminderScreen() {
           />
         </View>
 
-        {/* Add Repeats frequency */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Add Repeats frequency
-          </ThemedText>
-        </Pressable>
-
-        {/* Start today */}
-        <Pressable style={[styles.row, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={{ color: theme.text }}>
-            Start today
-          </ThemedText>
-        </Pressable>
-
-        {/* No end date */}
+        {/* Repeats frequency */}
         <Pressable 
           style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => setHasEndDate(!hasEndDate)}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate("RepeatFrequency", {
+              reminderId,
+              repeatInterval,
+              repeatUnit,
+              selectedDays,
+              startsOn,
+              startDate,
+              ends,
+              endDate,
+              occurrences,
+            });
+          }}
         >
           <ThemedText type="body" style={{ color: theme.text }}>
-            {hasEndDate ? "Has end date" : "No end date"}
+            {getRepeatFrequencyDisplay()}
+          </ThemedText>
+        </Pressable>
+
+        {/* Start date */}
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate("RepeatFrequency", {
+              reminderId,
+              repeatInterval,
+              repeatUnit,
+              selectedDays,
+              startsOn,
+              startDate,
+              ends,
+              endDate,
+              occurrences,
+            });
+          }}
+        >
+          <ThemedText type="body" style={{ color: theme.text }}>
+            {getStartDateDisplay()}
+          </ThemedText>
+        </Pressable>
+
+        {/* End date */}
+        <Pressable 
+          style={[styles.row, { borderBottomColor: theme.border }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate("RepeatFrequency", {
+              reminderId,
+              repeatInterval,
+              repeatUnit,
+              selectedDays,
+              startsOn,
+              startDate,
+              ends,
+              endDate,
+              occurrences,
+            });
+          }}
+        >
+          <ThemedText type="body" style={{ color: theme.text }}>
+            {getEndDateDisplay()}
           </ThemedText>
         </Pressable>
 
