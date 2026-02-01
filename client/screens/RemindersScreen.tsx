@@ -20,6 +20,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/Button";
+import { AppHeader } from "@/components/AppHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
@@ -213,24 +214,6 @@ export default function RemindersScreen() {
 
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
 
-  const renderHeader = () => {
-    return (
-      <View style={styles.topNav}>
-        <View style={styles.logoContainer}>
-          <ThemedText style={[styles.logoText, { color: theme.primary }]}>GoFlo</ThemedText>
-        </View>
-        <ThemedText style={[styles.navTitle, { color: theme.text }]}>Reminders</ThemedText>
-        <Pressable 
-          style={styles.moreButton}
-          onPress={() => navigation.navigate("More")}
-          hitSlop={8}
-        >
-          <Feather name="more-horizontal" size={24} color={theme.text} />
-        </Pressable>
-      </View>
-    );
-  };
-
   const renderListHeader = () => {
     return (
       <View style={styles.toolbar}>
@@ -266,9 +249,7 @@ export default function RemindersScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={{ paddingTop: insets.top + Spacing.sm }}>
-        {renderHeader()}
-      </View>
+      <AppHeader title="Reminders" />
       <FlatList
         data={reminders}
         renderItem={renderItem}
@@ -295,28 +276,6 @@ export default function RemindersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  topNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-  },
-  logoContainer: {
-    flex: 1,
-  },
-  logoText: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  navTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  moreButton: {
-    flex: 1,
-    alignItems: "flex-end",
   },
   toolbar: {
     flexDirection: "row",

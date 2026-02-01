@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { Card } from "@/components/Card";
+import { AppHeader } from "@/components/AppHeader";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -96,20 +97,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      {/* Top Navigation Bar */}
-      <View style={[styles.topNav, { paddingTop: insets.top + Spacing.sm }]}>
-        <View style={styles.logoContainer}>
-          <Text style={[styles.logoText, { color: theme.primary }]}>GoFlo</Text>
-        </View>
-        <Text style={[styles.navTitle, { color: theme.text }]}>Today</Text>
-        <Pressable 
-          style={styles.moreButton}
-          onPress={() => navigation.navigate("More")}
-          testID="button-more"
-        >
-          <Feather name="more-horizontal" size={24} color={theme.text} />
-        </Pressable>
-      </View>
+      <AppHeader title="Today" />
 
       <ScrollView
         contentContainerStyle={[
@@ -298,29 +286,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  topNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  logoContainer: {
-    width: 60,
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  navTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  moreButton: {
-    width: 60,
-    alignItems: "flex-end",
-    padding: Spacing.xs,
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
