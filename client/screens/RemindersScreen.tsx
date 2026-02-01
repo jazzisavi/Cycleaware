@@ -191,7 +191,7 @@ export default function RemindersScreen() {
       description="Create your first reminder to get started with building good habits."
       action={
         <Button onPress={handleCreatePress} testID="button-create-first" icon="plus">
-          Create Reminder
+          Create A Reminder
         </Button>
       }
     />

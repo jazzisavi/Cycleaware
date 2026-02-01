@@ -149,7 +149,7 @@ export default function HomeScreen() {
             testID="button-create-reminder"
             icon="plus"
           >
-            Create Reminder
+            Create A Reminder
           </Button>
         ) : null}
 
