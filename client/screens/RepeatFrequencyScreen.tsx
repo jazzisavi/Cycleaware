@@ -27,7 +27,7 @@ export default function RepeatFrequencyScreen() {
 
   const params = route.params || {};
   
-  const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval?.toString() || "2");
+  const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval?.toString() || "1");
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
   const [selectedDays, setSelectedDays] = useState<string[]>(params.selectedDays || []);
   const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on">(params.startsOn || "today");
