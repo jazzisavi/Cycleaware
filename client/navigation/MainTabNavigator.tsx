@@ -38,7 +38,7 @@ export default function MainTabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.surface,
+          backgroundColor: theme.backgroundDefault,
           borderTopColor: theme.border,
           height: 85,
           paddingBottom: 25,
@@ -77,6 +77,11 @@ export default function MainTabNavigator() {
         name="Reminders"
         component={RemindersScreen}
         options={{
+          headerShown: true,
+          headerTitle: "Reminders",
+          headerStyle: {
+            backgroundColor: theme.backgroundRoot,
+          },
           tabBarIcon: ({ color, size }) => (
             <Feather name="bell" size={size} color={color} />
           ),

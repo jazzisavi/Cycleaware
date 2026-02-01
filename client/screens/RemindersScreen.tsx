@@ -9,7 +9,6 @@ import {
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -31,7 +30,6 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function RemindersScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
@@ -268,7 +266,7 @@ export default function RemindersScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.md,
+            paddingTop: Spacing.lg,
             paddingBottom: tabBarHeight + Spacing["5xl"],
             flex: reminders.length === 0 ? 1 : undefined,
           },
