@@ -213,50 +213,60 @@ export default function RemindersScreen() {
 
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
 
+  const renderHeader = () => {
+    return (
+      <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
+        <View style={styles.logoContainer}>
+          <View style={[styles.logoCircle, { backgroundColor: theme.primary }]}>
+            <Feather name="droplet" size={16} color="#FFFFFF" />
+          </View>
+        </View>
+        <ThemedText type="h2" style={styles.headerTitle}>Reminders</ThemedText>
+        <Pressable style={styles.moreButton} hitSlop={8}>
+          <Feather name="more-horizontal" size={24} color={theme.text} />
+        </Pressable>
+      </View>
+    );
+  };
+
   const renderListHeader = () => {
-    if (reminders.length === 0) return null;
-    
     return (
       <View style={styles.toolbar}>
+        <View style={styles.toolbarLeft}>
+          {isSelecting && selectedIds.size > 0 ? (
+            <Pressable onPress={handleDeleteSelected} style={styles.toolbarButton}>
+              <ThemedText type="body" style={{ color: theme.error }}>
+                Delete ({selectedIds.size})
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+        </View>
+        
         <Pressable
           onPress={() => {
-            setIsSelecting(!isSelecting);
             if (isSelecting) {
-              setSelectedIds(new Set());
+              handleSelectAll();
+            } else {
+              setIsSelecting(true);
             }
           }}
           style={styles.toolbarButton}
         >
-          <ThemedText
-            type="body"
-            style={{ color: isSelecting ? theme.error : theme.primary }}
-          >
-            {isSelecting ? "Cancel" : "Select"}
+          <ThemedText type="body" style={{ color: theme.primary }}>
+            {isSelecting ? (allSelected ? "Deselect all" : "Select all") : "Select all"}
           </ThemedText>
         </Pressable>
-
-        {isSelecting ? (
-          <View style={styles.toolbarActions}>
-            <Pressable onPress={handleSelectAll} style={styles.toolbarButton}>
-              <ThemedText type="body" style={{ color: theme.primary }}>
-                {allSelected ? "Deselect All" : "Select All"}
-              </ThemedText>
-            </Pressable>
-            {selectedIds.size > 0 ? (
-              <Pressable onPress={handleDeleteSelected} style={styles.toolbarButton}>
-                <ThemedText type="body" style={{ color: theme.error }}>
-                  Delete ({selectedIds.size})
-                </ThemedText>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
       </View>
     );
   };
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
+        {renderHeader()}
+      </View>
       <FlatList
         data={reminders}
         renderItem={renderItem}
@@ -266,7 +276,7 @@ export default function RemindersScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: insets.top + Spacing.lg,
+            paddingTop: Spacing.md,
             paddingBottom: tabBarHeight + Spacing["5xl"],
             flex: reminders.length === 0 ? 1 : undefined,
           },
@@ -284,19 +294,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerWrapper: {
+    backgroundColor: "transparent",
+  },
+  headerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  logoContainer: {
+    width: 40,
+  },
+  logoCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: "center",
+  },
+  moreButton: {
+    width: 40,
+    alignItems: "flex-end",
+  },
   toolbar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.md,
   },
+  toolbarLeft: {
+    flex: 1,
+  },
   toolbarButton: {
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.sm,
-  },
-  toolbarActions: {
-    flexDirection: "row",
-    gap: Spacing.md,
   },
   listContent: {
     paddingHorizontal: Spacing.lg,
