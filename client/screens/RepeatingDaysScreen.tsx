@@ -88,7 +88,7 @@ export default function RepeatingDaysScreen() {
           </ThemedText>
         </View>
         <Pressable onPress={handleDone} style={styles.headerButton}>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+          <ThemedText type="body" style={{ color: theme.text, fontWeight: "600" }}>
             Done
           </ThemedText>
         </Pressable>
