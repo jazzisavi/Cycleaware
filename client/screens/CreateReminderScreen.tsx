@@ -72,11 +72,26 @@ export default function CreateReminderScreen() {
         setReminderTimes(times);
       }
 
-      // Parse cycle start date
+      // Parse cycle start date with smart detection
       if (reminderData.cycleStartDate) {
         const cycleStart = new Date(reminderData.cycleStartDate);
-        setStartsOn("on");
-        setStartDate(cycleStart);
+        cycleStart.setHours(0, 0, 0, 0);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        if (cycleStart.getTime() === today.getTime()) {
+          setStartsOn("today");
+        } else if (cycleStart.getTime() === tomorrow.getTime()) {
+          setStartsOn("tomorrow");
+        } else {
+          setStartsOn("on");
+          setStartDate(cycleStart);
+        }
       }
 
       // Parse cycle end date
