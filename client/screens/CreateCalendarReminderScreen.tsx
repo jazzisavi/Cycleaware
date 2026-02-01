@@ -237,6 +237,18 @@ export default function CreateCalendarReminderScreen() {
     }
   };
 
+  const calculateStartDate = () => {
+    if (startsOn === "today") {
+      return new Date().toISOString();
+    } else if (startsOn === "tomorrow") {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow.toISOString();
+    } else {
+      return startDate;
+    }
+  };
+
   const handleSave = () => {
     if (!title.trim() || reminderTimes.length === 0) {
       return;
@@ -255,6 +267,13 @@ export default function CreateCalendarReminderScreen() {
       reminderTimes: reminderTimesArray,
       alarmType,
       isActive: true,
+      weeklyRepeatDays: selectedDays,
+      repeatInterval,
+      repeatUnit,
+      calendarStartDate: calculateStartDate(),
+      calendarEndDate: ends === "on" ? endDate : null,
+      calendarEndsType: ends,
+      maxOccurrences: ends === "after" ? occurrences : null,
     };
 
     if (isEditMode) {

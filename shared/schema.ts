@@ -37,7 +37,14 @@ export const reminders = pgTable("reminders", {
   cycleEndDate: timestamp("cycle_end_date"), // Optional: when to stop the cycle entirely
   
   // For calendar-based reminders (weekly repeat)
-  weeklyRepeatDays: jsonb("weekly_repeat_days").$type<number[]>(), // 0-6 for Sun-Sat
+  weeklyRepeatDays: jsonb("weekly_repeat_days").$type<string[]>(), // ["mon", "tue", "wed", etc.]
+  repeatInterval: integer("repeat_interval").default(1), // e.g., every 2 weeks
+  repeatUnit: text("repeat_unit").default("week"), // "week" or "day"
+  calendarStartDate: timestamp("calendar_start_date"), // When the calendar reminder starts
+  calendarEndDate: timestamp("calendar_end_date"), // Optional end date
+  calendarEndsType: text("calendar_ends_type").default("never"), // "never", "on", or "after"
+  maxOccurrences: integer("max_occurrences"), // For "after X occurrences"
+  completedOccurrences: integer("completed_occurrences").default(0), // Track completed count
   
   // For calendar-based reminders (specific dates)
   specificDates: jsonb("specific_dates").$type<string[]>(), // ISO date strings
