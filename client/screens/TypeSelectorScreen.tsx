@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Image } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
@@ -74,17 +74,11 @@ export default function TypeSelectorScreen() {
               styles.optionCard,
               {
                 backgroundColor: theme.backgroundDefault,
-                borderColor: theme.accentCoral,
                 ...Shadows.md,
               },
               cycleAnimatedStyle,
             ]}
           >
-            <Image
-              source={require("../../assets/images/cycle-icon.png")}
-              style={styles.optionImage}
-              resizeMode="contain"
-            />
             <ThemedText type="h3" style={styles.optionTitle}>
               Cycle-Based
             </ThemedText>
@@ -102,17 +96,11 @@ export default function TypeSelectorScreen() {
               styles.optionCard,
               {
                 backgroundColor: theme.backgroundDefault,
-                borderColor: theme.accentMint,
                 ...Shadows.md,
               },
               calendarAnimatedStyle,
             ]}
           >
-            <Image
-              source={require("../../assets/images/calendar-icon.png")}
-              style={styles.optionImage}
-              resizeMode="contain"
-            />
             <ThemedText type="h3" style={styles.optionTitle}>
               Calendar-Based
             </ThemedText>
@@ -148,13 +136,7 @@ const styles = StyleSheet.create({
   optionCard: {
     padding: Spacing["2xl"],
     borderRadius: BorderRadius.xl,
-    borderWidth: 2,
     alignItems: "center",
-  },
-  optionImage: {
-    width: 80,
-    height: 80,
-    marginBottom: Spacing.lg,
   },
   optionTitle: {
     marginBottom: Spacing.sm,
