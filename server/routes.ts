@@ -9,6 +9,125 @@ import { checkCycleDay, getNextNotificationTimes } from "./utils/cycleCalculator
 // Simple session store (in production, use Redis or database sessions)
 const sessions = new Map<string, string>();
 
+// Day name to number mapping (0 = Sunday)
+const DAY_NAME_TO_NUMBER: Record<string, number> = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
+};
+
+// Calculate next occurrence for calendar-based reminders
+function calculateNextCalendarOccurrence(reminderData: any, fromDate: Date = new Date()): Date | null {
+  const {
+    weeklyRepeatDays,
+    repeatInterval = 1,
+    repeatUnit = "week",
+    calendarStartDate,
+    calendarEndDate,
+    calendarEndsType,
+    maxOccurrences,
+    completedOccurrences = 0,
+    reminderTime = "09:00",
+  } = reminderData;
+
+  const [hours, minutes] = reminderTime.split(":").map(Number);
+  const startDate = calendarStartDate ? new Date(calendarStartDate) : new Date();
+  startDate.setHours(0, 0, 0, 0);
+
+  // Check if reminder has ended
+  if (calendarEndsType === "on" && calendarEndDate) {
+    const endDate = new Date(calendarEndDate);
+    endDate.setHours(23, 59, 59, 999);
+    if (fromDate > endDate) {
+      return null;
+    }
+  }
+
+  if (calendarEndsType === "after" && maxOccurrences) {
+    if (completedOccurrences >= maxOccurrences) {
+      return null;
+    }
+  }
+
+  // Start searching from the later of startDate or fromDate
+  let searchDate = new Date(Math.max(startDate.getTime(), fromDate.getTime()));
+  searchDate.setHours(0, 0, 0, 0);
+
+  if (repeatUnit === "day") {
+    // Daily repeat: find next occurrence based on interval
+    const daysSinceStart = Math.floor((searchDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    const daysIntoInterval = daysSinceStart % repeatInterval;
+    
+    if (daysIntoInterval !== 0) {
+      // Move to next interval day
+      searchDate.setDate(searchDate.getDate() + (repeatInterval - daysIntoInterval));
+    }
+
+    // Check if today's reminder time hasn't passed
+    const todayWithTime = new Date(searchDate);
+    todayWithTime.setHours(hours, minutes, 0, 0);
+    
+    if (todayWithTime > fromDate) {
+      return todayWithTime;
+    }
+    
+    // Otherwise, return next interval day
+    searchDate.setDate(searchDate.getDate() + repeatInterval);
+    searchDate.setHours(hours, minutes, 0, 0);
+    return searchDate;
+  } else {
+    // Weekly repeat
+    const selectedDays = (weeklyRepeatDays || []) as string[];
+    
+    if (selectedDays.length === 0) {
+      // No days selected, default to daily
+      const result = new Date(searchDate);
+      result.setHours(hours, minutes, 0, 0);
+      if (result > fromDate) return result;
+      result.setDate(result.getDate() + 1);
+      return result;
+    }
+
+    const dayNumbers = selectedDays.map(d => DAY_NAME_TO_NUMBER[d]).filter(n => n !== undefined);
+    
+    // Search up to 8 weeks ahead
+    for (let weekOffset = 0; weekOffset < 8 * repeatInterval; weekOffset++) {
+      const checkDate = new Date(searchDate);
+      checkDate.setDate(checkDate.getDate() + weekOffset);
+      
+      // Calculate which week we're in relative to start
+      const daysSinceStart = Math.floor((checkDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+      const weeksSinceStart = Math.floor(daysSinceStart / 7);
+      
+      // Check if this week matches the interval
+      if (weeksSinceStart % repeatInterval !== 0) {
+        continue;
+      }
+
+      const dayOfWeek = checkDate.getDay();
+      if (dayNumbers.includes(dayOfWeek)) {
+        const resultDate = new Date(checkDate);
+        resultDate.setHours(hours, minutes, 0, 0);
+        
+        if (resultDate > fromDate) {
+          // Check end date constraint
+          if (calendarEndsType === "on" && calendarEndDate) {
+            const endDate = new Date(calendarEndDate);
+            if (resultDate > endDate) return null;
+          }
+          return resultDate;
+        }
+      }
+    }
+    
+    return null;
+  }
+}
+
 // Middleware to get current user from session
 async function getCurrentUser(req: Request) {
   const sessionId = req.headers["x-session-id"] as string;
@@ -168,6 +287,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             current < earliest ? current : earliest
           );
         }
+      } else if (req.body.reminderType === "calendar") {
+        nextOccurrence = calculateNextCalendarOccurrence(req.body);
       }
       
       const reminderData = {
@@ -176,6 +297,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nextOccurrence,
         cycleStartDate: req.body.cycleStartDate ? new Date(req.body.cycleStartDate) : null,
         cycleEndDate: req.body.cycleEndDate ? new Date(req.body.cycleEndDate) : null,
+        calendarStartDate: req.body.calendarStartDate ? new Date(req.body.calendarStartDate) : null,
+        calendarEndDate: req.body.calendarEndDate ? new Date(req.body.calendarEndDate) : null,
       };
       
       const reminder = await storage.createReminder(reminderData);
@@ -249,26 +372,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             current < earliest ? current : earliest
           );
         }
-      } else if (reminder.reminderType === "calendar" && reminder.weeklyRepeatDays) {
-        const [hours, minutes] = (reminder.reminderTime || "09:00").split(":").map(Number);
-        const weekdays = reminder.weeklyRepeatDays as number[];
-        const nextDate = new Date();
-        const currentDay = nextDate.getDay();
+      } else if (reminder.reminderType === "calendar") {
+        // Increment completed occurrences for calendar reminders
+        const newCompletedCount = (reminder.completedOccurrences || 0) + 1;
         
-        for (let i = 1; i <= 7; i++) {
-          const checkDay = (currentDay + i) % 7;
-          if (weekdays.includes(checkDay)) {
-            nextDate.setDate(nextDate.getDate() + i);
-            nextDate.setHours(hours, minutes, 0, 0);
-            nextOccurrence = nextDate;
-            break;
-          }
-        }
+        // Calculate next occurrence using the new function
+        const reminderWithUpdatedCount = {
+          ...reminder,
+          completedOccurrences: newCompletedCount,
+        };
+        nextOccurrence = calculateNextCalendarOccurrence(reminderWithUpdatedCount);
       }
       
-      const updatedReminder = await storage.updateReminder(reminder.id, {
-        nextOccurrence,
-      });
+      const updateData: any = { nextOccurrence };
+      if (reminder.reminderType === "calendar") {
+        updateData.completedOccurrences = (reminder.completedOccurrences || 0) + 1;
+      }
+      
+      const updatedReminder = await storage.updateReminder(reminder.id, updateData);
       
       res.json(updatedReminder);
     } catch (error) {
