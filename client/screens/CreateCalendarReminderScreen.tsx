@@ -276,21 +276,33 @@ export default function CreateCalendarReminderScreen() {
           <Feather name="x" size={24} color={theme.text} />
         </Pressable>
         <View style={{ flex: 1 }} />
-        <Pressable 
-          onPress={handleSave}
-          disabled={!title.trim() || isSaving}
-          style={styles.headerButton}
-        >
-          <ThemedText 
-            type="body" 
-            style={{ 
-              color: title.trim() ? theme.text : theme.textTertiary,
-              fontWeight: "500",
-            }}
-          >
-            Save
-          </ThemedText>
-        </Pressable>
+        {(() => {
+          const hasTitle = title.trim().length > 0;
+          const hasTimes = reminderTimes.length > 0;
+          const hasDays = repeatUnit === "day" || selectedDays.length > 0;
+          const hasValidEnds = ends === "never" || 
+            (ends === "on" && endDate) || 
+            (ends === "after" && occurrences > 0);
+          const canSave = hasTitle && hasTimes && hasDays && hasValidEnds && !isSaving;
+          
+          return (
+            <Pressable 
+              onPress={handleSave}
+              disabled={!canSave}
+              style={[styles.headerButton, { opacity: canSave ? 1 : 0.4 }]}
+            >
+              <ThemedText 
+                type="body" 
+                style={{ 
+                  color: canSave ? theme.text : theme.textTertiary,
+                  fontWeight: "500",
+                }}
+              >
+                Save
+              </ThemedText>
+            </Pressable>
+          );
+        })()}
       </View>
 
       <ScrollView
