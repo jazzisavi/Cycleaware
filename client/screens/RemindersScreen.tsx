@@ -222,33 +222,18 @@ export default function RemindersScreen() {
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
 
   const renderListHeader = () => {
-    if (reminders.length === 0) return null;
-    
     return (
-      <View style={[styles.toolbar, { backgroundColor: theme.backgroundSecondary }]}>
+      <View style={styles.toolbar}>
         <View style={styles.toolbarLeft}>
           {isSelecting && selectedIds.size > 0 ? (
-            <Pressable 
-              onPress={handleDeleteSelected} 
-              style={styles.toolbarButton}
-              testID="button-delete-selected"
-            >
-              <Feather name="trash-2" size={18} color={theme.error} style={{ marginRight: 6 }} />
+            <Pressable onPress={handleDeleteSelected} style={styles.toolbarButton}>
               <ThemedText type="body" style={{ color: theme.error }}>
                 Delete ({selectedIds.size})
               </ThemedText>
             </Pressable>
-          ) : isSelecting ? (
-            <Pressable 
-              onPress={() => setIsSelecting(false)} 
-              style={styles.toolbarButton}
-              testID="button-cancel-select"
-            >
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                Cancel
-              </ThemedText>
-            </Pressable>
-          ) : null}
+          ) : (
+            <View />
+          )}
         </View>
         
         <Pressable
@@ -260,10 +245,9 @@ export default function RemindersScreen() {
             }
           }}
           style={styles.toolbarButton}
-          testID="button-select-all"
         >
-          <ThemedText type="body" style={{ color: theme.primary, fontWeight: "600" }}>
-            {isSelecting ? (allSelected ? "Deselect all" : "Select all") : "Select"}
+          <ThemedText type="body" style={{ color: theme.primary }}>
+            {isSelecting ? (allSelected ? "Deselect all" : "Select all") : "Select all"}
           </ThemedText>
         </Pressable>
       </View>
@@ -305,20 +289,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.md,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    minHeight: 44,
   },
   toolbarLeft: {
     flex: 1,
   },
   toolbarButton: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.sm,
-    minHeight: 36,
   },
   listContent: {
     paddingHorizontal: Spacing.lg,
