@@ -30,14 +30,11 @@ export default function RepeatFrequencyScreen() {
   const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval?.toString() || "1");
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
   const [selectedDays, setSelectedDays] = useState<string[]>(params.selectedDays || []);
-  const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on">(params.startsOn || "today");
-  const [startDate, setStartDate] = useState<Date>(params.startDate ? new Date(params.startDate) : new Date());
   const [ends, setEnds] = useState<"never" | "on" | "after">(params.ends || "never");
   const [endDate, setEndDate] = useState<Date>(params.endDate ? new Date(params.endDate) : new Date());
   const [occurrences, setOccurrences] = useState(params.occurrences?.toString() || "1");
   
   const [showUnitPicker, setShowUnitPicker] = useState(false);
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   const toggleDay = (dayKey: string) => {
@@ -65,8 +62,6 @@ export default function RepeatFrequencyScreen() {
       repeatInterval: parseInt(repeatInterval) || 1,
       repeatUnit,
       selectedDays,
-      startsOn,
-      startDate: startDate.toISOString(),
       ends,
       endDate: endDate.toISOString(),
       occurrences: parseInt(occurrences) || 1,
@@ -86,17 +81,6 @@ export default function RepeatFrequencyScreen() {
         index: routes.length - 1,
       });
     });
-  };
-
-  const handleStartDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") {
-      setShowStartDatePicker(false);
-      if (event.type === "set" && selectedDate) {
-        setStartDate(selectedDate);
-      }
-    } else if (selectedDate) {
-      setStartDate(selectedDate);
-    }
   };
 
   const handleEndDateChange = (event: any, selectedDate?: Date) => {
@@ -193,87 +177,6 @@ export default function RepeatFrequencyScreen() {
             </View>
           </View>
         ) : null}
-
-        <View style={[styles.section, { borderBottomColor: theme.border }]}>
-          <ThemedText type="body" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-            Starts on
-          </ThemedText>
-          
-          <Pressable 
-            style={styles.radioRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setStartsOn("today");
-            }}
-          >
-            <View style={[
-              styles.radio,
-              { borderColor: theme.text },
-              startsOn === "today" && styles.radioSelected,
-            ]}>
-              {startsOn === "today" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
-              ) : null}
-            </View>
-            <ThemedText type="body" style={styles.radioLabel}>
-              Today
-            </ThemedText>
-          </Pressable>
-
-          <Pressable 
-            style={styles.radioRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setStartsOn("tomorrow");
-            }}
-          >
-            <View style={[
-              styles.radio,
-              { borderColor: theme.text },
-              startsOn === "tomorrow" && styles.radioSelected,
-            ]}>
-              {startsOn === "tomorrow" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
-              ) : null}
-            </View>
-            <ThemedText type="body" style={styles.radioLabel}>
-              Tomorrow
-            </ThemedText>
-          </Pressable>
-
-          <Pressable 
-            style={styles.radioRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setStartsOn("on");
-              setShowStartDatePicker(true);
-            }}
-          >
-            <View style={[
-              styles.radio,
-              { borderColor: theme.text },
-              startsOn === "on" && styles.radioSelected,
-            ]}>
-              {startsOn === "on" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
-              ) : null}
-            </View>
-            <ThemedText type="body" style={styles.radioLabel}>
-              On
-            </ThemedText>
-            <Pressable 
-              style={[styles.dateButton, { borderColor: theme.border }]}
-              onPress={() => {
-                setStartsOn("on");
-                setShowStartDatePicker(true);
-              }}
-            >
-              <ThemedText type="small">
-                {formatDate(startDate)}
-              </ThemedText>
-            </Pressable>
-          </Pressable>
-        </View>
 
         <View style={styles.section}>
           <ThemedText type="body" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
@@ -411,16 +314,6 @@ export default function RepeatFrequencyScreen() {
         </Pressable>
       </Modal>
 
-      {showStartDatePicker && Platform.OS === "android" ? (
-        <DateTimePicker
-          value={startDate}
-          mode="date"
-          display="default"
-          onChange={handleStartDateChange}
-          minimumDate={new Date()}
-        />
-      ) : null}
-
       {showEndDatePicker && Platform.OS === "android" ? (
         <DateTimePicker
           value={endDate}
@@ -430,61 +323,6 @@ export default function RepeatFrequencyScreen() {
           minimumDate={new Date()}
         />
       ) : null}
-
-      <Modal
-        visible={showStartDatePicker && Platform.OS !== "android"}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowStartDatePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.datePickerModal, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={styles.modalHeader}>
-              <ThemedText type="h3" style={{ fontWeight: "600" }}>
-                Select start date
-              </ThemedText>
-            </View>
-            {Platform.OS === "web" ? (
-              <TextInput
-                style={[styles.webDateInput, { color: theme.text, borderColor: theme.border }]}
-                value={startDate.toISOString().split("T")[0]}
-                onChangeText={(text) => {
-                  const date = new Date(text);
-                  if (!isNaN(date.getTime())) {
-                    setStartDate(date);
-                  }
-                }}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={theme.textTertiary}
-              />
-            ) : (
-              <DateTimePicker
-                value={startDate}
-                mode="date"
-                display="spinner"
-                onChange={handleStartDateChange}
-                minimumDate={new Date()}
-              />
-            )}
-            <View style={styles.modalButtons}>
-              <Pressable 
-                style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]}
-                onPress={() => setShowStartDatePicker(false)}
-              >
-                <ThemedText type="body">Cancel</ThemedText>
-              </Pressable>
-              <Pressable 
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={() => setShowStartDatePicker(false)}
-              >
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-                  Done
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <Modal
         visible={showEndDatePicker && Platform.OS !== "android"}

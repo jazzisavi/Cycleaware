@@ -39,8 +39,6 @@ export type RootStackParamList = {
     repeatInterval?: number;
     repeatUnit?: "week" | "day";
     selectedDays?: string[];
-    startsOn?: "today" | "tomorrow" | "on";
-    startDate?: string;
     ends?: "never" | "on" | "after";
     endDate?: string;
     occurrences?: number;
@@ -50,8 +48,6 @@ export type RootStackParamList = {
     repeatInterval?: number;
     repeatUnit?: "week" | "day";
     selectedDays?: string[];
-    startsOn?: "today" | "tomorrow" | "on";
-    startDate?: string;
     ends?: "never" | "on" | "after";
     endDate?: string;
     occurrences?: number;
