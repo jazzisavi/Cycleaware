@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { StyleSheet, View, Pressable, ScrollView, TextInput, Modal, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp, CommonActions } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StackActions } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -73,9 +72,20 @@ export default function RepeatFrequencyScreen() {
       occurrences: parseInt(occurrences) || 1,
     };
     
-    navigation.dispatch(
-      StackActions.replace("CreateCalendarReminder", newParams)
-    );
+    navigation.dispatch((state) => {
+      const routes = state.routes.slice(0, -1);
+      if (routes.length > 0) {
+        routes[routes.length - 1] = {
+          ...routes[routes.length - 1],
+          params: newParams,
+        };
+      }
+      return CommonActions.reset({
+        ...state,
+        routes,
+        index: routes.length - 1,
+      });
+    });
   };
 
   const handleStartDateChange = (event: any, selectedDate?: Date) => {
