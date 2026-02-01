@@ -195,7 +195,7 @@ export default function HomeScreen() {
                       testID={`button-complete-${reminder.id}`}
                     >
                       <Text style={styles.takenButtonText}>
-                        {isCompleted ? "Done" : "Taken"}
+                        {isCompleted ? "Done" : "Take"}
                       </Text>
                     </Pressable>
                   </View>

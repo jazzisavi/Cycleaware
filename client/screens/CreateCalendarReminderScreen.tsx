@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -15,15 +15,21 @@ import { Spacing } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import type { Reminder } from "@shared/schema";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteProps = RouteProp<RootStackParamList, "CreateCalendarReminder">;
 
 export default function CreateCalendarReminderScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
   const { requestPermissionIfNeeded } = useNotificationPermission();
+
+  const reminderId = route.params?.reminderId;
+  const isEditMode = !!reminderId;
 
   const [title, setTitle] = useState("");
   const [hasEndDate, setHasEndDate] = useState(false);
@@ -33,6 +39,29 @@ export default function CreateCalendarReminderScreen() {
   const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
+
+  const { data: existingReminder } = useQuery<Reminder>({
+    queryKey: ["/api/reminders", reminderId],
+    enabled: isEditMode,
+  });
+
+  useEffect(() => {
+    if (existingReminder && isEditMode) {
+      setTitle(existingReminder.title);
+      setNotes(existingReminder.notes || "");
+      setAlarmType((existingReminder.alarmType as "notification" | "alarm") || "notification");
+      
+      if (existingReminder.reminderTimes && existingReminder.reminderTimes.length > 0) {
+        const times = existingReminder.reminderTimes.map((t) => {
+          const [hours, minutes] = t.split(":").map(Number);
+          const date = new Date();
+          date.setHours(hours, minutes, 0, 0);
+          return date;
+        });
+        setReminderTimes(times);
+      }
+    }
+  }, [existingReminder, isEditMode]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -47,6 +76,37 @@ export default function CreateCalendarReminderScreen() {
     },
     onError: (error) => {
       console.error("Failed to create reminder:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("PUT", `/api/reminders/${reminderId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.popToTop();
+    },
+    onError: (error) => {
+      console.error("Failed to update reminder:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/reminders/${reminderId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.popToTop();
+    },
+    onError: (error) => {
+      console.error("Failed to delete reminder:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     },
   });
@@ -125,8 +185,19 @@ export default function CreateCalendarReminderScreen() {
       isActive: true,
     };
 
-    createMutation.mutate(reminderData);
+    if (isEditMode) {
+      updateMutation.mutate(reminderData);
+    } else {
+      createMutation.mutate(reminderData);
+    }
   };
+
+  const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    deleteMutation.mutate();
+  };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: "#FFFFFF" }]}>
@@ -138,7 +209,7 @@ export default function CreateCalendarReminderScreen() {
         <View style={{ flex: 1 }} />
         <Pressable 
           onPress={handleSave}
-          disabled={!title.trim() || createMutation.isPending}
+          disabled={!title.trim() || isSaving}
           style={styles.headerButton}
         >
           <ThemedText 
@@ -372,6 +443,20 @@ export default function CreateCalendarReminderScreen() {
             </ThemedText>
           </Pressable>
         </View>
+
+        {/* Delete button - only show in edit mode */}
+        {isEditMode ? (
+          <Pressable 
+            style={[styles.deleteButton, { borderColor: theme.error }]}
+            onPress={handleDelete}
+            disabled={deleteMutation.isPending}
+            testID="button-delete"
+          >
+            <ThemedText type="body" style={{ color: theme.error, fontWeight: "500" }}>
+              Delete Reminder
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </ThemedView>
   );
@@ -441,6 +526,13 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+  },
+  deleteButton: {
+    marginTop: Spacing["2xl"],
+    paddingVertical: Spacing.lg,
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
   },
   modalOverlay: {
     flex: 1,

@@ -120,12 +120,19 @@ export default function RemindersScreen() {
     );
   };
 
+  const formatStartDate = (dateStr: string | Date | null) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
   const formatReminderDescription = (reminder: Reminder) => {
     if (reminder.reminderType === "cycle") {
       const startDay = reminder.cycleDayStart || 1;
       const endDay = reminder.cycleDayEnd || startDay;
       const time = formatTime(reminder.reminderTime);
-      return `Remind me day ${startDay} to ${endDay} at ${time}`;
+      const startDate = reminder.cycleStartDate ? ` - Started ${formatStartDate(reminder.cycleStartDate)}` : "";
+      return `Day ${startDay} to ${endDay} at ${time}${startDate}`;
     } else {
       const time = formatTime(reminder.reminderTime);
       return `Calendar reminder at ${time}`;
