@@ -186,7 +186,6 @@ export default function RemindersScreen() {
 
   const renderEmpty = () => (
     <EmptyState
-      image={require("../../assets/images/empty-reminders.png")}
       title="No Reminders Yet"
       description="Create your first reminder to get started with building good habits."
       action={
