@@ -131,15 +131,15 @@ export function Button({
         <ActivityIndicator color={getTextColor()} size="small" />
       ) : (
         <View style={styles.content}>
-          {icon ? (
-            <Feather name={icon} size={18} color={getTextColor()} style={styles.icon} />
-          ) : null}
           <ThemedText
             type="button"
             style={[styles.buttonText, { color: getTextColor() }]}
           >
             {children}
           </ThemedText>
+          {icon ? (
+            <Feather name={icon} size={18} color={getTextColor()} style={styles.icon} />
+          ) : null}
         </View>
       )}
     </AnimatedPressable>
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   icon: {
-    marginRight: Spacing.xs,
+    marginLeft: Spacing.xs,
   },
   buttonText: {
     fontWeight: "600",

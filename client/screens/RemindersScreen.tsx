@@ -7,6 +7,7 @@ import {
   Switch,
   Pressable,
   Alert,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -108,28 +109,30 @@ export default function RemindersScreen() {
     setSelectedIds(newSelected);
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
 
-    Alert.alert(
-      "Delete Reminders",
-      `Are you sure you want to delete ${selectedIds.size} reminder${selectedIds.size > 1 ? "s" : ""}?`,
-      [
+    const message = `Are you sure you want to delete ${selectedIds.size} reminder${selectedIds.size > 1 ? "s" : ""}?`;
+    
+    const performDelete = async () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      for (const id of selectedIds) {
+        await deleteMutation.mutateAsync(id);
+      }
+      setSelectedIds(new Set());
+      setIsSelecting(false);
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm(message)) {
+        await performDelete();
+      }
+    } else {
+      Alert.alert("Delete Reminders", message, [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            for (const id of selectedIds) {
-              await deleteMutation.mutateAsync(id);
-            }
-            setSelectedIds(new Set());
-            setIsSelecting(false);
-          },
-        },
-      ]
-    );
+        { text: "Delete", style: "destructive", onPress: performDelete },
+      ]);
+    }
   };
 
   const formatStartDate = (dateStr: string | Date | null) => {
