@@ -139,7 +139,10 @@ export default function CreateReminderScreen() {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await requestPermissionIfNeeded();
-      navigation.popToTop();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main", params: { screen: "Reminders" } }],
+      });
     },
     onError: (error) => {
       console.error("Failed to create reminder:", error);
@@ -155,7 +158,10 @@ export default function CreateReminderScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.popToTop();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main", params: { screen: "Reminders" } }],
+      });
     },
     onError: (error) => {
       console.error("Failed to update reminder:", error);
@@ -170,7 +176,10 @@ export default function CreateReminderScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.popToTop();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Main", params: { screen: "Reminders" } }],
+      });
     },
     onError: (error) => {
       console.error("Failed to delete reminder:", error);
