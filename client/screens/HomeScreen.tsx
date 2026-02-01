@@ -183,16 +183,20 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                     <Pressable 
-                      style={styles.completeButton}
+                      style={[
+                        styles.takenButton,
+                        { 
+                          backgroundColor: isCompleted ? theme.success : theme.primary,
+                          opacity: isCompleted ? 0.6 : 1,
+                        }
+                      ]}
                       onPress={() => handleComplete(reminder.id)}
                       disabled={isCompleted || completeMutation.isPending}
                       testID={`button-complete-${reminder.id}`}
                     >
-                      <Feather 
-                        name={isCompleted ? "check-circle" : "circle"} 
-                        size={28} 
-                        color={isCompleted ? theme.success : theme.border} 
-                      />
+                      <Text style={styles.takenButtonText}>
+                        {isCompleted ? "Done" : "Taken"}
+                      </Text>
                     </Pressable>
                   </View>
                 </Card>
@@ -378,8 +382,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: Spacing.sm,
   },
-  completeButton: {
-    padding: Spacing.sm,
+  takenButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  takenButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
   historyBanner: {
     flexDirection: "row",
