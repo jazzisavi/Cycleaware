@@ -215,14 +215,16 @@ export default function RemindersScreen() {
 
   const renderHeader = () => {
     return (
-      <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
+      <View style={styles.topNav}>
         <View style={styles.logoContainer}>
-          <View style={[styles.logoCircle, { backgroundColor: theme.primary }]}>
-            <Feather name="droplet" size={16} color="#FFFFFF" />
-          </View>
+          <ThemedText style={[styles.logoText, { color: theme.primary }]}>GoFlo</ThemedText>
         </View>
-        <ThemedText type="h2" style={styles.headerTitle}>Reminders</ThemedText>
-        <Pressable style={styles.moreButton} hitSlop={8}>
+        <ThemedText style={[styles.navTitle, { color: theme.text }]}>Reminders</ThemedText>
+        <Pressable 
+          style={styles.moreButton}
+          onPress={() => navigation.navigate("More")}
+          hitSlop={8}
+        >
           <Feather name="more-horizontal" size={24} color={theme.text} />
         </Pressable>
       </View>
@@ -264,7 +266,7 @@ export default function RemindersScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.headerWrapper, { paddingTop: insets.top }]}>
+      <View style={{ paddingTop: insets.top + Spacing.sm }}>
         {renderHeader()}
       </View>
       <FlatList
@@ -294,33 +296,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerWrapper: {
-    backgroundColor: "transparent",
-  },
-  headerBar: {
+  topNav: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
+    paddingVertical: Spacing.sm,
   },
   logoContainer: {
-    width: 40,
-  },
-  logoCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
     flex: 1,
-    textAlign: "center",
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  navTitle: {
+    fontSize: 17,
+    fontWeight: "600",
   },
   moreButton: {
-    width: 40,
+    flex: 1,
     alignItems: "flex-end",
   },
   toolbar: {
