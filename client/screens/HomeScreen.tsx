@@ -32,6 +32,12 @@ interface Reminder {
   reminderTimes?: string[];
 }
 
+interface NotificationHistoryItem {
+  id: number;
+  status: string;
+  scheduledFor: string;
+}
+
 export default function HomeScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -44,6 +50,14 @@ export default function HomeScreen() {
   const { data: reminders = [] } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
   });
+
+  const { data: notificationHistory = [] } = useQuery<NotificationHistoryItem[]>({
+    queryKey: ["/api/notification-history"],
+  });
+
+  const incompleteCount = notificationHistory.filter(
+    (item) => item.status !== "completed"
+  ).length;
 
   const completeMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -247,8 +261,8 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Check out your History Banner */}
-        {reminders.length > 0 ? (
+        {/* Check out your History Banner - only show when more than 3 incomplete reminders */}
+        {notificationHistory.length > 0 && incompleteCount > 3 ? (
           <Pressable 
             style={[styles.historyBanner, { backgroundColor: "#FFFFFF" }]}
             onPress={() => navigation.navigate("History")}
@@ -259,7 +273,7 @@ export default function HomeScreen() {
                 Check out your History
               </Text>
               <Text style={[styles.historyText, { color: theme.textSecondary }]}>
-                You have several unresolved reminders, check out your history to make sure you're on track
+                You have {incompleteCount} unresolved reminders, check out your history to make sure you're on track
               </Text>
             </View>
             <Feather name="chevron-right" size={24} color={theme.textSecondary} />
