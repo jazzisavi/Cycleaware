@@ -255,6 +255,8 @@ export default function RemindersScreen() {
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
 
   const renderListHeader = () => {
+    if (reminders.length === 0) return null;
+    
     return (
       <View style={styles.toolbar}>
         <View style={styles.toolbarLeft}>
