@@ -1,11 +1,32 @@
-import { useCallback } from "react";
-import * as Notifications from "expo-notifications";
+import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 const PERMISSION_REQUESTED_KEY = "@goflo/notification_permission_requested";
 
+function isExpoGo(): boolean {
+  return Constants.appOwnership === "expo";
+}
+
 export function useNotificationPermission() {
+  const [notificationsAvailable, setNotificationsAvailable] = useState(false);
+
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (Platform.OS === "web") {
+        setNotificationsAvailable(false);
+        return;
+      }
+      if (Platform.OS === "android" && isExpoGo()) {
+        setNotificationsAvailable(false);
+        return;
+      }
+      setNotificationsAvailable(true);
+    };
+    checkAvailability();
+  }, []);
+
   const requestPermissionIfNeeded = useCallback(async () => {
     try {
       const hasRequested = await AsyncStorage.getItem(PERMISSION_REQUESTED_KEY);
@@ -17,6 +38,13 @@ export function useNotificationPermission() {
         await AsyncStorage.setItem(PERMISSION_REQUESTED_KEY, "true");
         return;
       }
+
+      if (Platform.OS === "android" && isExpoGo()) {
+        await AsyncStorage.setItem(PERMISSION_REQUESTED_KEY, "true");
+        return;
+      }
+
+      const Notifications = await import("expo-notifications");
 
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       
@@ -40,9 +68,10 @@ export function useNotificationPermission() {
         });
       }
     } catch (error) {
-      console.log("Error requesting notification permission:", error);
+      console.log("Notifications not available:", error);
+      await AsyncStorage.setItem(PERMISSION_REQUESTED_KEY, "true");
     }
   }, []);
 
-  return { requestPermissionIfNeeded };
+  return { requestPermissionIfNeeded, notificationsAvailable };
 }
