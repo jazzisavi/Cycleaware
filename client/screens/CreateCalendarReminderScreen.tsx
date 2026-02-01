@@ -52,9 +52,6 @@ export default function CreateCalendarReminderScreen() {
   });
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
-    if (Platform.OS !== "ios") {
-      setShowTimePicker(false);
-    }
     if (selectedTime) {
       setTempTime(selectedTime);
     }

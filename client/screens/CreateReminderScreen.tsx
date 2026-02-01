@@ -164,9 +164,6 @@ export default function CreateReminderScreen() {
   });
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
-    if (Platform.OS !== "ios") {
-      setShowTimePicker(false);
-    }
     if (selectedTime) {
       setTempTime(selectedTime);
     }
