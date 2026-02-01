@@ -19,7 +19,7 @@ import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 
 export type RootStackParamList = {
-  Main: undefined;
+  Main: { screen?: "Home" | "Reminders" } | undefined;
   TypeSelector: undefined;
   CreateCycleReminder: {
     reminderId?: string;
