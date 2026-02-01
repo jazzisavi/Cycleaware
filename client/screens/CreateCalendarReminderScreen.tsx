@@ -14,6 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -22,6 +23,7 @@ export default function CreateCalendarReminderScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const queryClient = useQueryClient();
+  const { requestPermissionIfNeeded } = useNotificationPermission();
 
   const [title, setTitle] = useState("");
   const [hasEndDate, setHasEndDate] = useState(false);
@@ -37,9 +39,10 @@ export default function CreateCalendarReminderScreen() {
       const response = await apiRequest("POST", "/api/reminders", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await requestPermissionIfNeeded();
       navigation.popToTop();
     },
     onError: (error) => {

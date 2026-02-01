@@ -15,6 +15,7 @@ import { Spacing, Colors } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { Reminder } from "@shared/schema";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateCycleReminder">;
@@ -25,6 +26,7 @@ export default function CreateReminderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
+  const { requestPermissionIfNeeded } = useNotificationPermission();
 
   const reminderId = route.params?.reminderId;
   const isEditMode = !!reminderId;
@@ -118,9 +120,10 @@ export default function CreateReminderScreen() {
       const response = await apiRequest("POST", "/api/reminders", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await requestPermissionIfNeeded();
       navigation.popToTop();
     },
     onError: (error) => {
