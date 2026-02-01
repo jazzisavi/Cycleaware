@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
@@ -38,6 +39,17 @@ export default function RemindersScreen() {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
+
+  // Reset selection mode when navigating away from the screen
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup when screen loses focus
+        setIsSelecting(false);
+        setSelectedIds(new Set());
+      };
+    }, [])
+  );
 
   const { data: reminders = [], isLoading, refetch } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
@@ -241,7 +253,9 @@ export default function RemindersScreen() {
             if (isSelecting) {
               handleSelectAll();
             } else {
+              // Enter selection mode AND select all items immediately
               setIsSelecting(true);
+              setSelectedIds(new Set(reminders.map((r) => r.id)));
             }
           }}
           style={styles.toolbarButton}
