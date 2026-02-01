@@ -141,19 +141,21 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Create Reminder Button */}
-        <Pressable
-          style={[styles.createReminderButton, { backgroundColor: "#FFFFFF", borderColor: theme.border }]}
-          onPress={() => navigation.navigate("TypeSelector")}
-          testID="button-create-reminder"
-        >
-          <Text style={[styles.createReminderText, { color: theme.text }]}>
-            Create a reminder
-          </Text>
-          <View style={[styles.plusIcon, { backgroundColor: theme.primary }]}>
-            <Feather name="plus" size={20} color="#FFFFFF" />
-          </View>
-        </Pressable>
+        {/* Create Reminder Button - only show when no active reminders */}
+        {reminders.length === 0 ? (
+          <Pressable
+            style={[styles.createReminderButton, { backgroundColor: "#FFFFFF", borderColor: theme.border }]}
+            onPress={() => navigation.navigate("TypeSelector")}
+            testID="button-create-reminder"
+          >
+            <Text style={[styles.createReminderText, { color: theme.text }]}>
+              Create a reminder
+            </Text>
+            <View style={[styles.plusIcon, { backgroundColor: theme.primary }]}>
+              <Feather name="plus" size={20} color="#FFFFFF" />
+            </View>
+          </Pressable>
+        ) : null}
 
         {/* Today's Reminders */}
         {todaysReminders.length > 0 ? (
