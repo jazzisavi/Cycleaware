@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -6,7 +6,6 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -20,21 +19,12 @@ import {
   handleNotificationAction 
 } from "@/services/notifications";
 
-// Keep the splash screen visible while loading fonts
-SplashScreen.preventAutoHideAsync();
-
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({
+  const [fontsLoaded] = useFonts({
     ...Feather.font,
     ...Ionicons.font,
     ...MaterialIcons.font,
   });
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded || fontError) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     setupNotificationCategories();
@@ -59,7 +49,7 @@ export default function App() {
     };
   }, []);
 
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#6B9BD1" />
@@ -71,7 +61,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <GestureHandlerRootView style={styles.root} onLayout={onLayoutRootView}>
+          <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
               <NavigationContainer>
                 <RootStackNavigator />
