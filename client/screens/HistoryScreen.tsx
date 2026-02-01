@@ -1,7 +1,6 @@
 import React from "react";
 import { FlatList, StyleSheet, View, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 
@@ -14,7 +13,6 @@ import type { NotificationHistory } from "@shared/schema";
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
 
   const { data: history = [], isLoading, refetch } = useQuery<NotificationHistory[]>({
@@ -133,7 +131,7 @@ export default function HistoryScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: Spacing.lg,
             paddingBottom: insets.bottom + Spacing["2xl"],
             flex: history.length === 0 ? 1 : undefined,
           },

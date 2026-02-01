@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Pressable } from "react-native";
+import { StyleSheet, View, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -20,7 +18,6 @@ const DEFAULT_SNOOZE_DURATION = 60;
 
 export default function SnoozeSettingsScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [selectedDuration, setSelectedDuration] = useState(DEFAULT_SNOOZE_DURATION);
@@ -79,11 +76,11 @@ export default function SnoozeSettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAwareScrollViewCompat
+      <ScrollView
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: Spacing.lg,
             paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
@@ -153,7 +150,7 @@ export default function SnoozeSettingsScreen() {
         <Button onPress={handleSave} loading={isLoading} style={styles.saveButton} testID="button-save-snooze">
           Save Settings
         </Button>
-      </KeyboardAwareScrollViewCompat>
+      </ScrollView>
     </ThemedView>
   );
 }

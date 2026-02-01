@@ -1,11 +1,9 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { SettingsRow } from "@/components/SettingsRow";
@@ -18,17 +16,16 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAwareScrollViewCompat
+      <ScrollView
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: Spacing.lg,
             paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
@@ -108,7 +105,7 @@ export default function MoreScreen() {
           showChevron={false}
           testID="row-version"
         />
-      </KeyboardAwareScrollViewCompat>
+      </ScrollView>
     </ThemedView>
   );
 }

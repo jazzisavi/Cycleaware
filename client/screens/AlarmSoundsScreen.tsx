@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FlatList, StyleSheet, View, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -30,7 +29,6 @@ const ALARM_SOUNDS: AlarmSound[] = [
 
 export default function AlarmSoundsScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const [selectedSound, setSelectedSound] = useState("default");
   const [playingSound, setPlayingSound] = useState<string | null>(null);
@@ -134,7 +132,7 @@ export default function AlarmSoundsScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: headerHeight + Spacing.xl,
+            paddingTop: Spacing.lg,
             paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
