@@ -43,8 +43,6 @@ export default function CreateCalendarReminderScreen() {
   const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval || 1);
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
   const [selectedDays, setSelectedDays] = useState<string[]>(params.selectedDays || ["mon", "thu"]);
-  const [startsOn, setStartsOn] = useState<"today" | "tomorrow" | "on">(params.startsOn || "today");
-  const [startDate, setStartDate] = useState<string>(params.startDate || new Date().toISOString());
   const [ends, setEnds] = useState<"never" | "on" | "after">(params.ends || "never");
   const [endDate, setEndDate] = useState<string>(params.endDate || new Date().toISOString());
   const [occurrences, setOccurrences] = useState(params.occurrences || 1);
@@ -53,8 +51,6 @@ export default function CreateCalendarReminderScreen() {
     if (params.repeatInterval !== undefined) setRepeatInterval(params.repeatInterval);
     if (params.repeatUnit !== undefined) setRepeatUnit(params.repeatUnit);
     if (params.selectedDays !== undefined) setSelectedDays(params.selectedDays);
-    if (params.startsOn !== undefined) setStartsOn(params.startsOn);
-    if (params.startDate !== undefined) setStartDate(params.startDate);
     if (params.ends !== undefined) setEnds(params.ends);
     if (params.endDate !== undefined) setEndDate(params.endDate);
     if (params.occurrences !== undefined) setOccurrences(params.occurrences);
@@ -217,16 +213,6 @@ export default function CreateCalendarReminderScreen() {
     return display;
   };
 
-  const getStartDateDisplay = () => {
-    if (startsOn === "today") {
-      return "Starts today";
-    } else if (startsOn === "tomorrow") {
-      return "Starts tomorrow";
-    } else {
-      return `Starts on ${formatDate(startDate)}`;
-    }
-  };
-
   const getEndDateDisplay = () => {
     if (ends === "never") {
       return "No end date";
@@ -238,15 +224,7 @@ export default function CreateCalendarReminderScreen() {
   };
 
   const calculateStartDate = () => {
-    if (startsOn === "today") {
-      return new Date().toISOString();
-    } else if (startsOn === "tomorrow") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return tomorrow.toISOString();
-    } else {
-      return startDate;
-    }
+    return new Date().toISOString();
   };
 
   const handleSave = () => {
@@ -345,8 +323,6 @@ export default function CreateCalendarReminderScreen() {
               repeatInterval,
               repeatUnit,
               selectedDays,
-              startsOn,
-              startDate,
               ends,
               endDate,
               occurrences,
@@ -355,29 +331,6 @@ export default function CreateCalendarReminderScreen() {
         >
           <ThemedText type="body" style={{ color: theme.text }}>
             {getRepeatFrequencyDisplay()}
-          </ThemedText>
-        </Pressable>
-
-        {/* Start date */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate("RepeatFrequency", {
-              reminderId,
-              repeatInterval,
-              repeatUnit,
-              selectedDays,
-              startsOn,
-              startDate,
-              ends,
-              endDate,
-              occurrences,
-            });
-          }}
-        >
-          <ThemedText type="body" style={{ color: theme.text }}>
-            {getStartDateDisplay()}
           </ThemedText>
         </Pressable>
 
@@ -391,8 +344,6 @@ export default function CreateCalendarReminderScreen() {
               repeatInterval,
               repeatUnit,
               selectedDays,
-              startsOn,
-              startDate,
               ends,
               endDate,
               occurrences,
