@@ -215,6 +215,30 @@ export default function RemindersScreen() {
             Edit
           </ThemedText>
         </Pressable>
+        <Pressable
+          onPress={() => {
+            Alert.alert(
+              "Delete Reminder",
+              `Are you sure you want to delete "${item.title}"?`,
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: () => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                    deleteMutation.mutate(item.id);
+                  },
+                },
+              ]
+            );
+          }}
+          hitSlop={8}
+          style={{ marginLeft: Spacing.md }}
+          testID={`button-delete-${item.id}`}
+        >
+          <Feather name="trash-2" size={18} color={theme.error} />
+        </Pressable>
       </View>
     </View>
   );
