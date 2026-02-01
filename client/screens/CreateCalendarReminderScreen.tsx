@@ -233,7 +233,7 @@ export default function CreateCalendarReminderScreen() {
               
               <View style={styles.modalButtons}>
                 <Pressable 
-                  style={[styles.modalButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                  style={[styles.modalButton, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
                   onPress={() => setShowAdditionalTimePicker(false)}
                 >
                   <ThemedText type="body" style={{ color: theme.text }}>

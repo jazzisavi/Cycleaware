@@ -14,6 +14,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Colors } from "@/constants/theme";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { Reminder } from "@shared/schema";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateCycleReminder">;
@@ -44,7 +45,7 @@ export default function CreateReminderScreen() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Fetch reminder data when editing
-  const { data: reminderData } = useQuery({
+  const { data: reminderData } = useQuery<Reminder>({
     queryKey: ["/api/reminders", reminderId],
     enabled: isEditMode && !isLoaded,
   });
@@ -54,7 +55,7 @@ export default function CreateReminderScreen() {
     if (reminderData && isEditMode && !isLoaded) {
       setTitle(reminderData.title || "");
       setNotes(reminderData.notes || "");
-      setAlarmType(reminderData.alarmType || "notification");
+      setAlarmType((reminderData.alarmType as "notification" | "alarm") || "notification");
       setCycleDayStart(reminderData.cycleDayStart || 14);
       setCycleDayEnd(reminderData.cycleDayEnd || 28);
       
