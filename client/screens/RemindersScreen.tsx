@@ -138,6 +138,19 @@ export default function RemindersScreen() {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
+  const formatDayName = (day: string) => {
+    const dayNames: Record<string, string> = {
+      sun: "Sun",
+      mon: "Mon",
+      tue: "Tue",
+      wed: "Wed",
+      thu: "Thu",
+      fri: "Fri",
+      sat: "Sat",
+    };
+    return dayNames[day] || day;
+  };
+
   const formatReminderDescription = (reminder: Reminder) => {
     if (reminder.reminderType === "cycle") {
       const startDay = reminder.cycleDayStart || 1;
@@ -147,7 +160,15 @@ export default function RemindersScreen() {
       return `Day ${startDay} to ${endDay} at ${time}${startDate}`;
     } else {
       const time = formatTime(reminder.reminderTime);
-      return `Calendar reminder at ${time}`;
+      const weeklyDays = (reminder.weeklyRepeatDays as string[]) || [];
+      const startDate = reminder.calendarStartDate ? ` - Started ${formatStartDate(reminder.calendarStartDate)}` : "";
+      
+      if (weeklyDays.length > 0) {
+        const dayLabels = weeklyDays.map(formatDayName).join(", ");
+        return `${dayLabels} at ${time}${startDate}`;
+      }
+      
+      return `Daily at ${time}${startDate}`;
     }
   };
 
