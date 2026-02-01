@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useLayoutEffect } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -215,55 +215,60 @@ export default function RemindersScreen() {
 
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
 
-  return (
-    <ThemedView style={styles.container}>
-      {reminders.length > 0 ? (
-        <View style={[styles.toolbar, { paddingTop: headerHeight + Spacing.sm }]}>
-          <Pressable
-            onPress={() => {
-              setIsSelecting(!isSelecting);
-              if (isSelecting) {
-                setSelectedIds(new Set());
-              }
-            }}
-            style={styles.toolbarButton}
+  const renderListHeader = () => {
+    if (reminders.length === 0) return null;
+    
+    return (
+      <View style={styles.toolbar}>
+        <Pressable
+          onPress={() => {
+            setIsSelecting(!isSelecting);
+            if (isSelecting) {
+              setSelectedIds(new Set());
+            }
+          }}
+          style={styles.toolbarButton}
+        >
+          <ThemedText
+            type="body"
+            style={{ color: isSelecting ? theme.error : theme.primary }}
           >
-            <ThemedText
-              type="body"
-              style={{ color: isSelecting ? theme.error : theme.primary }}
-            >
-              {isSelecting ? "Cancel" : "Select"}
-            </ThemedText>
-          </Pressable>
+            {isSelecting ? "Cancel" : "Select"}
+          </ThemedText>
+        </Pressable>
 
-          {isSelecting ? (
-            <View style={styles.toolbarActions}>
-              <Pressable onPress={handleSelectAll} style={styles.toolbarButton}>
-                <ThemedText type="body" style={{ color: theme.primary }}>
-                  {allSelected ? "Deselect All" : "Select All"}
+        {isSelecting ? (
+          <View style={styles.toolbarActions}>
+            <Pressable onPress={handleSelectAll} style={styles.toolbarButton}>
+              <ThemedText type="body" style={{ color: theme.primary }}>
+                {allSelected ? "Deselect All" : "Select All"}
+              </ThemedText>
+            </Pressable>
+            {selectedIds.size > 0 ? (
+              <Pressable onPress={handleDeleteSelected} style={styles.toolbarButton}>
+                <ThemedText type="body" style={{ color: theme.error }}>
+                  Delete ({selectedIds.size})
                 </ThemedText>
               </Pressable>
-              {selectedIds.size > 0 ? (
-                <Pressable onPress={handleDeleteSelected} style={styles.toolbarButton}>
-                  <ThemedText type="body" style={{ color: theme.error }}>
-                    Delete ({selectedIds.size})
-                  </ThemedText>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-      ) : null}
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    );
+  };
 
+  return (
+    <ThemedView style={styles.container}>
       <FlatList
         data={reminders}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderListHeader}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: reminders.length > 0 ? Spacing.md : headerHeight + Spacing.xl,
+            paddingTop: headerHeight + Spacing.md,
             paddingBottom: tabBarHeight + Spacing["5xl"],
             flex: reminders.length === 0 ? 1 : undefined,
           },
@@ -285,8 +290,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   toolbarButton: {
     paddingVertical: Spacing.xs,
