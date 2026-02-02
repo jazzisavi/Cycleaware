@@ -185,6 +185,15 @@ export default function HomeScreen() {
               const isCompleted = completedIds.has(reminder.id);
               return (
                 <Card key={reminder.id} style={styles.reminderCard}>
+                  {showNotificationWarning ? (
+                    <Pressable 
+                      onPress={openSettings}
+                      style={styles.cardWarningBadge}
+                      testID={`warning-badge-${reminder.id}`}
+                    >
+                      <Feather name="alert-triangle" size={12} color="#FFFFFF" />
+                    </Pressable>
+                  ) : null}
                   <View style={styles.reminderContent}>
                     <View
                       style={[
@@ -198,9 +207,11 @@ export default function HomeScreen() {
                       ]}
                     />
                     <View style={styles.reminderInfo}>
-                      <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                        {reminder.title}
-                      </Text>
+                      <View style={styles.titleRow}>
+                        <Text style={[styles.reminderTitle, { color: theme.text }]}>
+                          {reminder.title}
+                        </Text>
+                      </View>
                       <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
                         {formatTime(reminder.reminderTime)} today
                       </Text>
@@ -247,6 +258,15 @@ export default function HomeScreen() {
             </Text>
             {upcomingReminders.map((reminder) => (
               <Card key={reminder.id} style={styles.reminderCard}>
+                {showNotificationWarning ? (
+                  <Pressable 
+                    onPress={openSettings}
+                    style={styles.cardWarningBadge}
+                    testID={`warning-badge-upcoming-${reminder.id}`}
+                  >
+                    <Feather name="alert-triangle" size={12} color="#FFFFFF" />
+                  </Pressable>
+                ) : null}
                 <View style={styles.reminderContent}>
                   <View
                     style={[
@@ -474,5 +494,22 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "500",
+  },
+  cardWarningBadge: {
+    position: "absolute",
+    top: Spacing.sm,
+    right: Spacing.sm,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
   },
 });
