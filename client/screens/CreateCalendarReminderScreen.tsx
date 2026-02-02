@@ -87,7 +87,6 @@ export default function CreateCalendarReminderScreen() {
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error) => {
@@ -231,6 +230,9 @@ export default function CreateCalendarReminderScreen() {
     if (!title.trim() || reminderTimes.length === 0) {
       return;
     }
+
+    // Trigger permission popup immediately (runs in parallel with save)
+    requestPermission();
 
     const reminderTimesArray = reminderTimes.map((t) => 
       `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`
