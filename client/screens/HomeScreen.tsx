@@ -16,6 +16,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { Card } from "@/components/Card";
 import { AppHeader } from "@/components/AppHeader";
@@ -45,8 +46,11 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const queryClient = useQueryClient();
+  const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
   const [showWelcome, setShowWelcome] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
+  
+  const showNotificationWarning = notificationsAvailable && permissionStatus !== "granted" && permissionStatus !== "unavailable";
 
   const { data: reminders = [] } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
@@ -113,6 +117,24 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <AppHeader title="Today" />
+
+      {showNotificationWarning ? (
+        <Pressable 
+          onPress={openSettings}
+          style={styles.notificationBanner}
+          testID="banner-notification-warning"
+        >
+          <View style={styles.notificationBannerContent}>
+            <View style={styles.notificationBannerIcon}>
+              <Feather name="bell-off" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.notificationBannerText}>
+              Notifications are off - tap to enable in Settings
+            </Text>
+            <Feather name="chevron-right" size={18} color="#FFFFFF" />
+          </View>
+        </Pressable>
+      ) : null}
 
       <ScrollView
         contentContainerStyle={[
@@ -424,5 +446,33 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 16,
     textAlign: "center",
+  },
+  notificationBanner: {
+    backgroundColor: "#DC3545",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    overflow: "hidden",
+  },
+  notificationBannerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  notificationBannerIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notificationBannerText: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
