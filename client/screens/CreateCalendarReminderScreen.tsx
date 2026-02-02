@@ -269,7 +269,7 @@ export default function CreateCalendarReminderScreen() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: "#FFFFFF" }]}>
+    <ThemedView style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
@@ -472,7 +472,7 @@ export default function CreateCalendarReminderScreen() {
                   style={[styles.modalButton, { backgroundColor: theme.primary }]}
                   onPress={handleSaveTime}
                 >
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                  <ThemedText type="body" style={{ color: theme.buttonText, fontWeight: "600" }}>
                     Done
                   </ThemedText>
                 </Pressable>

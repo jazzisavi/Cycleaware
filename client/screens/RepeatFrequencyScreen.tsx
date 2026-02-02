@@ -95,7 +95,7 @@ export default function RepeatFrequencyScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: "#FFFFFF" }]}>
+    <ThemedView style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
           <Feather name="arrow-left" size={24} color={theme.text} />
@@ -103,7 +103,7 @@ export default function RepeatFrequencyScreen() {
         <ThemedText type="h3" style={styles.headerTitle}>
           Repeat frequency
         </ThemedText>
-        <Pressable onPress={handleDone} style={styles.doneButton}>
+        <Pressable onPress={handleDone} style={[styles.doneButton, { backgroundColor: theme.backgroundSecondary }]}>
           <ThemedText type="body" style={{ fontWeight: "600" }}>
             Done
           </ThemedText>
@@ -166,7 +166,7 @@ export default function RepeatFrequencyScreen() {
                       type="body" 
                       style={[
                         styles.dayText,
-                        isSelected && { color: "#FFFFFF" },
+                        isSelected && { color: theme.buttonText },
                       ]}
                     >
                       {day}
@@ -370,7 +370,7 @@ export default function RepeatFrequencyScreen() {
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => setShowEndDatePicker(false)}
               >
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                <ThemedText type="body" style={{ color: theme.buttonText, fontWeight: "600" }}>
                   Done
                 </ThemedText>
               </Pressable>
@@ -403,7 +403,6 @@ const styles = StyleSheet.create({
   doneButton: {
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
-    backgroundColor: "#F0F0F0",
     borderRadius: 16,
   },
   content: {

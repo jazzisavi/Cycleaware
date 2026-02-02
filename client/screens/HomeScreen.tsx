@@ -125,7 +125,7 @@ export default function HomeScreen() {
       >
         {/* Welcome Message Card */}
         {showWelcome ? (
-          <View style={[styles.welcomeCard, { backgroundColor: "#FFFFFF" }]}>
+          <View style={[styles.welcomeCard, { backgroundColor: theme.backgroundDefault }]}>
             <Pressable 
               style={styles.closeButton}
               onPress={() => setShowWelcome(false)}
@@ -262,7 +262,7 @@ export default function HomeScreen() {
         {/* Check out your History Banner - only show when more than 3 incomplete reminders */}
         {notificationHistory.length > 0 && incompleteCount > 3 ? (
           <Pressable 
-            style={[styles.historyBanner, { backgroundColor: "#FFFFFF" }]}
+            style={[styles.historyBanner, { backgroundColor: theme.backgroundDefault }]}
             onPress={() => navigation.navigate("History")}
             testID="button-view-history"
           >
