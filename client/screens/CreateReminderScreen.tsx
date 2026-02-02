@@ -26,7 +26,7 @@ export default function CreateReminderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
-  const { requestPermissionIfNeeded } = useNotificationPermission();
+  const { requestPermission } = useNotificationPermission();
 
   const reminderId = route.params?.reminderId;
   const isEditMode = !!reminderId;
@@ -138,7 +138,7 @@ export default function CreateReminderScreen() {
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await requestPermissionIfNeeded();
+      requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error) => {

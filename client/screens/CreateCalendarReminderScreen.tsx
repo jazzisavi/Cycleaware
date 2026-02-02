@@ -26,7 +26,7 @@ export default function CreateCalendarReminderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const queryClient = useQueryClient();
-  const { requestPermissionIfNeeded } = useNotificationPermission();
+  const { requestPermission } = useNotificationPermission();
 
   const params = route.params || {};
   const reminderId = params.reminderId;
@@ -87,7 +87,7 @@ export default function CreateCalendarReminderScreen() {
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await requestPermissionIfNeeded();
+      requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error) => {
