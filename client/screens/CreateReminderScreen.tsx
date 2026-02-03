@@ -152,6 +152,8 @@ export default function CreateReminderScreen() {
       console.log("Reminder created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Request notification permission after save completes
+      requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error) => {
@@ -168,6 +170,8 @@ export default function CreateReminderScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Request notification permission after save completes
+      requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error) => {
@@ -261,9 +265,6 @@ export default function CreateReminderScreen() {
       console.log("Cannot save - validation failed");
       return;
     }
-
-    // Trigger permission popup immediately (runs in parallel with save)
-    requestPermission();
 
     const reminderTimesArray: string[] = reminderTimes.map((t) => 
       `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`
