@@ -262,10 +262,12 @@ export default function CreateReminderScreen() {
     reminderTimes.length > 0;
 
   const handleSave = () => {
+    Alert.alert("DEBUG 1", "handleSave called");
     console.log("handleSave called, canSave:", canSave);
     console.log("Form state:", { title: title.trim(), cycleDayStart, cycleDayEnd, startsOn, ends, reminderTimesCount: reminderTimes.length });
     
     if (!canSave) {
+      Alert.alert("DEBUG 2", "Validation failed - cannot save");
       console.log("Cannot save - validation failed");
       return;
     }
@@ -306,6 +308,8 @@ export default function CreateReminderScreen() {
       soundEnabled,
       isActive: true,
     };
+
+    Alert.alert("DEBUG 3", `About to call mutation. isEditMode: ${isEditMode}`);
 
     if (isEditMode) {
       updateMutation.mutate(reminderDataPayload);

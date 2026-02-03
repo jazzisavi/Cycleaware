@@ -248,7 +248,10 @@ export default function CreateCalendarReminderScreen() {
   };
 
   const handleSave = () => {
+    Alert.alert("CAL DEBUG 1", "handleSave called");
+    
     if (!title.trim() || reminderTimes.length === 0) {
+      Alert.alert("CAL DEBUG 2", "Validation failed");
       return;
     }
 
@@ -273,6 +276,8 @@ export default function CreateCalendarReminderScreen() {
       calendarEndsType: ends,
       maxOccurrences: ends === "after" ? occurrences : null,
     };
+
+    Alert.alert("CAL DEBUG 3", `About to mutate. isEditMode: ${isEditMode}`);
 
     if (isEditMode) {
       updateMutation.mutate(reminderData);

@@ -339,6 +339,11 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : null}
+
+        {/* Version Number for debugging */}
+        <Text style={[styles.versionText, { color: theme.textTertiary }]}>
+          v1.0.1
+        </Text>
       </ScrollView>
     </View>
   );
@@ -514,5 +519,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
+  },
+  versionText: {
+    textAlign: "center",
+    fontSize: 12,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
   },
 });
