@@ -12,6 +12,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Colors } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { Reminder } from "@shared/schema";
@@ -377,7 +378,7 @@ export default function CreateReminderScreen() {
               fontWeight: "500",
             }}
           >
-            Save
+            {Copy.common.save}
           </ThemedText>
         </Pressable>
       </View>
@@ -395,7 +396,7 @@ export default function CreateReminderScreen() {
           <TextInput
             ref={titleInputRef}
             style={[styles.titleInput, { color: theme.text }]}
-            placeholder="Add reminder title"
+            placeholder={Copy.createCycleReminder.addTitlePlaceholder}
             placeholderTextColor={theme.textTertiary}
             value={title}
             onChangeText={setTitle}
@@ -456,7 +457,7 @@ export default function CreateReminderScreen() {
                 testID={`time-row-${index}`}
               >
                 <ThemedText type="body" style={{ color: theme.text }}>
-                  Remind me at {formatTime(reminderTime)}
+                  {Copy.createCycleReminder.remindMeAt(formatTime(reminderTime))}
                 </ThemedText>
               </Pressable>
             ))}
@@ -467,7 +468,7 @@ export default function CreateReminderScreen() {
               onPress={() => handleOpenTimePicker(null)}
             >
               <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                Add reminder time
+                {Copy.createCycleReminder.addReminderTime}
               </ThemedText>
             </Pressable>
           </View>
@@ -494,7 +495,7 @@ export default function CreateReminderScreen() {
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
               <View style={styles.modalHeader}>
                 <ThemedText type="h3" style={{ fontWeight: "600" }}>
-                  Set reminder time
+                  {Copy.createCycleReminder.setReminderTimeTitle}
                 </ThemedText>
               </View>
               
@@ -517,7 +518,7 @@ export default function CreateReminderScreen() {
                     maxLength={5}
                   />
                   <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-                    Enter time in 24-hour format (e.g., 09:00)
+                    {Copy.createCycleReminder.timeFormatHint}
                   </ThemedText>
                 </View>
               ) : (
@@ -535,7 +536,7 @@ export default function CreateReminderScreen() {
                   onPress={() => setShowTimePicker(false)}
                 >
                   <ThemedText type="body" style={{ color: theme.text }}>
-                    Cancel
+                    {Copy.common.cancel}
                   </ThemedText>
                 </Pressable>
                 <Pressable 
@@ -543,7 +544,7 @@ export default function CreateReminderScreen() {
                   onPress={handleSaveTime}
                 >
                   <ThemedText type="body" style={{ color: theme.buttonText, fontWeight: "600" }}>
-                    Done
+                    {Copy.common.done}
                   </ThemedText>
                 </Pressable>
               </View>
@@ -559,7 +560,7 @@ export default function CreateReminderScreen() {
           <View style={styles.groupContent}>
             <TextInput
               style={[styles.notesInput, { color: theme.text }]}
-              placeholder="Add medication notes"
+              placeholder={Copy.createCycleReminder.addNotesPlaceholder}
               placeholderTextColor={theme.textSecondary}
               value={notes}
               onChangeText={setNotes}
@@ -597,10 +598,10 @@ export default function CreateReminderScreen() {
               </View>
               <View style={{ marginLeft: Spacing.md, flex: 1 }}>
                 <ThemedText type="body" style={{ color: theme.text }}>
-                  Make some noise
+                  {Copy.soundSettings.makeSomeNoise}
                 </ThemedText>
                 <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: 2 }}>
-                  Plays your default notification sound
+                  {Copy.soundSettings.playsDefaultSound}
                 </ThemedText>
               </View>
             </Pressable>

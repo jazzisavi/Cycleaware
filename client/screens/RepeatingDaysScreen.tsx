@@ -11,6 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -84,12 +85,12 @@ export default function RepeatingDaysScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <ThemedText type="body" style={{ fontWeight: "600" }}>
-            Repeating days
+            {Copy.repeatingDays.headerTitle}
           </ThemedText>
         </View>
         <Pressable onPress={handleDone} style={styles.headerButton}>
           <ThemedText type="body" style={{ color: theme.text, fontWeight: "600" }}>
-            Done
+            {Copy.common.done}
           </ThemedText>
         </Pressable>
       </View>
@@ -98,7 +99,7 @@ export default function RepeatingDaysScreen() {
         {/* Starts on Section - moved to top */}
         <View style={styles.section}>
           <ThemedText type="body" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            Cycle starts
+            {Copy.repeatingDays.cycleStarts}
           </ThemedText>
 
           <Pressable
@@ -117,7 +118,7 @@ export default function RepeatingDaysScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Today
+              {Copy.common.today}
             </ThemedText>
           </Pressable>
 
@@ -137,7 +138,7 @@ export default function RepeatingDaysScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Tomorrow
+              {Copy.common.tomorrow}
             </ThemedText>
           </Pressable>
 
@@ -158,7 +159,7 @@ export default function RepeatingDaysScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              On
+              {Copy.common.on}
             </ThemedText>
             <Pressable
               style={[styles.dateButton, { borderColor: theme.border }]}
@@ -194,7 +195,7 @@ export default function RepeatingDaysScreen() {
               maxLength={2}
             />
           </View>
-          <ThemedText type="body" style={styles.toText}>to</ThemedText>
+          <ThemedText type="body" style={styles.toText}>{Copy.common.to}</ThemedText>
           <View style={[styles.dayInput, { borderColor: theme.border }]}>
             <TextInput
               style={[styles.dayInputText, { color: theme.text }]}
@@ -204,18 +205,18 @@ export default function RepeatingDaysScreen() {
               maxLength={2}
             />
           </View>
-          <ThemedText type="body" style={styles.daysLabel}>days</ThemedText>
+          <ThemedText type="body" style={styles.daysLabel}>{Copy.common.days}</ThemedText>
         </View>
 
         {/* Description */}
         <ThemedText type="body" style={[styles.description, { color: theme.textTertiary }]}>
-          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sap
+          {Copy.repeatingDays.descriptionPlaceholder}
         </ThemedText>
 
         {/* Ends Section */}
         <View style={styles.section}>
           <ThemedText type="body" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            Ends
+            {Copy.repeatingDays.ends}
           </ThemedText>
 
           <Pressable
@@ -234,7 +235,7 @@ export default function RepeatingDaysScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Never
+              {Copy.common.never}
             </ThemedText>
           </Pressable>
 
@@ -255,7 +256,7 @@ export default function RepeatingDaysScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              On
+              {Copy.common.on}
             </ThemedText>
             <Pressable
               style={[styles.dateButton, { borderColor: theme.border }]}

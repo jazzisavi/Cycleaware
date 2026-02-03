@@ -12,6 +12,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
@@ -310,7 +311,7 @@ export default function CreateCalendarReminderScreen() {
                   fontWeight: "500",
                 }}
               >
-                Save
+                {Copy.common.save}
               </ThemedText>
             </Pressable>
           );
@@ -330,7 +331,7 @@ export default function CreateCalendarReminderScreen() {
           <TextInput
             ref={titleInputRef}
             style={[styles.titleInput, { color: theme.text }]}
-            placeholder="Add reminder title"
+            placeholder={Copy.createCalendarReminder.addTitlePlaceholder}
             placeholderTextColor={theme.textTertiary}
             value={title}
             onChangeText={setTitle}
@@ -402,7 +403,7 @@ export default function CreateCalendarReminderScreen() {
                 testID={`time-row-${index}`}
               >
                 <ThemedText type="body" style={{ color: theme.text }}>
-                  Remind me at {formatTime(reminderTime)}
+                  {Copy.createCalendarReminder.remindMeAt(formatTime(reminderTime))}
                 </ThemedText>
               </Pressable>
             ))}
@@ -413,7 +414,7 @@ export default function CreateCalendarReminderScreen() {
               onPress={() => handleOpenTimePicker(null)}
             >
               <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                Add reminder time
+                {Copy.createCalendarReminder.addReminderTime}
               </ThemedText>
             </Pressable>
           </View>
@@ -440,7 +441,7 @@ export default function CreateCalendarReminderScreen() {
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
               <View style={styles.modalHeader}>
                 <ThemedText type="h3" style={{ fontWeight: "600" }}>
-                  Set reminder time
+                  {Copy.createCalendarReminder.setReminderTimeTitle}
                 </ThemedText>
               </View>
               
@@ -463,7 +464,7 @@ export default function CreateCalendarReminderScreen() {
                     maxLength={5}
                   />
                   <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-                    Enter time in 24-hour format (e.g., 14:30)
+                    {Copy.createCalendarReminder.timeFormatHint}
                   </ThemedText>
                 </View>
               ) : (
@@ -481,7 +482,7 @@ export default function CreateCalendarReminderScreen() {
                   onPress={() => setShowTimePicker(false)}
                 >
                   <ThemedText type="body" style={{ color: theme.text }}>
-                    Cancel
+                    {Copy.common.cancel}
                   </ThemedText>
                 </Pressable>
                 <Pressable 
@@ -489,7 +490,7 @@ export default function CreateCalendarReminderScreen() {
                   onPress={handleSaveTime}
                 >
                   <ThemedText type="body" style={{ color: theme.buttonText, fontWeight: "600" }}>
-                    Done
+                    {Copy.common.done}
                   </ThemedText>
                 </Pressable>
               </View>

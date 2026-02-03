@@ -11,6 +11,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -101,11 +102,11 @@ export default function RepeatFrequencyScreen() {
           <Feather name="arrow-left" size={24} color={theme.text} />
         </Pressable>
         <ThemedText type="h3" style={styles.headerTitle}>
-          Repeat frequency
+          {Copy.repeatFrequency.headerTitle}
         </ThemedText>
         <Pressable onPress={handleDone} style={[styles.doneButton, { backgroundColor: theme.backgroundSecondary }]}>
           <ThemedText type="body" style={{ fontWeight: "600" }}>
-            Done
+            {Copy.common.done}
           </ThemedText>
         </Pressable>
       </View>
@@ -119,7 +120,7 @@ export default function RepeatFrequencyScreen() {
       >
         <View style={[styles.section, { borderBottomColor: theme.border }]}>
           <ThemedText type="body" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-            Repeat every
+            {Copy.repeatFrequency.repeatEvery}
           </ThemedText>
           <View style={styles.repeatEveryRow}>
             <View style={[styles.numberInputContainer, { borderColor: theme.border }]}>
@@ -136,7 +137,7 @@ export default function RepeatFrequencyScreen() {
               onPress={() => setShowUnitPicker(true)}
             >
               <ThemedText type="body">
-                {repeatUnit === "week" ? "Week" : "Day"}
+                {repeatUnit === "week" ? Copy.common.week : Copy.common.day}
               </ThemedText>
               <Feather name="chevron-down" size={18} color={theme.text} />
             </Pressable>
@@ -146,7 +147,7 @@ export default function RepeatFrequencyScreen() {
         {repeatUnit === "week" ? (
           <View style={[styles.section, { borderBottomColor: theme.border }]}>
             <ThemedText type="body" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-              Repeat on
+              {Copy.repeatFrequency.repeatOn}
             </ThemedText>
             <View style={styles.daysRow}>
               {DAYS.map((day, index) => {
@@ -180,7 +181,7 @@ export default function RepeatFrequencyScreen() {
 
         <View style={styles.section}>
           <ThemedText type="body" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-            Ends
+            {Copy.repeatFrequency.ends}
           </ThemedText>
           
           <Pressable 
@@ -200,7 +201,7 @@ export default function RepeatFrequencyScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={styles.radioLabel}>
-              Never
+              {Copy.common.never}
             </ThemedText>
           </Pressable>
 
@@ -222,7 +223,7 @@ export default function RepeatFrequencyScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={styles.radioLabel}>
-              On
+              {Copy.common.on}
             </ThemedText>
             <Pressable 
               style={[styles.dateButton, { borderColor: theme.border }]}
@@ -254,7 +255,7 @@ export default function RepeatFrequencyScreen() {
               ) : null}
             </View>
             <ThemedText type="body" style={styles.radioLabel}>
-              After
+              {Copy.common.after}
             </ThemedText>
             <View style={[styles.occurrenceInput, { borderColor: theme.border }]}>
               <TextInput
@@ -267,7 +268,7 @@ export default function RepeatFrequencyScreen() {
               />
             </View>
             <ThemedText type="body" style={{ marginLeft: Spacing.sm }}>
-              occurrence
+              {Copy.common.occurrence}
             </ThemedText>
           </Pressable>
         </View>
@@ -292,7 +293,7 @@ export default function RepeatFrequencyScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <ThemedText type="body">Day</ThemedText>
+              <ThemedText type="body">{Copy.common.day}</ThemedText>
               {repeatUnit === "day" ? (
                 <Feather name="check" size={20} color={theme.primary} />
               ) : null}
@@ -305,7 +306,7 @@ export default function RepeatFrequencyScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
             >
-              <ThemedText type="body">Week</ThemedText>
+              <ThemedText type="body">{Copy.common.week}</ThemedText>
               {repeatUnit === "week" ? (
                 <Feather name="check" size={20} color={theme.primary} />
               ) : null}
@@ -334,7 +335,7 @@ export default function RepeatFrequencyScreen() {
           <View style={[styles.datePickerModal, { backgroundColor: theme.backgroundDefault }]}>
             <View style={styles.modalHeader}>
               <ThemedText type="h3" style={{ fontWeight: "600" }}>
-                Select end date
+                {Copy.repeatFrequency.selectEndDate}
               </ThemedText>
             </View>
             {Platform.OS === "web" ? (
@@ -364,14 +365,14 @@ export default function RepeatFrequencyScreen() {
                 style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]}
                 onPress={() => setShowEndDatePicker(false)}
               >
-                <ThemedText type="body">Cancel</ThemedText>
+                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
               </Pressable>
               <Pressable 
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => setShowEndDatePicker(false)}
               >
                 <ThemedText type="body" style={{ color: theme.buttonText, fontWeight: "600" }}>
-                  Done
+                  {Copy.common.done}
                 </ThemedText>
               </Pressable>
             </View>

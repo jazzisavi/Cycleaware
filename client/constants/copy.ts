@@ -70,8 +70,8 @@ export const Copy = {
   createCycleReminder: {
     headerTitle: "Create Cycle Reminder",
     editHeaderTitle: "Edit Reminder",
-    titlePlaceholder: "Add reminder title",
-    notesPlaceholder: "Add medication notes",
+    addTitlePlaceholder: "Add reminder title",
+    addNotesPlaceholder: "Add medication notes",
     addDaysOfCycle: "Add days of cycle",
     cycleStartsToday: "Cycle starts today",
     cycleStartsTomorrow: "Cycle starts tomorrow",
@@ -81,6 +81,9 @@ export const Copy = {
     endsOn: (date: string) => `Ends on ${date}`,
     addEndDate: "Add end date",
     addReminderTime: "Add reminder time",
+    remindMeAt: (time: string) => `Remind me at ${time}`,
+    setReminderTimeTitle: "Set reminder time",
+    timeFormatHint: "Enter time in 24-hour format (e.g., 09:00)",
     deleteReminder: "Delete Reminder",
   },
 
@@ -88,18 +91,21 @@ export const Copy = {
   createCalendarReminder: {
     headerTitle: "Create Calendar Reminder",
     editHeaderTitle: "Edit Reminder",
-    titlePlaceholder: "Add reminder title",
-    notesPlaceholder: "Add medication notes",
+    addTitlePlaceholder: "Add reminder title",
+    addNotesPlaceholder: "Add medication notes",
     repeatFrequency: "Repeat frequency",
     startsOn: "Starts on",
     addReminderTime: "Add reminder time",
+    remindMeAt: (time: string) => `Remind me at ${time}`,
+    setReminderTimeTitle: "Set reminder time",
+    timeFormatHint: "Enter time in 24-hour format (e.g., 14:30)",
     deleteReminder: "Delete Reminder",
   },
 
   // Sound Settings (shared between both create screens)
   soundSettings: {
     makeSomeNoise: "Make some noise",
-    makeSomeNoiseDescription: "Plays your default notification sound",
+    playsDefaultSound: "Plays your default notification sound",
   },
 
   // Repeating Days Screen
