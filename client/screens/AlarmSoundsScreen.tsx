@@ -11,21 +11,22 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 
+type SoundId = keyof typeof Copy.alarmSounds.sounds;
+
 interface AlarmSound {
-  id: string;
-  name: string;
+  id: SoundId;
   systemName: string;
 }
 
 const ALARM_SOUNDS: AlarmSound[] = [
-  { id: "default", name: "Default", systemName: "default" },
-  { id: "chime", name: "Chime", systemName: "chime" },
-  { id: "bell", name: "Bell", systemName: "bell" },
-  { id: "digital", name: "Digital", systemName: "digital" },
-  { id: "gentle", name: "Gentle Wake", systemName: "gentle" },
-  { id: "classic", name: "Classic", systemName: "classic" },
-  { id: "melody", name: "Melody", systemName: "melody" },
-  { id: "vibrate", name: "Vibrate Only", systemName: "vibrate" },
+  { id: "default", systemName: "default" },
+  { id: "chime", systemName: "chime" },
+  { id: "bell", systemName: "bell" },
+  { id: "digital", systemName: "digital" },
+  { id: "gentle", systemName: "gentle" },
+  { id: "classic", systemName: "classic" },
+  { id: "melody", systemName: "melody" },
+  { id: "vibrate", systemName: "vibrate" },
 ];
 
 export default function AlarmSoundsScreen() {
@@ -81,7 +82,7 @@ export default function AlarmSoundsScreen() {
             <View style={[styles.radioOuter, { borderColor: theme.border }]} />
           )}
           <ThemedText type="body" style={{ marginLeft: Spacing.md }}>
-            {item.name}
+            {Copy.alarmSounds.sounds[item.id]}
           </ThemedText>
         </View>
         <Pressable

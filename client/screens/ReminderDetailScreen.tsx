@@ -102,7 +102,7 @@ export default function ReminderDetailScreen() {
       return Copy.reminderDetail.everyNDays(reminder.cycleIntervalDays || 1);
     }
     if (reminder.weeklyRepeatDays && reminder.weeklyRepeatDays.length > 0) {
-      const days = (reminder.weeklyRepeatDays as number[]).map((d) => WEEKDAYS[d].slice(0, 3));
+      const days = (reminder.weeklyRepeatDays as unknown as number[]).map((d) => WEEKDAYS[d].slice(0, 3));
       return Copy.reminderDetail.everyDays(days.join(", "));
     }
     return Copy.reminderDetail.customSchedule;
