@@ -380,29 +380,36 @@ export default function CreateCalendarReminderScreen() {
           </ThemedText>
         </Pressable>
 
-        {/* Reminder times */}
-        {reminderTimes.map((reminderTime, index) => (
-          <Pressable 
-            key={index}
-            style={[styles.row, styles.timeRow, { borderBottomColor: theme.border }]}
-            onPress={() => handleOpenTimePicker(index)}
-            testID={`time-row-${index}`}
-          >
-            <ThemedText type="body" style={{ color: theme.text }}>
-              Remind me at {formatTime(reminderTime)}
-            </ThemedText>
-          </Pressable>
-        ))}
+        {/* Reminder times group */}
+        <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
+          <View style={styles.groupIconContainer}>
+            <Feather name="bell" size={20} color={theme.textSecondary} />
+          </View>
+          <View style={styles.groupContent}>
+            {reminderTimes.map((reminderTime, index) => (
+              <Pressable 
+                key={index}
+                style={[styles.groupRow, styles.timeRow]}
+                onPress={() => handleOpenTimePicker(index)}
+                testID={`time-row-${index}`}
+              >
+                <ThemedText type="body" style={{ color: theme.text }}>
+                  Remind me at {formatTime(reminderTime)}
+                </ThemedText>
+              </Pressable>
+            ))}
 
-        {/* Add reminder time */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => handleOpenTimePicker(null)}
-        >
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Add reminder time
-          </ThemedText>
-        </Pressable>
+            {/* Add reminder time */}
+            <Pressable 
+              style={styles.groupRow}
+              onPress={() => handleOpenTimePicker(null)}
+            >
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                Add reminder time
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
 
         {/* Time Picker - Android uses native picker, iOS/web use modal */}
         {showTimePicker && Platform.OS === "android" && (
@@ -593,6 +600,21 @@ const styles = StyleSheet.create({
   row: {
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
+  },
+  groupContainer: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    paddingVertical: Spacing.md,
+  },
+  groupIconContainer: {
+    width: 32,
+    paddingTop: Spacing.sm,
+  },
+  groupContent: {
+    flex: 1,
+  },
+  groupRow: {
+    paddingVertical: Spacing.sm,
   },
   timeRow: {
     flexDirection: "row",
