@@ -553,7 +553,7 @@ export default function CreateReminderScreen() {
 
         {/* Notes Group */}
         <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
-          <View style={styles.groupIconContainer}>
+          <View style={[styles.groupIconContainer, { paddingTop: 0 }]}>
             <Feather name="align-left" size={20} color={theme.textSecondary} />
           </View>
           <View style={styles.groupContent}>
