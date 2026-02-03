@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -46,6 +46,16 @@ export default function CreateCalendarReminderScreen() {
   const [ends, setEnds] = useState<"never" | "on" | "after">(params.ends || "never");
   const [endDate, setEndDate] = useState<string>(params.endDate || new Date().toISOString());
   const [occurrences, setOccurrences] = useState(params.occurrences || 1);
+
+  const titleInputRef = useRef<TextInput>(null);
+
+  // Auto-focus title input on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (params.repeatInterval !== undefined) setRepeatInterval(params.repeatInterval);
@@ -318,6 +328,7 @@ export default function CreateCalendarReminderScreen() {
         {/* Title Input */}
         <View style={styles.inputContainer}>
           <TextInput
+            ref={titleInputRef}
             style={[styles.titleInput, { color: theme.text }]}
             placeholder="Add reminder title"
             placeholderTextColor={theme.textTertiary}

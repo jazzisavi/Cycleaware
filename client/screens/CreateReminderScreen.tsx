@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -45,6 +45,16 @@ export default function CreateReminderScreen() {
   const [notes, setNotes] = useState("");
   const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const titleInputRef = useRef<TextInput>(null);
+
+  // Auto-focus title input on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch reminder data when editing
   const { data: reminderData } = useQuery<Reminder>({
@@ -383,6 +393,7 @@ export default function CreateReminderScreen() {
         {/* Title Input */}
         <View style={styles.inputContainer}>
           <TextInput
+            ref={titleInputRef}
             style={[styles.titleInput, { color: theme.text }]}
             placeholder="Add reminder title"
             placeholderTextColor={theme.textTertiary}
