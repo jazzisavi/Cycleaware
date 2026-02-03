@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   },
   soundRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     paddingVertical: Spacing.md,
   },
   checkbox: {
