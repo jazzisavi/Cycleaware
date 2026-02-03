@@ -143,10 +143,13 @@ export default function CreateReminderScreen() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log("Creating reminder with data:", JSON.stringify(data));
       const response = await apiRequest("POST", "/api/reminders", data);
+      console.log("Create reminder response status:", response.status);
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      console.log("Reminder created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate("Main", { screen: "Reminders" });
@@ -251,7 +254,11 @@ export default function CreateReminderScreen() {
     reminderTimes.length > 0;
 
   const handleSave = () => {
+    console.log("handleSave called, canSave:", canSave);
+    console.log("Form state:", { title: title.trim(), cycleDayStart, cycleDayEnd, startsOn, ends, reminderTimesCount: reminderTimes.length });
+    
     if (!canSave) {
+      console.log("Cannot save - validation failed");
       return;
     }
 
