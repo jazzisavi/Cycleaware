@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { 
   setupNotificationCategories, 
   setupNotificationResponseListener,
+  setupNotificationReceivedListener,
   handleNotificationAction 
 } from "@/services/notifications";
 
@@ -21,12 +22,15 @@ export default function App() {
   useEffect(() => {
     setupNotificationCategories();
     
-    let cleanup: (() => void) | null = null;
+    let responseCleanup: (() => void) | null = null;
+    let receivedCleanup: (() => void) | null = null;
     
-    const setupListener = async () => {
-      cleanup = await setupNotificationResponseListener(
-        async (actionId, reminderId, reminderTitle) => {
-          const result = await handleNotificationAction(actionId, reminderId, reminderTitle);
+    const setupListeners = async () => {
+      receivedCleanup = await setupNotificationReceivedListener();
+      
+      responseCleanup = await setupNotificationResponseListener(
+        async (actionId, reminderId, reminderTitle, soundEnabled) => {
+          const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled);
           if (result.success && result.message) {
             console.log(result.message);
           }
@@ -34,10 +38,11 @@ export default function App() {
       );
     };
     
-    setupListener();
+    setupListeners();
     
     return () => {
-      if (cleanup) cleanup();
+      if (responseCleanup) responseCleanup();
+      if (receivedCleanup) receivedCleanup();
     };
   }, []);
 

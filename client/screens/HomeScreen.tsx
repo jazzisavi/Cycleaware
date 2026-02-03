@@ -23,6 +23,7 @@ import { Card } from "@/components/Card";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/Button";
 import { apiRequest } from "@/lib/query-client";
+import { stopAlarm } from "@/services/notifications";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface Reminder {
@@ -74,7 +75,8 @@ export default function HomeScreen() {
     },
   });
 
-  const handleComplete = (id: number) => {
+  const handleComplete = async (id: number) => {
+    await stopAlarm();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCompletedIds(prev => new Set(prev).add(id));
     completeMutation.mutate(id);
