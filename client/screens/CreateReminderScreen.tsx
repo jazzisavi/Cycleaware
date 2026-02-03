@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput, Modal } from "react-native";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput, Modal, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -150,14 +150,16 @@ export default function CreateReminderScreen() {
     },
     onSuccess: async (data) => {
       console.log("Reminder created successfully:", data);
+      Alert.alert("DEBUG", "Save successful! Navigating...");
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Request notification permission after save completes
       requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Failed to create reminder:", error);
+      Alert.alert("Save Error", `Failed to save: ${error?.message || String(error)}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     },
   });
@@ -168,14 +170,16 @@ export default function CreateReminderScreen() {
       return response.json();
     },
     onSuccess: () => {
+      Alert.alert("DEBUG", "Update successful! Navigating...");
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Request notification permission after save completes
       requestPermission();
       navigation.navigate("Main", { screen: "Reminders" });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Failed to update reminder:", error);
+      Alert.alert("Update Error", `Failed to update: ${error?.message || String(error)}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     },
   });
