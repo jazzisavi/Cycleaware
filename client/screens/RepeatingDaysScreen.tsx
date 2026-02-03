@@ -95,36 +95,7 @@ export default function RepeatingDaysScreen() {
       </View>
 
       <View style={[styles.content, { paddingBottom: insets.bottom + Spacing.xl }]}>
-        {/* Day Range Selector */}
-        <View style={styles.dayRangeContainer}>
-          <View style={[styles.dayInput, { borderColor: theme.border }]}>
-            <TextInput
-              style={[styles.dayInputText, { color: theme.text }]}
-              value={String(dayStart)}
-              onChangeText={(text) => setDayStart(Number(text) || 14)}
-              keyboardType="number-pad"
-              maxLength={2}
-            />
-          </View>
-          <ThemedText type="body" style={styles.toText}>to</ThemedText>
-          <View style={[styles.dayInput, { borderColor: theme.border }]}>
-            <TextInput
-              style={[styles.dayInputText, { color: theme.text }]}
-              value={String(dayEnd)}
-              onChangeText={(text) => setDayEnd(Number(text) || 28)}
-              keyboardType="number-pad"
-              maxLength={2}
-            />
-          </View>
-          <ThemedText type="body" style={styles.daysLabel}>days</ThemedText>
-        </View>
-
-        {/* Description */}
-        <ThemedText type="body" style={[styles.description, { color: theme.textTertiary }]}>
-          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sap
-        </ThemedText>
-
-        {/* Starts on Section */}
+        {/* Starts on Section - moved to top */}
         <View style={styles.section}>
           <ThemedText type="body" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
             Cycle starts
@@ -211,6 +182,35 @@ export default function RepeatingDaysScreen() {
             />
           )}
         </View>
+
+        {/* Day Range Selector */}
+        <View style={styles.dayRangeContainer}>
+          <View style={[styles.dayInput, { borderColor: theme.border }]}>
+            <TextInput
+              style={[styles.dayInputText, { color: theme.text }]}
+              value={String(dayStart)}
+              onChangeText={(text) => setDayStart(Number(text) || 14)}
+              keyboardType="number-pad"
+              maxLength={2}
+            />
+          </View>
+          <ThemedText type="body" style={styles.toText}>to</ThemedText>
+          <View style={[styles.dayInput, { borderColor: theme.border }]}>
+            <TextInput
+              style={[styles.dayInputText, { color: theme.text }]}
+              value={String(dayEnd)}
+              onChangeText={(text) => setDayEnd(Number(text) || 28)}
+              keyboardType="number-pad"
+              maxLength={2}
+            />
+          </View>
+          <ThemedText type="body" style={styles.daysLabel}>days</ThemedText>
+        </View>
+
+        {/* Description */}
+        <ThemedText type="body" style={[styles.description, { color: theme.textTertiary }]}>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sap
+        </ThemedText>
 
         {/* Ends Section */}
         <View style={styles.section}>
