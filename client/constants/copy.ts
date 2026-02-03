@@ -107,7 +107,7 @@ export const Copy = {
   // Sound Settings (shared between both create screens)
   soundSettings: {
     makeSomeNoise: "Make some noise",
-    playsDefaultSound: "Plays your default notification sound",
+    playsDefaultSound: "An alarm will sound until you dismiss the notification",
   },
 
   // Repeating Days Screen

@@ -39,7 +39,7 @@ export default function CreateCalendarReminderScreen() {
   const [tempTime, setTempTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
 
   const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval || 1);
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");

@@ -44,7 +44,7 @@ export default function CreateReminderScreen() {
   const [tempTime, setTempTime] = useState<Date>(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const titleInputRef = useRef<TextInput>(null);
