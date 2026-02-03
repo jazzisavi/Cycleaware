@@ -91,7 +91,7 @@ class AlarmServiceClass {
     }
   }
 
-  async playPreview(soundId: AlarmSoundId): Promise<void> {
+  async playPreview(soundId: AlarmSoundId, durationMs: number = 4000): Promise<void> {
     await this.stopPreview();
 
     try {
@@ -102,7 +102,7 @@ class AlarmServiceClass {
       const { sound: previewAudio } = await Audio.Sound.createAsync(
         soundFile,
         {
-          isLooping: false,
+          isLooping: true,
           shouldPlay: true,
           volume: 1.0,
         }
@@ -111,11 +111,9 @@ class AlarmServiceClass {
       this.previewSound = previewAudio;
       this.isPreviewing = true;
 
-      previewAudio.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          this.stopPreview();
-        }
-      });
+      setTimeout(() => {
+        this.stopPreview();
+      }, durationMs);
     } catch (error) {
       console.error("Error previewing sound:", error);
     }

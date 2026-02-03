@@ -65,7 +65,7 @@ export default function AlarmSoundsScreen() {
       
       setTimeout(() => {
         setPlayingSound(null);
-      }, 3000);
+      }, 4000);
     }
   };
 
