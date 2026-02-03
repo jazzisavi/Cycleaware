@@ -566,10 +566,6 @@ export default function CreateReminderScreen() {
 
         {/* Alarm type */}
         <View style={styles.alarmSection}>
-          <ThemedText type="body" style={[styles.alarmTitle, { color: theme.text }]}>
-            Alarm type
-          </ThemedText>
-
           <Pressable 
             style={styles.radioRow}
             onPress={() => {
