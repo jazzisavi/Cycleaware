@@ -53,8 +53,9 @@ export const reminders = pgTable("reminders", {
   reminderTime: text("reminder_time").notNull(), // Primary time HH:MM format
   reminderTimes: jsonb("reminder_times").$type<string[]>(), // Additional times ["HH:MM", "HH:MM"]
   
-  // Alarm settings
-  alarmType: text("alarm_type").default("notification"), // notification or alarm
+  // Sound settings
+  alarmType: text("alarm_type").default("notification"), // deprecated - kept for compatibility
+  soundEnabled: boolean("sound_enabled").default(true).notNull(), // whether to play sound with notification
   
   // Next occurrence
   nextOccurrence: timestamp("next_occurrence"),

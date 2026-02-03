@@ -51,7 +51,7 @@ export default function RepeatingDaysScreen() {
       title: route.params?.title,
       notes: route.params?.notes,
       reminderTimes: route.params?.reminderTimes,
-      alarmType: route.params?.alarmType,
+      soundEnabled: route.params?.soundEnabled,
       dayStart,
       dayEnd,
       startsOn,

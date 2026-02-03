@@ -26,7 +26,7 @@ export type RootStackParamList = {
     title?: string;
     notes?: string;
     reminderTimes?: string[];
-    alarmType?: "notification" | "alarm";
+    soundEnabled?: boolean;
     dayStart?: number;
     dayEnd?: number;
     startsOn?: "today" | "tomorrow" | "on";
@@ -56,7 +56,7 @@ export type RootStackParamList = {
     title?: string;
     notes?: string;
     reminderTimes?: string[];
-    alarmType?: "notification" | "alarm";
+    soundEnabled?: boolean;
     dayStart?: number;
     dayEnd?: number;
     startsOn?: "today" | "tomorrow" | "on";

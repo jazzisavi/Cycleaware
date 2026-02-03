@@ -43,7 +43,7 @@ export default function CreateReminderScreen() {
   const [tempTime, setTempTime] = useState<Date>(new Date(new Date().setHours(9, 0, 0, 0)));
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [notes, setNotes] = useState("");
-  const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const titleInputRef = useRef<TextInput>(null);
@@ -67,7 +67,7 @@ export default function CreateReminderScreen() {
     if (reminderData && isEditMode && !isLoaded) {
       setTitle(reminderData.title || "");
       setNotes(reminderData.notes || "");
-      setAlarmType((reminderData.alarmType as "notification" | "alarm") || "notification");
+      setSoundEnabled(reminderData.soundEnabled ?? true);
       setCycleDayStart(reminderData.cycleDayStart || 14);
       setCycleDayEnd(reminderData.cycleDayEnd || 28);
       
@@ -121,7 +121,7 @@ export default function CreateReminderScreen() {
     if (route.params && !isEditMode) {
       if (route.params.title !== undefined) setTitle(route.params.title);
       if (route.params.notes !== undefined) setNotes(route.params.notes);
-      if (route.params.alarmType !== undefined) setAlarmType(route.params.alarmType);
+      if (route.params.soundEnabled !== undefined) setSoundEnabled(route.params.soundEnabled);
       if (route.params.reminderTimes !== undefined) {
         const times = route.params.reminderTimes.map((t) => {
           const [hours, minutes] = t.split(":").map(Number);
@@ -290,7 +290,7 @@ export default function CreateReminderScreen() {
       cycleDayEnd: cycleDayEnd || 28,
       cycleStartDate: cycleStartDateValue.toISOString(),
       cycleEndDate: ends === "on" && endDate ? endDate.toISOString() : null,
-      alarmType,
+      soundEnabled,
       isActive: true,
     };
 
@@ -315,7 +315,7 @@ export default function CreateReminderScreen() {
       title,
       notes,
       reminderTimes: reminderTimesStrings,
-      alarmType,
+      soundEnabled,
       dayStart: cycleDayStart || 14,
       dayEnd: cycleDayEnd || 28,
       startsOn: startsOn || "today",
@@ -564,48 +564,36 @@ export default function CreateReminderScreen() {
           />
         </View>
 
-        {/* Alarm type */}
+        {/* Sound toggle */}
         <View style={styles.alarmSection}>
           <Pressable 
-            style={styles.radioRow}
+            style={styles.soundRow}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setAlarmType("notification");
+              setSoundEnabled(!soundEnabled);
             }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: soundEnabled }}
+            accessibilityLabel="Make some noise"
+            testID="checkbox-sound-enabled"
           >
             <View style={[
-              styles.radio,
+              styles.checkbox,
               { borderColor: theme.text },
-              alarmType === "notification" && { borderColor: theme.primary },
+              soundEnabled && { backgroundColor: theme.primary, borderColor: theme.primary },
             ]}>
-              {alarmType === "notification" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
+              {soundEnabled ? (
+                <Feather name="check" size={14} color="#fff" />
               ) : null}
             </View>
-            <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Notification
-            </ThemedText>
-          </Pressable>
-
-          <Pressable 
-            style={styles.radioRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setAlarmType("alarm");
-            }}
-          >
-            <View style={[
-              styles.radio,
-              { borderColor: theme.text },
-              alarmType === "alarm" && { borderColor: theme.primary },
-            ]}>
-              {alarmType === "alarm" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
-              ) : null}
+            <View style={{ marginLeft: Spacing.md, flex: 1 }}>
+              <ThemedText type="body" style={{ color: theme.text }}>
+                Make some noise
+              </ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: 2 }}>
+                Plays your default notification sound
+              </ThemedText>
             </View>
-            <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Alarm
-            </ThemedText>
           </Pressable>
         </View>
 
@@ -688,6 +676,19 @@ const styles = StyleSheet.create({
   alarmTitle: {
     fontWeight: "500",
     marginBottom: Spacing.lg,
+  },
+  soundRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   radioRow: {
     flexDirection: "row",

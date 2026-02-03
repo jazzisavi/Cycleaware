@@ -38,7 +38,7 @@ export default function CreateCalendarReminderScreen() {
   const [tempTime, setTempTime] = useState(new Date(new Date().setHours(9, 0, 0, 0)));
   const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
-  const [alarmType, setAlarmType] = useState<"notification" | "alarm">("notification");
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval || 1);
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
@@ -75,7 +75,7 @@ export default function CreateCalendarReminderScreen() {
     if (existingReminder && isEditMode) {
       setTitle(existingReminder.title);
       setNotes(existingReminder.notes || "");
-      setAlarmType((existingReminder.alarmType as "notification" | "alarm") || "notification");
+      setSoundEnabled(existingReminder.soundEnabled ?? true);
       
       if (existingReminder.reminderTimes && existingReminder.reminderTimes.length > 0) {
         const times = existingReminder.reminderTimes.map((t) => {
@@ -255,7 +255,7 @@ export default function CreateCalendarReminderScreen() {
       reminderType: "calendar",
       reminderTime: primaryTimeString,
       reminderTimes: reminderTimesArray,
-      alarmType,
+      soundEnabled,
       isActive: true,
       weeklyRepeatDays: selectedDays,
       repeatInterval,
@@ -510,48 +510,36 @@ export default function CreateCalendarReminderScreen() {
           />
         </View>
 
-        {/* Alarm type */}
+        {/* Sound toggle */}
         <View style={styles.alarmSection}>
           <Pressable 
-            style={styles.radioRow}
+            style={styles.soundRow}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setAlarmType("notification");
+              setSoundEnabled(!soundEnabled);
             }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: soundEnabled }}
+            accessibilityLabel="Make some noise"
+            testID="checkbox-sound-enabled"
           >
             <View style={[
-              styles.radio,
+              styles.checkbox,
               { borderColor: theme.text },
-              alarmType === "notification" && { borderColor: theme.primary },
+              soundEnabled && { backgroundColor: theme.primary, borderColor: theme.primary },
             ]}>
-              {alarmType === "notification" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
+              {soundEnabled ? (
+                <Feather name="check" size={14} color="#fff" />
               ) : null}
             </View>
-            <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Notification
-            </ThemedText>
-          </Pressable>
-
-          <Pressable 
-            style={styles.radioRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setAlarmType("alarm");
-            }}
-          >
-            <View style={[
-              styles.radio,
-              { borderColor: theme.text },
-              alarmType === "alarm" && { borderColor: theme.primary },
-            ]}>
-              {alarmType === "alarm" ? (
-                <View style={[styles.radioInner, { backgroundColor: theme.text }]} />
-              ) : null}
+            <View style={{ marginLeft: Spacing.md, flex: 1 }}>
+              <ThemedText type="body" style={{ color: theme.text }}>
+                Make some noise
+              </ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: 2 }}>
+                Plays your default notification sound
+              </ThemedText>
             </View>
-            <ThemedText type="body" style={{ color: theme.text, marginLeft: Spacing.md }}>
-              Alarm
-            </ThemedText>
           </Pressable>
         </View>
 
@@ -634,6 +622,19 @@ const styles = StyleSheet.create({
   alarmTitle: {
     fontWeight: "500",
     marginBottom: Spacing.lg,
+  },
+  soundRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   radioRow: {
     flexDirection: "row",
