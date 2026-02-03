@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AlarmService } from "./AlarmService";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -76,7 +77,8 @@ export async function scheduleReminderNotification(
   reminderId: string,
   title: string,
   notes: string | null,
-  triggerDate: Date
+  triggerDate: Date,
+  soundEnabled: boolean = false
 ): Promise<string | null> {
   if (!isNotificationsAvailable()) {
     console.log("Notifications not available, skipping schedule");
@@ -90,7 +92,7 @@ export async function scheduleReminderNotification(
       content: {
         title: title,
         body: notes || "Time for your reminder",
-        data: { reminderId },
+        data: { reminderId, soundEnabled },
         categoryIdentifier: "reminder",
       },
       trigger: {
@@ -109,8 +111,11 @@ export async function scheduleReminderNotification(
 export async function handleNotificationAction(
   actionIdentifier: string,
   reminderId: string,
-  reminderTitle: string
+  reminderTitle: string,
+  soundEnabled: boolean = false
 ): Promise<{ success: boolean; message?: string }> {
+  await AlarmService.stopAlarm();
+  
   if (!isNotificationsAvailable()) {
     return { success: false, message: "Notifications not available" };
   }
@@ -125,7 +130,8 @@ export async function handleNotificationAction(
           reminderId,
           reminderTitle,
           `Snoozed - will remind again in ${snoozeDuration} minutes`,
-          snoozeTime
+          snoozeTime,
+          soundEnabled
         );
         
         return { 
@@ -157,8 +163,34 @@ export async function handleNotificationAction(
   }
 }
 
+export async function setupNotificationReceivedListener(): Promise<(() => void) | null> {
+  if (!isNotificationsAvailable()) {
+    return null;
+  }
+
+  try {
+    const Notifications = await import("expo-notifications");
+
+    const subscription = Notifications.addNotificationReceivedListener(
+      async (notification) => {
+        const data = notification.request.content.data;
+        const soundEnabled = data?.soundEnabled as boolean;
+
+        if (soundEnabled) {
+          await AlarmService.playAlarm();
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  } catch (error) {
+    console.error("Error setting up notification received listener:", error);
+    return null;
+  }
+}
+
 export async function setupNotificationResponseListener(
-  onAction: (actionId: string, reminderId: string, reminderTitle: string) => Promise<void>
+  onAction: (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean) => Promise<void>
 ): Promise<(() => void) | null> {
   if (!isNotificationsAvailable()) {
     return null;
@@ -169,13 +201,16 @@ export async function setupNotificationResponseListener(
 
     const subscription = Notifications.addNotificationResponseReceivedListener(
       async (response) => {
+        await AlarmService.stopAlarm();
+        
         const actionIdentifier = response.actionIdentifier;
         const data = response.notification.request.content.data;
         const reminderId = data?.reminderId as string;
         const reminderTitle = response.notification.request.content.title || "";
+        const soundEnabled = data?.soundEnabled as boolean || false;
 
-        if (reminderId && actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
-          await onAction(actionIdentifier, reminderId, reminderTitle);
+        if (reminderId) {
+          await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled);
         }
       }
     );
@@ -185,4 +220,8 @@ export async function setupNotificationResponseListener(
     console.error("Error setting up notification listener:", error);
     return null;
   }
+}
+
+export async function stopAlarm(): Promise<void> {
+  await AlarmService.stopAlarm();
 }
