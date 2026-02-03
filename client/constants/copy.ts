@@ -225,7 +225,6 @@ export const Copy = {
       gentle: "Gentle Wake",
       classic: "Classic",
       melody: "Melody",
-      vibrate: "Vibrate Only",
     },
   },
 

@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FlatList, StyleSheet, View, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useNavigation } from "@react-navigation/native";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,52 +11,76 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
-
-type SoundId = keyof typeof Copy.alarmSounds.sounds;
+import { AlarmService, AlarmSoundId } from "@/services/AlarmService";
 
 interface AlarmSound {
-  id: SoundId;
-  systemName: string;
+  id: AlarmSoundId;
+  labelKey: keyof typeof Copy.alarmSounds.sounds;
 }
 
 const ALARM_SOUNDS: AlarmSound[] = [
-  { id: "default", systemName: "default" },
-  { id: "chime", systemName: "chime" },
-  { id: "bell", systemName: "bell" },
-  { id: "digital", systemName: "digital" },
-  { id: "gentle", systemName: "gentle" },
-  { id: "classic", systemName: "classic" },
-  { id: "melody", systemName: "melody" },
-  { id: "vibrate", systemName: "vibrate" },
+  { id: "default", labelKey: "default" },
+  { id: "chime", labelKey: "chime" },
+  { id: "bell", labelKey: "bell" },
+  { id: "digital", labelKey: "digital" },
+  { id: "gentle", labelKey: "gentle" },
+  { id: "classic", labelKey: "classic" },
+  { id: "melody", labelKey: "melody" },
 ];
 
 export default function AlarmSoundsScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { theme } = useTheme();
-  const [selectedSound, setSelectedSound] = useState("default");
-  const [playingSound, setPlayingSound] = useState<string | null>(null);
+  const [selectedSound, setSelectedSound] = useState<AlarmSoundId>("default");
+  const [playingSound, setPlayingSound] = useState<AlarmSoundId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSelect = (soundId: string) => {
+  useEffect(() => {
+    const loadSelectedSound = async () => {
+      const saved = await AlarmService.getSelectedSound();
+      setSelectedSound(saved);
+    };
+    loadSelectedSound();
+
+    return () => {
+      AlarmService.stopPreview();
+    };
+  }, []);
+
+  const handleSelect = (soundId: AlarmSoundId) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedSound(soundId);
   };
 
-  const handlePlay = async (soundId: string) => {
+  const handlePlay = async (soundId: AlarmSoundId) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     if (playingSound === soundId) {
+      await AlarmService.stopPreview();
       setPlayingSound(null);
     } else {
       setPlayingSound(soundId);
-      // Simulate playing sound
-      setTimeout(() => setPlayingSound(null), 2000);
+      await AlarmService.playPreview(soundId);
+      
+      setTimeout(() => {
+        setPlayingSound(null);
+      }, 3000);
     }
   };
 
   const handleSave = async () => {
     setIsLoading(true);
-    // Save logic will be implemented in Phase 2
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      await AlarmService.stopPreview();
+      await AlarmService.setSelectedSound(selectedSound);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error saving sound:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderItem = ({ item }: { item: AlarmSound }) => {
@@ -72,6 +97,7 @@ export default function AlarmSoundsScreen() {
             borderColor: isSelected ? theme.primary : theme.borderLight,
           },
         ]}
+        testID={`sound-option-${item.id}`}
       >
         <View style={styles.soundInfo}>
           {isSelected ? (
@@ -82,13 +108,14 @@ export default function AlarmSoundsScreen() {
             <View style={[styles.radioOuter, { borderColor: theme.border }]} />
           )}
           <ThemedText type="body" style={{ marginLeft: Spacing.md }}>
-            {Copy.alarmSounds.sounds[item.id]}
+            {Copy.alarmSounds.sounds[item.labelKey]}
           </ThemedText>
         </View>
         <Pressable
           onPress={() => handlePlay(item.id)}
           style={[styles.playButton, { backgroundColor: theme.backgroundSecondary }]}
           hitSlop={8}
+          testID={`play-sound-${item.id}`}
         >
           <Feather
             name={isPlaying ? "pause" : "play"}
