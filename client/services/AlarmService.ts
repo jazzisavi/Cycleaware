@@ -1,8 +1,25 @@
 import { Audio } from "expo-av";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const SELECTED_SOUND_KEY = "@goflo/selected_alarm_sound";
+
+export type AlarmSoundId = "default" | "chime" | "bell" | "digital" | "gentle" | "classic" | "melody";
+
+const SOUND_FILES: Record<AlarmSoundId, any> = {
+  default: require("../../assets/sounds/alarm.mp3"),
+  chime: require("../../assets/sounds/chime.mp3"),
+  bell: require("../../assets/sounds/bell.mp3"),
+  digital: require("../../assets/sounds/digital.mp3"),
+  gentle: require("../../assets/sounds/gentle.mp3"),
+  classic: require("../../assets/sounds/classic.mp3"),
+  melody: require("../../assets/sounds/melody.mp3"),
+};
 
 class AlarmServiceClass {
   private sound: Audio.Sound | null = null;
+  private previewSound: Audio.Sound | null = null;
   private isPlaying: boolean = false;
+  private isPreviewing: boolean = false;
 
   async initialize() {
     try {
@@ -16,14 +33,37 @@ class AlarmServiceClass {
     }
   }
 
-  async playAlarm() {
+  async getSelectedSound(): Promise<AlarmSoundId> {
+    try {
+      const saved = await AsyncStorage.getItem(SELECTED_SOUND_KEY);
+      if (saved && saved in SOUND_FILES) {
+        return saved as AlarmSoundId;
+      }
+    } catch (error) {
+      console.error("Error reading selected sound:", error);
+    }
+    return "default";
+  }
+
+  async setSelectedSound(soundId: AlarmSoundId): Promise<void> {
+    try {
+      await AsyncStorage.setItem(SELECTED_SOUND_KEY, soundId);
+    } catch (error) {
+      console.error("Error saving selected sound:", error);
+    }
+  }
+
+  async playAlarm(soundId?: AlarmSoundId) {
     if (this.isPlaying) return;
 
     try {
       await this.initialize();
       
+      const selectedSound = soundId || await this.getSelectedSound();
+      const soundFile = SOUND_FILES[selectedSound] || SOUND_FILES.default;
+      
       const { sound } = await Audio.Sound.createAsync(
-        require("../../assets/sounds/alarm.mp3"),
+        soundFile,
         {
           isLooping: true,
           shouldPlay: true,
@@ -51,8 +91,55 @@ class AlarmServiceClass {
     }
   }
 
+  async playPreview(soundId: AlarmSoundId): Promise<void> {
+    await this.stopPreview();
+
+    try {
+      await this.initialize();
+      
+      const soundFile = SOUND_FILES[soundId] || SOUND_FILES.default;
+      
+      const { sound: previewAudio } = await Audio.Sound.createAsync(
+        soundFile,
+        {
+          isLooping: false,
+          shouldPlay: true,
+          volume: 1.0,
+        }
+      );
+      
+      this.previewSound = previewAudio;
+      this.isPreviewing = true;
+
+      previewAudio.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          this.stopPreview();
+        }
+      });
+    } catch (error) {
+      console.error("Error previewing sound:", error);
+    }
+  }
+
+  async stopPreview(): Promise<void> {
+    if (!this.previewSound) return;
+
+    try {
+      await this.previewSound.stopAsync();
+      await this.previewSound.unloadAsync();
+      this.previewSound = null;
+      this.isPreviewing = false;
+    } catch (error) {
+      console.error("Error stopping preview:", error);
+    }
+  }
+
   getIsPlaying() {
     return this.isPlaying;
+  }
+
+  getIsPreviewing() {
+    return this.isPreviewing;
   }
 }
 
