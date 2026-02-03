@@ -610,8 +610,7 @@ const styles = StyleSheet.create({
   },
   groupIconContainer: {
     width: 32,
-    paddingTop: 2,
-    alignItems: "flex-start",
+    paddingTop: Spacing.sm,
   },
   groupContent: {
     flex: 1,
