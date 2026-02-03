@@ -338,47 +338,55 @@ export default function CreateCalendarReminderScreen() {
           />
         </View>
 
-        {/* Repeats frequency */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate("RepeatFrequency", {
-              reminderId,
-              repeatInterval,
-              repeatUnit,
-              selectedDays,
-              ends,
-              endDate,
-              occurrences,
-            });
-          }}
-        >
-          <ThemedText type="body" style={{ color: theme.text }}>
-            {getRepeatFrequencyDisplay()}
-          </ThemedText>
-        </Pressable>
+        {/* Schedule Settings Group */}
+        <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
+          <View style={styles.groupIconContainer}>
+            <Feather name="refresh-cw" size={20} color={theme.textSecondary} />
+          </View>
+          <View style={styles.groupContent}>
+            {/* Repeats frequency */}
+            <Pressable 
+              style={styles.groupRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("RepeatFrequency", {
+                  reminderId,
+                  repeatInterval,
+                  repeatUnit,
+                  selectedDays,
+                  ends,
+                  endDate,
+                  occurrences,
+                });
+              }}
+            >
+              <ThemedText type="body" style={{ color: theme.text }}>
+                {getRepeatFrequencyDisplay()}
+              </ThemedText>
+            </Pressable>
 
-        {/* End date */}
-        <Pressable 
-          style={[styles.row, { borderBottomColor: theme.border }]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate("RepeatFrequency", {
-              reminderId,
-              repeatInterval,
-              repeatUnit,
-              selectedDays,
-              ends,
-              endDate,
-              occurrences,
-            });
-          }}
-        >
-          <ThemedText type="body" style={{ color: theme.text }}>
-            {getEndDateDisplay()}
-          </ThemedText>
-        </Pressable>
+            {/* End date */}
+            <Pressable 
+              style={styles.groupRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("RepeatFrequency", {
+                  reminderId,
+                  repeatInterval,
+                  repeatUnit,
+                  selectedDays,
+                  ends,
+                  endDate,
+                  occurrences,
+                });
+              }}
+            >
+              <ThemedText type="body" style={{ color: theme.text }}>
+                {getEndDateDisplay()}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
 
         {/* Reminder times group */}
         <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
