@@ -10,6 +10,7 @@ import { Button } from "@/components/Button";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -43,21 +44,21 @@ export default function ProfileScreen() {
             style={styles.avatar}
           />
           <ThemedText type="link" style={styles.changePhoto}>
-            Change Photo
+            {Copy.profile.changePhoto}
           </ThemedText>
         </View>
 
-        <SectionHeader title="Personal Information" />
+        <SectionHeader title={Copy.profile.personalInfoSection} />
         <TextInput
-          label="Display Name"
-          placeholder="Enter your name"
+          label={Copy.profile.displayNameLabel}
+          placeholder={Copy.profile.displayNamePlaceholder}
           value={displayName}
           onChangeText={setDisplayName}
           testID="input-display-name"
         />
         <TextInput
-          label="Email Address"
-          placeholder="Enter your email"
+          label={Copy.profile.emailLabel}
+          placeholder={Copy.profile.emailPlaceholder}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -65,18 +66,18 @@ export default function ProfileScreen() {
           testID="input-email"
         />
 
-        <SectionHeader title="Subscription" />
+        <SectionHeader title={Copy.profile.subscriptionSection} />
         <View style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.primary }]}>
           <View style={styles.subscriptionRow}>
-            <ThemedText type="h3">Free Trial</ThemedText>
+            <ThemedText type="h3">{Copy.profile.freeTrialTitle}</ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
               <ThemedText type="caption" style={{ color: theme.success }}>
-                Active
+                {Copy.common.active}
               </ThemedText>
             </View>
           </View>
           <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-            Your trial ends in 30 days. Upgrade to continue using all features.
+            {Copy.profile.trialEndsMessage}
           </ThemedText>
           <Button
             variant="outline"
@@ -84,13 +85,13 @@ export default function ProfileScreen() {
             onPress={() => {}}
             testID="button-upgrade"
           >
-            View Plans
+            {Copy.profile.viewPlans}
           </Button>
         </View>
 
         <View style={styles.saveSection}>
           <Button onPress={handleSave} loading={isLoading} testID="button-save">
-            Save Changes
+            {Copy.profile.saveChanges}
           </Button>
         </View>
       </KeyboardAwareScrollViewCompat>

@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 
 const SNOOZE_OPTIONS = [10, 20, 30, 40, 50, 60, 90, 120];
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
@@ -87,10 +88,10 @@ export default function SnoozeSettingsScreen() {
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
         <ThemedText type="h2" style={styles.title}>
-          Default Snooze Duration
+          {Copy.snoozeSettings.title}
         </ThemedText>
         <ThemedText type="body" style={[styles.description, { color: theme.textSecondary }]}>
-          Choose how long to snooze notifications when you tap the snooze button.
+          {Copy.snoozeSettings.description}
         </ThemedText>
 
         <View style={styles.optionsGrid}>
@@ -148,7 +149,7 @@ export default function SnoozeSettingsScreen() {
         </View>
 
         <Button onPress={handleSave} loading={isLoading} style={styles.saveButton} testID="button-save-snooze">
-          Save Settings
+          {Copy.snoozeSettings.saveButton}
         </Button>
       </ScrollView>
     </ThemedView>

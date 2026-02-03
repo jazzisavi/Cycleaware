@@ -9,6 +9,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import type { NotificationHistory } from "@shared/schema";
 
 export default function HistoryScreen() {
@@ -95,8 +96,8 @@ export default function HistoryScreen() {
   const renderEmpty = () => (
     <EmptyState
       image={require("../../assets/images/empty-history.png")}
-      title="No History Yet"
-      description="Your notification history will appear here once you start receiving reminders."
+      title={Copy.history.noHistoryTitle}
+      description={Copy.history.noHistoryDescription}
     />
   );
 

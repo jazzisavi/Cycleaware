@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import { Card } from "@/components/Card";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/Button";
@@ -116,7 +117,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <AppHeader title="Today" />
+      <AppHeader title={Copy.navigation.today} />
 
       {showNotificationWarning ? (
         <Pressable 
@@ -129,7 +130,7 @@ export default function HomeScreen() {
               <Feather name="bell-off" size={16} color="#FFFFFF" />
             </View>
             <Text style={styles.notificationBannerText}>
-              Notifications are off - tap to enable in Settings
+              {Copy.home.notificationBannerText}
             </Text>
             <Feather name="chevron-right" size={18} color="#FFFFFF" />
           </View>
@@ -156,10 +157,10 @@ export default function HomeScreen() {
               <Feather name="x" size={18} color={theme.textTertiary} />
             </Pressable>
             <Text style={[styles.welcomeTitle, { color: theme.text }]}>
-              Welcome message
+              {Copy.home.welcomeTitle}
             </Text>
             <Text style={[styles.welcomeText, { color: theme.textSecondary }]}>
-              Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien is convallis
+              {Copy.home.welcomeText}
             </Text>
           </View>
         ) : null}
@@ -171,7 +172,7 @@ export default function HomeScreen() {
             testID="button-create-reminder"
             icon="plus"
           >
-            Create A Reminder
+            {Copy.home.createReminderButton}
           </Button>
         ) : null}
 
@@ -179,7 +180,7 @@ export default function HomeScreen() {
         {todaysReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Today's Reminders
+              {Copy.home.todaysReminders}
             </Text>
             {todaysReminders.map((reminder) => {
               const isCompleted = completedIds.has(reminder.id);
@@ -224,7 +225,7 @@ export default function HomeScreen() {
                         </Text>
                       ) : null}
                       <Text style={[styles.reminderStatus, { color: theme.textTertiary }]}>
-                        Status: Active
+                        {Copy.home.statusActive}
                       </Text>
                     </View>
                     <Pressable 
@@ -240,7 +241,7 @@ export default function HomeScreen() {
                       testID={`button-complete-${reminder.id}`}
                     >
                       <Text style={styles.takenButtonText}>
-                        {isCompleted ? "Done" : "Take"}
+                        {isCompleted ? Copy.home.doneButton : Copy.home.takeButton}
                       </Text>
                     </Pressable>
                   </View>
@@ -254,7 +255,7 @@ export default function HomeScreen() {
         {upcomingReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Upcoming
+              {Copy.home.upcoming}
             </Text>
             {upcomingReminders.map((reminder) => (
               <Card key={reminder.id} style={styles.reminderCard}>
@@ -310,10 +311,10 @@ export default function HomeScreen() {
           >
             <View style={styles.historyContent}>
               <Text style={[styles.historyTitle, { color: theme.text }]}>
-                Check out your History
+                {Copy.home.checkHistory}
               </Text>
               <Text style={[styles.historyText, { color: theme.textSecondary }]}>
-                You have {incompleteCount} unresolved reminders, check out your history to make sure you're on track
+                {Copy.home.checkHistoryText(incompleteCount)}
               </Text>
             </View>
             <Feather name="chevron-right" size={24} color={theme.textSecondary} />
@@ -329,10 +330,10 @@ export default function HomeScreen() {
               resizeMode="contain"
             />
             <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              No reminders yet
+              {Copy.home.noRemindersTitle}
             </Text>
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-              Create your first reminder to get started
+              {Copy.home.noRemindersSubtitle}
             </Text>
           </View>
         ) : null}

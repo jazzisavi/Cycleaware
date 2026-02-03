@@ -9,6 +9,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 
 interface AlarmSound {
   id: string;
@@ -107,10 +108,10 @@ export default function AlarmSoundsScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <ThemedText type="h2" style={styles.title}>
-              Alarm Sound
+              {Copy.alarmSounds.title}
             </ThemedText>
             <ThemedText type="body" style={[styles.description, { color: theme.textSecondary }]}>
-              Choose the sound that will play when your reminders go off.
+              {Copy.alarmSounds.description}
             </ThemedText>
           </View>
         }
@@ -120,12 +121,12 @@ export default function AlarmSoundsScreen() {
               <View style={[styles.webNotice, { backgroundColor: theme.warning + "20" }]}>
                 <Feather name="alert-circle" size={18} color={theme.warning} />
                 <ThemedText type="small" style={{ color: theme.warning, marginLeft: Spacing.sm, flex: 1 }}>
-                  Sound preview is available in the Expo Go app on your device.
+                  {Copy.alarmSounds.webNotice}
                 </ThemedText>
               </View>
             ) : null}
             <Button onPress={handleSave} loading={isLoading} testID="button-save-sound">
-              Save Selection
+              {Copy.alarmSounds.saveButton}
             </Button>
           </View>
         }

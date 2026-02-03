@@ -46,6 +46,14 @@ shared/           # Code shared between client and server
 - **Demo Auth**: Simplified session-based auth with demo user for development
 - **Reminder Types**: Two distinct reminder modes (cycle and calendar) stored in single table with conditional fields
 - **Component Pattern**: Themed components (`ThemedText`, `ThemedView`) that automatically adapt to color scheme
+- **Centralized Copy**: All user-facing text is managed through `client/constants/copy.ts` for easy maintenance and future i18n support
+
+### Copy File Guidelines
+- **Location**: `client/constants/copy.ts`
+- **Structure**: Organized by screen/feature with nested objects (e.g., `Copy.home.welcomeTitle`, `Copy.profile.saveChanges`)
+- **Dynamic Text**: Use functions for parameterized strings (e.g., `Copy.home.checkHistoryText(count)`)
+- **IMPORTANT**: All new user-facing text MUST be added to the copy file first, then referenced in components
+- **Categories**: `common` (shared), `navigation`, `home`, `typeSelector`, `createCycleReminder`, `createCalendarReminder`, `soundSettings`, `repeatingDays`, `repeatFrequency`, `remindersScreen`, `reminderDetail`, `history`, `more`, `profile`, `snoozeSettings`, `alarmSounds`, `emptyState`, `errors`
 
 ## External Dependencies
 

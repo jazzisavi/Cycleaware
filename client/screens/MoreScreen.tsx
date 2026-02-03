@@ -10,6 +10,7 @@ import { SettingsRow } from "@/components/SettingsRow";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -31,76 +32,76 @@ export default function MoreScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <SectionHeader title="Settings" />
+        <SectionHeader title={Copy.more.settingsSection} />
         <SettingsRow
           icon="clock"
           iconColor={theme.warning}
-          title="History"
-          subtitle="View past notifications"
+          title={Copy.more.historyTitle}
+          subtitle={Copy.more.historySubtitle}
           onPress={() => navigation.navigate("History")}
           testID="row-history"
         />
         <SettingsRow
           icon="pause-circle"
           iconColor={theme.info}
-          title="Snooze Settings"
-          subtitle="Configure snooze duration"
+          title={Copy.more.snoozeTitle}
+          subtitle={Copy.more.snoozeSubtitle}
           onPress={() => navigation.navigate("SnoozeSettings")}
           testID="row-snooze"
         />
         <SettingsRow
           icon="volume-2"
           iconColor={theme.success}
-          title="Alarm Sounds"
-          subtitle="Choose notification sound"
+          title={Copy.more.alarmSoundsTitle}
+          subtitle={Copy.more.alarmSoundsSubtitle}
           onPress={() => navigation.navigate("AlarmSounds")}
           testID="row-sounds"
         />
 
-        <SectionHeader title="Account" />
+        <SectionHeader title={Copy.more.accountSection} />
         <View style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
           <View style={styles.subscriptionHeader}>
-            <ThemedText type="h4">Free Trial</ThemedText>
+            <ThemedText type="h4">{Copy.more.freeTrialTitle}</ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
               <ThemedText type="caption" style={{ color: theme.success }}>
-                Active
+                {Copy.common.active}
               </ThemedText>
             </View>
           </View>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            30 days remaining in your trial period
+            {Copy.more.trialRemaining(30)}
           </ThemedText>
         </View>
 
         <SettingsRow
           icon="user"
           iconColor={theme.primary}
-          title="Profile"
-          subtitle="Manage your account"
+          title={Copy.more.profileTitle}
+          subtitle={Copy.more.profileSubtitle}
           onPress={() => navigation.navigate("Profile")}
           testID="row-profile"
         />
         <SettingsRow
           icon="mail"
           iconColor={theme.textSecondary}
-          title="Email"
-          value="Not set"
+          title={Copy.more.emailTitle}
+          value={Copy.more.emailNotSet}
           onPress={() => navigation.navigate("Profile")}
           testID="row-email"
         />
         <SettingsRow
           icon="log-out"
           iconColor={theme.error}
-          title="Sign Out"
+          title={Copy.more.signOutTitle}
           showChevron={false}
           onPress={() => {}}
           testID="row-signout"
         />
 
-        <SectionHeader title="About" />
+        <SectionHeader title={Copy.more.aboutSection} />
         <SettingsRow
           icon="info"
-          title="Version"
+          title={Copy.more.versionTitle}
           value="1.0.0"
           showChevron={false}
           testID="row-version"

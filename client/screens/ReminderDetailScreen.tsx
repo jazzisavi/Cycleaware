@@ -16,6 +16,7 @@ import { Card } from "@/components/Card";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { Reminder } from "@shared/schema";
@@ -72,7 +73,7 @@ export default function ReminderDetailScreen() {
   if (!reminder) {
     return (
       <ThemedView style={[styles.container, styles.centered]}>
-        <ThemedText type="body">Reminder not found</ThemedText>
+        <ThemedText type="body">{Copy.reminderDetail.reminderNotFound}</ThemedText>
       </ThemedView>
     );
   }
@@ -87,7 +88,7 @@ export default function ReminderDetailScreen() {
   };
 
   const formatNextOccurrence = () => {
-    if (!reminder.nextOccurrence) return "Not scheduled";
+    if (!reminder.nextOccurrence) return Copy.reminderDetail.notScheduled;
     const date = new Date(reminder.nextOccurrence);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
@@ -104,7 +105,7 @@ export default function ReminderDetailScreen() {
       const days = (reminder.weeklyRepeatDays as number[]).map((d) => WEEKDAYS[d].slice(0, 3));
       return `Every ${days.join(", ")}`;
     }
-    return "Custom schedule";
+    return Copy.reminderDetail.customSchedule;
   };
 
   return (
@@ -126,7 +127,7 @@ export default function ReminderDetailScreen() {
             color={reminder.reminderType === "cycle" ? theme.accentCoral : theme.accentMint}
           />
           <ThemedText type="small" style={{ color: reminder.reminderType === "cycle" ? theme.accentCoral : theme.accentMint, marginLeft: Spacing.xs }}>
-            {reminder.reminderType === "cycle" ? "Cycle-Based" : "Calendar-Based"}
+            {reminder.reminderType === "cycle" ? Copy.reminderDetail.cycleBasedLabel : Copy.reminderDetail.calendarBasedLabel}
           </ThemedText>
         </View>
 
@@ -140,7 +141,7 @@ export default function ReminderDetailScreen() {
           </ThemedText>
         ) : null}
 
-        <SectionHeader title="Schedule" />
+        <SectionHeader title={Copy.reminderDetail.scheduleSection} />
         <Card style={styles.scheduleCard}>
           <View style={styles.scheduleRow}>
             <View style={[styles.scheduleIcon, { backgroundColor: theme.primary + "15" }]}>
@@ -148,7 +149,7 @@ export default function ReminderDetailScreen() {
             </View>
             <View>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Time
+                {Copy.reminderDetail.timeLabel}
               </ThemedText>
               <ThemedText type="h4">{formatTime()}</ThemedText>
             </View>
@@ -160,7 +161,7 @@ export default function ReminderDetailScreen() {
             </View>
             <View>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Repeat
+                {Copy.reminderDetail.repeatLabel}
               </ThemedText>
               <ThemedText type="h4">{getRepeatDescription()}</ThemedText>
             </View>
@@ -172,7 +173,7 @@ export default function ReminderDetailScreen() {
             </View>
             <View>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Next Occurrence
+                {Copy.reminderDetail.nextOccurrenceLabel}
               </ThemedText>
               <ThemedText type="h4">{formatNextOccurrence()}</ThemedText>
             </View>
@@ -185,7 +186,7 @@ export default function ReminderDetailScreen() {
             loading={completeMutation.isPending}
             testID="button-complete"
           >
-            Mark as Complete
+            {Copy.reminderDetail.markAsComplete}
           </Button>
           <Button
             variant="outline"
@@ -195,7 +196,7 @@ export default function ReminderDetailScreen() {
             testID="button-delete"
           >
             <ThemedText type="button" style={{ color: theme.error }}>
-              Delete Reminder
+              {Copy.reminderDetail.deleteReminder}
             </ThemedText>
           </Button>
         </View>

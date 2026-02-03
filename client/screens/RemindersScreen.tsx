@@ -25,6 +25,7 @@ import { Button } from "@/components/Button";
 import { AppHeader } from "@/components/AppHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { Reminder } from "@shared/schema";
@@ -112,7 +113,7 @@ export default function RemindersScreen() {
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
 
-    const message = `Are you sure you want to delete ${selectedIds.size} reminder${selectedIds.size > 1 ? "s" : ""}?`;
+    const message = Copy.remindersScreen.deleteConfirmMessage(selectedIds.size);
     
     const performDelete = async () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -128,9 +129,9 @@ export default function RemindersScreen() {
         await performDelete();
       }
     } else {
-      Alert.alert("Delete Reminders", message, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: performDelete },
+      Alert.alert(Copy.remindersScreen.deleteConfirmTitle, message, [
+        { text: Copy.common.cancel, style: "cancel" },
+        { text: Copy.common.delete, style: "destructive", onPress: performDelete },
       ]);
     }
   };
@@ -186,11 +187,11 @@ export default function RemindersScreen() {
 
   const renderEmpty = () => (
     <EmptyState
-      title="No Reminders Yet"
-      description="Create your first reminder to get started with building good habits."
+      title={Copy.remindersScreen.noRemindersTitle}
+      description={Copy.remindersScreen.noRemindersDescription}
       action={
         <Button onPress={handleCreatePress} testID="button-create-first" icon="plus">
-          Create A Reminder
+          {Copy.remindersScreen.createReminderButton}
         </Button>
       }
     />
@@ -247,7 +248,7 @@ export default function RemindersScreen() {
           testID={`button-edit-${item.id}`}
         >
           <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            Edit
+            {Copy.common.edit}
           </ThemedText>
         </Pressable>
       </View>
@@ -265,7 +266,7 @@ export default function RemindersScreen() {
           {isSelecting && selectedIds.size > 0 ? (
             <Pressable onPress={handleDeleteSelected} style={styles.toolbarButton}>
               <ThemedText type="body" style={{ color: theme.error }}>
-                Delete ({selectedIds.size})
+                {Copy.remindersScreen.deleteCount(selectedIds.size)}
               </ThemedText>
             </Pressable>
           ) : (
@@ -286,7 +287,7 @@ export default function RemindersScreen() {
           style={styles.toolbarButton}
         >
           <ThemedText type="body" style={{ color: theme.primary }}>
-            {isSelecting ? (allSelected ? "Deselect all" : "Select all") : "Select all"}
+            {isSelecting ? (allSelected ? Copy.remindersScreen.deselectAll : Copy.remindersScreen.selectAll) : Copy.remindersScreen.selectAll}
           </ThemedText>
         </Pressable>
       </View>
@@ -295,7 +296,7 @@ export default function RemindersScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <AppHeader title="Reminders" />
+      <AppHeader title={Copy.navigation.reminders} />
       <FlatList
         data={reminders}
         renderItem={renderItem}
