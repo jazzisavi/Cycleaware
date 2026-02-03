@@ -497,50 +497,60 @@ export default function CreateCalendarReminderScreen() {
           </View>
         </Modal>
 
-        {/* Add medication notes */}
-        <View style={[styles.row, { borderBottomColor: theme.border }]}>
-          <TextInput
-            style={[styles.notesInput, { color: theme.text }]}
-            placeholder="Add medication notes"
-            placeholderTextColor={theme.textSecondary}
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            testID="input-notes"
-          />
+        {/* Notes Group */}
+        <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
+          <View style={styles.groupIconContainer}>
+            <Feather name="file-text" size={20} color={theme.textSecondary} />
+          </View>
+          <View style={styles.groupContent}>
+            <TextInput
+              style={[styles.notesInput, { color: theme.text }]}
+              placeholder="Add medication notes"
+              placeholderTextColor={theme.textSecondary}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              testID="input-notes"
+            />
+          </View>
         </View>
 
-        {/* Sound toggle */}
-        <View style={styles.alarmSection}>
-          <Pressable 
-            style={styles.soundRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSoundEnabled(!soundEnabled);
-            }}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: soundEnabled }}
-            accessibilityLabel="Make some noise"
-            testID="checkbox-sound-enabled"
-          >
-            <View style={[
-              styles.checkbox,
-              { borderColor: theme.text },
-              soundEnabled && { backgroundColor: theme.primary, borderColor: theme.primary },
-            ]}>
-              {soundEnabled ? (
-                <Feather name="check" size={14} color="#fff" />
-              ) : null}
-            </View>
-            <View style={{ marginLeft: Spacing.md, flex: 1 }}>
-              <ThemedText type="body" style={{ color: theme.text }}>
-                Make some noise
-              </ThemedText>
-              <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: 2 }}>
-                Plays your default notification sound
-              </ThemedText>
-            </View>
-          </Pressable>
+        {/* Sound Group */}
+        <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
+          <View style={styles.groupIconContainer}>
+            <Feather name="volume-2" size={20} color={theme.textSecondary} />
+          </View>
+          <View style={styles.groupContent}>
+            <Pressable 
+              style={styles.soundRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSoundEnabled(!soundEnabled);
+              }}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: soundEnabled }}
+              accessibilityLabel="Make some noise"
+              testID="checkbox-sound-enabled"
+            >
+              <View style={[
+                styles.checkbox,
+                { borderColor: theme.text },
+                soundEnabled && { backgroundColor: theme.primary, borderColor: theme.primary },
+              ]}>
+                {soundEnabled ? (
+                  <Feather name="check" size={14} color="#fff" />
+                ) : null}
+              </View>
+              <View style={{ marginLeft: Spacing.md, flex: 1 }}>
+                <ThemedText type="body" style={{ color: theme.text }}>
+                  Make some noise
+                </ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: 2 }}>
+                  Plays your default notification sound
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
         </View>
 
         {/* Delete button - only show in edit mode */}
