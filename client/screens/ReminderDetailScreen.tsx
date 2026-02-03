@@ -99,11 +99,11 @@ export default function ReminderDetailScreen() {
 
   const getRepeatDescription = () => {
     if (reminder.reminderType === "cycle") {
-      return `Every ${reminder.cycleIntervalDays} day${reminder.cycleIntervalDays && reminder.cycleIntervalDays > 1 ? "s" : ""}`;
+      return Copy.reminderDetail.everyNDays(reminder.cycleIntervalDays || 1);
     }
     if (reminder.weeklyRepeatDays && reminder.weeklyRepeatDays.length > 0) {
       const days = (reminder.weeklyRepeatDays as number[]).map((d) => WEEKDAYS[d].slice(0, 3));
-      return `Every ${days.join(", ")}`;
+      return Copy.reminderDetail.everyDays(days.join(", "));
     }
     return Copy.reminderDetail.customSchedule;
   };

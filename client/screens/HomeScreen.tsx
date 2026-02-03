@@ -214,7 +214,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                       <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
-                        {formatTime(reminder.reminderTime)} today
+                        {Copy.home.timeToday(formatTime(reminder.reminderTime))}
                       </Text>
                       {reminder.notes ? (
                         <Text 
@@ -285,7 +285,7 @@ export default function HomeScreen() {
                       {reminder.title}
                     </Text>
                     <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
-                      {formatDate(reminder.nextOccurrence)} at {formatTime(reminder.reminderTime)}
+                      {Copy.home.dateAtTime(formatDate(reminder.nextOccurrence), formatTime(reminder.reminderTime))}
                     </Text>
                     {reminder.notes ? (
                       <Text 

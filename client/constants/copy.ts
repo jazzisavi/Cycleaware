@@ -54,6 +54,8 @@ export const Copy = {
     noRemindersTitle: "No reminders yet",
     noRemindersSubtitle: "Create your first reminder to get started",
     notificationBannerText: "Notifications are off - tap to enable in Settings",
+    timeToday: (time: string) => `${time} today`,
+    dateAtTime: (date: string, time: string) => `${date} at ${time}`,
   },
 
   // Type Selector Screen
@@ -151,6 +153,8 @@ export const Copy = {
     nextOccurrenceLabel: "Next Occurrence",
     markAsComplete: "Mark as Complete",
     deleteReminder: "Delete Reminder",
+    everyNDays: (days: number) => `Every ${days} day${days > 1 ? "s" : ""}`,
+    everyDays: (daysStr: string) => `Every ${daysStr}`,
   },
 
   // History Screen
