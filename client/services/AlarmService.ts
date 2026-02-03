@@ -3,16 +3,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SELECTED_SOUND_KEY = "@goflo/selected_alarm_sound";
 
-export type AlarmSoundId = "default" | "chime" | "bell" | "digital" | "gentle" | "classic" | "melody";
+export type AlarmSoundId = "morning_glory" | "birdsong" | "marimba" | "xylophone" | "alarm_clock" | "piano" | "harp";
 
 const SOUND_FILES: Record<AlarmSoundId, any> = {
-  default: require("../../assets/sounds/alarm.mp3"),
-  chime: require("../../assets/sounds/chime.mp3"),
-  bell: require("../../assets/sounds/bell.mp3"),
-  digital: require("../../assets/sounds/digital.mp3"),
-  gentle: require("../../assets/sounds/gentle.mp3"),
-  classic: require("../../assets/sounds/classic.mp3"),
-  melody: require("../../assets/sounds/melody.mp3"),
+  morning_glory: require("../../assets/sounds/morning_glory.mp3"),
+  birdsong: require("../../assets/sounds/birdsong.mp3"),
+  marimba: require("../../assets/sounds/marimba.mp3"),
+  xylophone: require("../../assets/sounds/xylophone.mp3"),
+  alarm_clock: require("../../assets/sounds/alarm_clock.mp3"),
+  piano: require("../../assets/sounds/piano.mp3"),
+  harp: require("../../assets/sounds/harp.mp3"),
 };
 
 class AlarmServiceClass {
@@ -42,7 +42,7 @@ class AlarmServiceClass {
     } catch (error) {
       console.error("Error reading selected sound:", error);
     }
-    return "default";
+    return "morning_glory";
   }
 
   async setSelectedSound(soundId: AlarmSoundId): Promise<void> {
@@ -60,7 +60,7 @@ class AlarmServiceClass {
       await this.initialize();
       
       const selectedSound = soundId || await this.getSelectedSound();
-      const soundFile = SOUND_FILES[selectedSound] || SOUND_FILES.default;
+      const soundFile = SOUND_FILES[selectedSound] || SOUND_FILES.morning_glory;
       
       const { sound } = await Audio.Sound.createAsync(
         soundFile,
@@ -97,7 +97,7 @@ class AlarmServiceClass {
     try {
       await this.initialize();
       
-      const soundFile = SOUND_FILES[soundId] || SOUND_FILES.default;
+      const soundFile = SOUND_FILES[soundId] || SOUND_FILES.morning_glory;
       
       const { sound: previewAudio } = await Audio.Sound.createAsync(
         soundFile,

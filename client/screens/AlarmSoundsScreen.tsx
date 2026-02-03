@@ -19,20 +19,20 @@ interface AlarmSound {
 }
 
 const ALARM_SOUNDS: AlarmSound[] = [
-  { id: "default", labelKey: "default" },
-  { id: "chime", labelKey: "chime" },
-  { id: "bell", labelKey: "bell" },
-  { id: "digital", labelKey: "digital" },
-  { id: "gentle", labelKey: "gentle" },
-  { id: "classic", labelKey: "classic" },
-  { id: "melody", labelKey: "melody" },
+  { id: "morning_glory", labelKey: "morning_glory" },
+  { id: "birdsong", labelKey: "birdsong" },
+  { id: "marimba", labelKey: "marimba" },
+  { id: "xylophone", labelKey: "xylophone" },
+  { id: "alarm_clock", labelKey: "alarm_clock" },
+  { id: "piano", labelKey: "piano" },
+  { id: "harp", labelKey: "harp" },
 ];
 
 export default function AlarmSoundsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const [selectedSound, setSelectedSound] = useState<AlarmSoundId>("default");
+  const [selectedSound, setSelectedSound] = useState<AlarmSoundId>("morning_glory");
   const [playingSound, setPlayingSound] = useState<AlarmSoundId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
