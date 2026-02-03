@@ -371,28 +371,16 @@ export default function CreateCalendarReminderScreen() {
 
         {/* Reminder times */}
         {reminderTimes.map((reminderTime, index) => (
-          <View 
+          <Pressable 
             key={index}
             style={[styles.row, styles.timeRow, { borderBottomColor: theme.border }]}
+            onPress={() => handleOpenTimePicker(index)}
+            testID={`time-row-${index}`}
           >
-            <Pressable 
-              style={{ flex: 1 }}
-              onPress={() => handleOpenTimePicker(index)}
-              testID={`time-row-${index}`}
-            >
-              <ThemedText type="body" style={{ color: theme.text }}>
-                Remind me at {formatTime(reminderTime)}
-              </ThemedText>
-            </Pressable>
-            <Pressable 
-              onPress={() => handleRemoveTime(index)}
-              style={[styles.removeButton, { backgroundColor: theme.backgroundSecondary, borderRadius: 12 }]}
-              testID={`remove-time-${index}`}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Feather name="x" size={18} color={theme.textSecondary} />
-            </Pressable>
-          </View>
+            <ThemedText type="body" style={{ color: theme.text }}>
+              Remind me at {formatTime(reminderTime)}
+            </ThemedText>
+          </Pressable>
         ))}
 
         {/* Add reminder time */}
