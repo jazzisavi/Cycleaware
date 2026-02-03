@@ -500,7 +500,7 @@ export default function CreateCalendarReminderScreen() {
         {/* Notes Group */}
         <View style={[styles.groupContainer, { borderBottomColor: theme.border }]}>
           <View style={styles.groupIconContainer}>
-            <Feather name="file-text" size={20} color={theme.textSecondary} />
+            <Feather name="align-left" size={20} color={theme.textSecondary} />
           </View>
           <View style={styles.groupContent}>
             <TextInput
@@ -610,7 +610,8 @@ const styles = StyleSheet.create({
   },
   groupIconContainer: {
     width: 32,
-    paddingTop: Spacing.sm,
+    paddingTop: 2,
+    alignItems: "flex-start",
   },
   groupContent: {
     flex: 1,
