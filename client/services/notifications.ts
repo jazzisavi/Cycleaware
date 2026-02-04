@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AlarmService } from "./AlarmService";
+import { getApiUrl } from "@/lib/query-client";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -42,11 +43,21 @@ export async function setupNotificationCategories(): Promise<void> {
 
     await Notifications.setNotificationCategoryAsync("reminder", [
       {
+        identifier: "take",
+        buttonTitle: "Take",
+        options: {
+          isDestructive: false,
+          isAuthenticationRequired: false,
+          opensAppToForeground: false,
+        },
+      },
+      {
         identifier: "snooze",
         buttonTitle: "Snooze",
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
+          opensAppToForeground: false,
         },
       },
       {
@@ -55,14 +66,7 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-        },
-      },
-      {
-        identifier: "take",
-        buttonTitle: "Take",
-        options: {
-          isDestructive: false,
-          isAuthenticationRequired: false,
+          opensAppToForeground: false,
         },
       },
     ]);
@@ -114,6 +118,8 @@ export async function handleNotificationAction(
   reminderTitle: string,
   soundEnabled: boolean = false
 ): Promise<{ success: boolean; message?: string }> {
+  console.log(`[Notification Action] actionIdentifier: ${actionIdentifier}, reminderId: ${reminderId}`);
+  
   await AlarmService.stopAlarm();
   
   if (!isNotificationsAvailable()) {
@@ -123,6 +129,7 @@ export async function handleNotificationAction(
   try {
     switch (actionIdentifier) {
       case "snooze": {
+        console.log("[Notification Action] Handling snooze");
         const snoozeDuration = await getSnoozeDuration();
         const snoozeTime = new Date(Date.now() + snoozeDuration * 60 * 1000);
         
@@ -141,6 +148,7 @@ export async function handleNotificationAction(
       }
       
       case "skip": {
+        console.log("[Notification Action] Handling skip");
         return { 
           success: true, 
           message: "Reminder skipped" 
@@ -148,14 +156,42 @@ export async function handleNotificationAction(
       }
       
       case "take": {
-        return { 
-          success: true, 
-          message: "Marked as taken" 
-        };
+        console.log("[Notification Action] Handling take - calling API");
+        try {
+          const baseUrl = getApiUrl();
+          const url = new URL(`/api/reminders/${reminderId}/complete`, baseUrl);
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          });
+          
+          if (response.ok) {
+            console.log("[Notification Action] Take API call succeeded");
+            return { 
+              success: true, 
+              message: "Marked as taken" 
+            };
+          } else {
+            console.log("[Notification Action] Take API call failed:", response.status);
+            return { 
+              success: false, 
+              message: "Failed to mark as taken" 
+            };
+          }
+        } catch (apiError) {
+          console.error("[Notification Action] Take API error:", apiError);
+          return { 
+            success: false, 
+            message: "Error marking as taken" 
+          };
+        }
       }
       
+      case "expo.modules.notifications.actions.DEFAULT":
       default:
-        return { success: false, message: "Unknown action" };
+        console.log(`[Notification Action] Default/unknown action: ${actionIdentifier}`);
+        return { success: true, message: "Notification tapped" };
     }
   } catch (error) {
     console.error("Error handling notification action:", error);
