@@ -311,14 +311,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/reminders/:id", async (req: Request, res: Response) => {
     try {
-      const reminder = await storage.updateReminder(req.params.id, req.body);
+      // Convert date strings to Date objects (same as create endpoint)
+      let nextOccurrence: Date | null = null;
+      
+      if (req.body.reminderType === "cycle" && req.body.cycleDayStart && req.body.cycleDayEnd && req.body.cycleStartDate) {
+        const cycleConfig = {
+          cycleDayStart: req.body.cycleDayStart,
+          cycleDayEnd: req.body.cycleDayEnd,
+          cycleStartDate: new Date(req.body.cycleStartDate),
+          cycleEndDate: req.body.cycleEndDate ? new Date(req.body.cycleEndDate) : null,
+        };
+        
+        const reminderTimes = req.body.reminderTimes || [req.body.reminderTime];
+        const nextTimes = getNextNotificationTimes(cycleConfig, reminderTimes);
+        
+        if (nextTimes.length > 0) {
+          nextOccurrence = nextTimes.reduce((earliest, current) => 
+            current < earliest ? current : earliest
+          );
+        }
+      } else if (req.body.reminderType === "calendar") {
+        nextOccurrence = calculateNextCalendarOccurrence(req.body);
+      }
+      
+      const updateData = {
+        ...req.body,
+        nextOccurrence,
+        cycleStartDate: req.body.cycleStartDate ? new Date(req.body.cycleStartDate) : null,
+        cycleEndDate: req.body.cycleEndDate ? new Date(req.body.cycleEndDate) : null,
+        calendarStartDate: req.body.calendarStartDate ? new Date(req.body.calendarStartDate) : null,
+        calendarEndDate: req.body.calendarEndDate ? new Date(req.body.calendarEndDate) : null,
+      };
+      
+      const reminder = await storage.updateReminder(req.params.id, updateData);
       if (!reminder) {
         return res.status(404).json({ message: "Reminder not found" });
       }
       res.json(reminder);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update reminder error:", error);
-      res.status(500).json({ message: "Failed to update reminder" });
+      console.error("Update reminder error details:", error?.message, error?.stack);
+      console.error("Request body was:", JSON.stringify(req.body, null, 2));
+      res.status(500).json({ message: "Failed to update reminder", error: error?.message });
     }
   });
 

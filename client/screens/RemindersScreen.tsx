@@ -61,7 +61,28 @@ export default function RemindersScreen() {
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       return apiRequest("PUT", `/api/reminders/${id}`, { isActive });
     },
-    onSuccess: () => {
+    onMutate: async ({ id, isActive }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/reminders"] });
+      
+      // Snapshot the previous value
+      const previousReminders = queryClient.getQueryData<Reminder[]>(["/api/reminders"]);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData<Reminder[]>(["/api/reminders"], (old) => 
+        old?.map((r) => r.id === id ? { ...r, isActive } : r) ?? []
+      );
+      
+      return { previousReminders };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousReminders) {
+        queryClient.setQueryData(["/api/reminders"], context.previousReminders);
+      }
+    },
+    onSettled: () => {
+      // Refetch after error or success
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
     },
   });
