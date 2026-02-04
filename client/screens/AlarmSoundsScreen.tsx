@@ -20,12 +20,7 @@ interface AlarmSound {
 
 const ALARM_SOUNDS: AlarmSound[] = [
   { id: "morning_glory", labelKey: "morning_glory" },
-  { id: "birdsong", labelKey: "birdsong" },
-  { id: "marimba", labelKey: "marimba" },
-  { id: "xylophone", labelKey: "xylophone" },
   { id: "alarm_clock", labelKey: "alarm_clock" },
-  { id: "piano", labelKey: "piano" },
-  { id: "harp", labelKey: "harp" },
 ];
 
 export default function AlarmSoundsScreen() {

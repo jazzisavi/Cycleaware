@@ -3,16 +3,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SELECTED_SOUND_KEY = "@goflo/selected_alarm_sound";
 
-export type AlarmSoundId = "morning_glory" | "birdsong" | "marimba" | "xylophone" | "alarm_clock" | "piano" | "harp";
+export type AlarmSoundId = "morning_glory" | "alarm_clock";
 
 const SOUND_FILES: Record<AlarmSoundId, any> = {
   morning_glory: require("../../assets/sounds/morning_glory.mp3"),
-  birdsong: require("../../assets/sounds/birdsong.mp3"),
-  marimba: require("../../assets/sounds/marimba.mp3"),
-  xylophone: require("../../assets/sounds/xylophone.mp3"),
   alarm_clock: require("../../assets/sounds/alarm_clock.mp3"),
-  piano: require("../../assets/sounds/piano.mp3"),
-  harp: require("../../assets/sounds/harp.mp3"),
 };
 
 class AlarmServiceClass {
