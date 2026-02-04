@@ -17,6 +17,7 @@ import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { Reminder } from "@shared/schema";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import { scheduleReminderNotification } from "@/services/notifications";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateCycleReminder">;
@@ -150,11 +151,21 @@ export default function CreateReminderScreen() {
     },
     onSuccess: async (data) => {
       console.log("Reminder created successfully:", data);
-      Alert.alert("DEBUG", "Save successful! Navigating...");
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Request notification permission after save completes
-      requestPermission();
+      
+      // Request notification permission and schedule notification
+      await requestPermission();
+      if (data.nextOccurrence) {
+        await scheduleReminderNotification(
+          data.id,
+          data.title,
+          data.notes || null,
+          new Date(data.nextOccurrence),
+          data.soundEnabled
+        );
+      }
+      
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error: any) => {
@@ -169,12 +180,22 @@ export default function CreateReminderScreen() {
       const response = await apiRequest("PUT", `/api/reminders/${reminderId}`, data);
       return response.json();
     },
-    onSuccess: () => {
-      Alert.alert("DEBUG", "Update successful! Navigating...");
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Request notification permission after save completes
-      requestPermission();
+      
+      // Request notification permission and schedule notification
+      await requestPermission();
+      if (data.nextOccurrence) {
+        await scheduleReminderNotification(
+          data.id,
+          data.title,
+          data.notes || null,
+          new Date(data.nextOccurrence),
+          data.soundEnabled
+        );
+      }
+      
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error: any) => {

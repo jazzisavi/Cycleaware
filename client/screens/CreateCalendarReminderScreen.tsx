@@ -17,6 +17,7 @@ import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import type { Reminder } from "@shared/schema";
+import { scheduleReminderNotification } from "@/services/notifications";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateCalendarReminder">;
@@ -97,12 +98,22 @@ export default function CreateCalendarReminderScreen() {
       console.log("Calendar: Create reminder response status:", response.status);
       return response.json();
     },
-    onSuccess: async () => {
-      Alert.alert("DEBUG", "Calendar save successful! Navigating...");
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Request notification permission after save completes
-      requestPermission();
+      
+      // Request notification permission and schedule notification
+      await requestPermission();
+      if (data.nextOccurrence) {
+        await scheduleReminderNotification(
+          data.id,
+          data.title,
+          data.notes || null,
+          new Date(data.nextOccurrence),
+          data.soundEnabled
+        );
+      }
+      
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error: any) => {
@@ -117,12 +128,22 @@ export default function CreateCalendarReminderScreen() {
       const response = await apiRequest("PUT", `/api/reminders/${reminderId}`, data);
       return response.json();
     },
-    onSuccess: () => {
-      Alert.alert("DEBUG", "Calendar update successful! Navigating...");
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Request notification permission after save completes
-      requestPermission();
+      
+      // Request notification permission and schedule notification
+      await requestPermission();
+      if (data.nextOccurrence) {
+        await scheduleReminderNotification(
+          data.id,
+          data.title,
+          data.notes || null,
+          new Date(data.nextOccurrence),
+          data.soundEnabled
+        );
+      }
+      
       navigation.navigate("Main", { screen: "Reminders" });
     },
     onError: (error: any) => {
