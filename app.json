@@ -42,6 +42,12 @@
     ],
     "experiments": {
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ab866bb4-8300-49c4-848f-a9315f9e8784"
+      }
+    },
+    "owner": "savidesign"
   }
 }
