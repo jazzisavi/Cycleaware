@@ -2,7 +2,14 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AlarmService } from "./AlarmService";
-import { getApiUrl } from "@/lib/query-client";
+
+function getNotificationApiUrl(): string {
+  let host = process.env.EXPO_PUBLIC_DOMAIN;
+  if (!host) {
+    host = "cycle-reminder.replit.app";
+  }
+  return `https://${host}`;
+}
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -158,7 +165,7 @@ export async function handleNotificationAction(
       case "take": {
         console.log("[Notification Action] Handling take - calling API");
         try {
-          const baseUrl = getApiUrl();
+          const baseUrl = getNotificationApiUrl();
           const url = new URL(`/api/reminders/${reminderId}/complete`, baseUrl);
           const response = await fetch(url, {
             method: "POST",
