@@ -52,11 +52,19 @@ export default function HomeScreen() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
   
-  const showNotificationWarning = notificationsAvailable && permissionStatus !== "granted" && permissionStatus !== "unavailable";
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const { data: reminders = [] } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
   });
+  
+  // Only show banner if: notifications are available, permission not granted, reminders exist, and user hasn't dismissed
+  const hasReminders = reminders.length > 0;
+  const showNotificationWarning = notificationsAvailable && 
+    permissionStatus !== "granted" && 
+    permissionStatus !== "unavailable" && 
+    hasReminders && 
+    !bannerDismissed;
 
   const { data: notificationHistory = [] } = useQuery<NotificationHistoryItem[]>({
     queryKey: ["/api/notification-history"],
@@ -122,21 +130,34 @@ export default function HomeScreen() {
       <AppHeader title={Copy.navigation.today} />
 
       {showNotificationWarning ? (
-        <Pressable 
-          onPress={openSettings}
+        <View 
           style={styles.notificationBanner}
           testID="banner-notification-warning"
         >
-          <View style={styles.notificationBannerContent}>
-            <View style={styles.notificationBannerIcon}>
-              <Feather name="bell-off" size={16} color="#FFFFFF" />
-            </View>
-            <Text style={styles.notificationBannerText}>
-              {Copy.home.notificationBannerText}
+          <View style={styles.notificationBannerHeader}>
+            <Text style={styles.notificationBannerTitle}>
+              {Copy.home.notificationBannerTitle}
             </Text>
-            <Feather name="chevron-right" size={18} color="#FFFFFF" />
+            <Pressable 
+              onPress={() => setBannerDismissed(true)}
+              style={styles.notificationBannerClose}
+              hitSlop={8}
+            >
+              <Feather name="x" size={18} color="#666666" />
+            </Pressable>
           </View>
-        </Pressable>
+          <Text style={styles.notificationBannerText}>
+            {Copy.home.notificationBannerText}
+          </Text>
+          <Pressable 
+            onPress={openSettings}
+            style={styles.notificationBannerButton}
+          >
+            <Text style={styles.notificationBannerButtonText}>
+              {Copy.home.notificationBannerButton}
+            </Text>
+          </Pressable>
+        </View>
       ) : null}
 
       <ScrollView
@@ -188,15 +209,6 @@ export default function HomeScreen() {
               const isCompleted = completedIds.has(reminder.id);
               return (
                 <Card key={reminder.id} style={styles.reminderCard}>
-                  {showNotificationWarning ? (
-                    <Pressable 
-                      onPress={openSettings}
-                      style={styles.cardWarningBadge}
-                      testID={`warning-badge-${reminder.id}`}
-                    >
-                      <Feather name="alert-triangle" size={12} color="#FFFFFF" />
-                    </Pressable>
-                  ) : null}
                   <View style={styles.reminderContent}>
                     <View
                       style={[
@@ -226,9 +238,15 @@ export default function HomeScreen() {
                           {reminder.notes}
                         </Text>
                       ) : null}
-                      <Text style={[styles.reminderStatus, { color: theme.textTertiary }]}>
-                        {Copy.home.statusActive}
-                      </Text>
+                      {showNotificationWarning ? (
+                        <Text style={styles.notificationsDisabledText}>
+                          {Copy.home.notificationsDisabled}
+                        </Text>
+                      ) : (
+                        <Text style={[styles.reminderStatus, { color: theme.textTertiary }]}>
+                          {Copy.home.statusActive}
+                        </Text>
+                      )}
                     </View>
                     <Pressable 
                       style={[
@@ -261,15 +279,6 @@ export default function HomeScreen() {
             </Text>
             {upcomingReminders.map((reminder) => (
               <Card key={reminder.id} style={styles.reminderCard}>
-                {showNotificationWarning ? (
-                  <Pressable 
-                    onPress={openSettings}
-                    style={styles.cardWarningBadge}
-                    testID={`warning-badge-upcoming-${reminder.id}`}
-                  >
-                    <Feather name="alert-triangle" size={12} color="#FFFFFF" />
-                  </Pressable>
-                ) : null}
                 <View style={styles.reminderContent}>
                   <View
                     style={[
@@ -295,6 +304,11 @@ export default function HomeScreen() {
                         numberOfLines={2}
                       >
                         {reminder.notes}
+                      </Text>
+                    ) : null}
+                    {showNotificationWarning ? (
+                      <Text style={styles.notificationsDisabledText}>
+                        {Copy.home.notificationsDisabled}
                       </Text>
                     ) : null}
                   </View>
@@ -476,32 +490,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   notificationBanner: {
-    backgroundColor: "#DC3545",
+    backgroundColor: "#FFF5F5",
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.sm,
     borderRadius: BorderRadius.md,
-    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    padding: Spacing.md,
   },
-  notificationBannerContent: {
+  notificationBannerHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-  notificationBannerIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+  notificationBannerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#DC2626",
+  },
+  notificationBannerClose: {
+    padding: 4,
   },
   notificationBannerText: {
-    flex: 1,
+    color: "#666666",
+    fontSize: 14,
+    marginBottom: Spacing.md,
+  },
+  notificationBannerButton: {
+    backgroundColor: "#DC2626",
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+  },
+  notificationBannerButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   cardWarningBadge: {
     position: "absolute",
@@ -525,5 +550,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: Spacing.xl,
     marginBottom: Spacing.md,
+  },
+  notificationsDisabledText: {
+    color: "#DC2626",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: Spacing.xs,
   },
 });
