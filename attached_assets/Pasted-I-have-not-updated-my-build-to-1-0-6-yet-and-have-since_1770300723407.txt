@@ -1,0 +1,14 @@
+I have not updated my build to 1.0.6 yet and have since found more issues with  v1.0. 5
+Some maybe fixed in 1.0.6 but i want you to confirm if more work is needed before i build another apk. 
+the snooze is partly working. Tap snooze it take you to the app shows the current reminder as active and does not dismiss the notification. 60 mins later i get another notification for the snooze. I tap ‘take’ and it opens up the app the reminder say active with a CTA to take. I hit take and it dismiss the reminder. 60 mins later i get another reminder. Conclusion the snooze is activated but not deactivated when “taken” Behavior should be: Receive notification> hit snooze>dismiss notification and show confirmation that they will be remindered in 60mins or whenever the setting is set too. In the app the notification on the homepage for the reminder status should now show snoozed. The user can snooze indefinitely. When they tap take in the app or via the notification the snooze feature should stop
+
+Sound worked on the first ever notification with sound but now it wont play again. I reinstalled the app to try again and it worked for multiple reminders but the sound was now stuck on regardless what i did, i marked it taken and deleted the reminder but still sound would not stop and i had to delete the whole app to stop it.
+Slow 
+The app is really slow to update states, I just marked a reminder taken and its still on the homepage, when editing the title takes seconds to show. Its really bad
+There is a large time gap between creating a reminder and the pop up for permissions. This needs to be instant as it looks broken
+History isnt being displayed on the history page. It should show show all that have been taken or skipped along with the date it was taken or skipped along with its label.I have just tested again and now history is showing so maybe its a very very slow state issue 
+When i delete the app and reinstall reminders from deleted app persists, is that normal behavior? Also it shows me old reminders that i had taken as not taken with a warning symbol next to it.
+Skip doesnt dismiss the reminder in the app or notifaction
+5. The “notifications are off” permission banner should only show if a reminder has been created and the settings are off. Change wording and design to attached. 
+I have updated the copy for the notification confirmation. See attached and make sure you are showing a confirmation as currently it doesnt.
+Edit button on reminder: remove and make card tappable to enter edit mod
