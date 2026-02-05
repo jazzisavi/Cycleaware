@@ -15,6 +15,8 @@ class AlarmServiceClass {
   private previewSound: Audio.Sound | null = null;
   private isPlaying: boolean = false;
   private isPreviewing: boolean = false;
+  private autoStopTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly AUTO_STOP_DURATION_MS = 2 * 60 * 1000; // 2 minutes
 
   async initialize() {
     try {
@@ -49,7 +51,11 @@ class AlarmServiceClass {
   }
 
   async playAlarm(soundId?: AlarmSoundId) {
-    if (this.isPlaying) return;
+    // Prevent multiple instances - stop any existing sound first
+    if (this.isPlaying) {
+      console.log("[AlarmService] Already playing, stopping existing sound first");
+      await this.stopAlarm();
+    }
 
     try {
       await this.initialize();
@@ -68,21 +74,49 @@ class AlarmServiceClass {
       
       this.sound = sound;
       this.isPlaying = true;
+      
+      // Set auto-stop timer (2 minutes) as safety net
+      this.clearAutoStopTimer();
+      this.autoStopTimer = setTimeout(async () => {
+        console.log("[AlarmService] Auto-stopping after 2 minutes");
+        await this.stopAlarm();
+      }, this.AUTO_STOP_DURATION_MS);
+      
+      console.log("[AlarmService] Alarm started playing");
     } catch (error) {
       console.error("Error playing alarm:", error);
+      this.isPlaying = false;
+    }
+  }
+  
+  private clearAutoStopTimer() {
+    if (this.autoStopTimer) {
+      clearTimeout(this.autoStopTimer);
+      this.autoStopTimer = null;
     }
   }
 
   async stopAlarm() {
-    if (!this.isPlaying || !this.sound) return;
+    // Clear auto-stop timer first
+    this.clearAutoStopTimer();
+    
+    if (!this.sound) {
+      this.isPlaying = false;
+      return;
+    }
 
     try {
+      console.log("[AlarmService] Stopping alarm");
       await this.sound.stopAsync();
       await this.sound.unloadAsync();
       this.sound = null;
       this.isPlaying = false;
+      console.log("[AlarmService] Alarm stopped successfully");
     } catch (error) {
       console.error("Error stopping alarm:", error);
+      // Force cleanup even on error
+      this.sound = null;
+      this.isPlaying = false;
     }
   }
 

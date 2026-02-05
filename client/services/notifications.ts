@@ -84,6 +84,26 @@ export async function setupNotificationCategories(): Promise<void> {
   }
 }
 
+export async function cancelPendingNotificationsForReminder(reminderId: string): Promise<void> {
+  if (!isNotificationsAvailable()) {
+    return;
+  }
+
+  try {
+    const Notifications = await import("expo-notifications");
+    const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    
+    for (const notification of scheduledNotifications) {
+      if (notification.content.data?.reminderId === reminderId) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        console.log(`[Notifications] Cancelled pending notification ${notification.identifier} for reminder ${reminderId}`);
+      }
+    }
+  } catch (error) {
+    console.error("Error cancelling pending notifications:", error);
+  }
+}
+
 export async function scheduleReminderNotification(
   reminderId: string,
   title: string,
@@ -155,16 +175,44 @@ export async function handleNotificationAction(
       }
       
       case "skip": {
-        console.log("[Notification Action] Handling skip");
-        return { 
-          success: true, 
-          message: "Reminder skipped" 
-        };
+        console.log("[Notification Action] Handling skip - calling API");
+        try {
+          const baseUrl = getNotificationApiUrl();
+          const url = new URL(`/api/reminders/${reminderId}/skip`, baseUrl);
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          });
+          
+          if (response.ok) {
+            console.log("[Notification Action] Skip API call succeeded");
+            return { 
+              success: true, 
+              message: "Reminder skipped" 
+            };
+          } else {
+            console.log("[Notification Action] Skip API call failed:", response.status);
+            return { 
+              success: false, 
+              message: "Failed to skip reminder" 
+            };
+          }
+        } catch (apiError) {
+          console.error("[Notification Action] Skip API error:", apiError);
+          return { 
+            success: false, 
+            message: "Error skipping reminder" 
+          };
+        }
       }
       
       case "take": {
         console.log("[Notification Action] Handling take - calling API");
         try {
+          // Cancel any pending snooze notifications for this reminder
+          await cancelPendingNotificationsForReminder(reminderId);
+          
           const baseUrl = getNotificationApiUrl();
           const url = new URL(`/api/reminders/${reminderId}/complete`, baseUrl);
           const response = await fetch(url, {

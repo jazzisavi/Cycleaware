@@ -432,6 +432,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/reminders/:id/skip", async (req: Request, res: Response) => {
+    try {
+      const user = await getOrCreateDemoUser();
+      const reminder = await storage.getReminder(req.params.id);
+      
+      if (!reminder) {
+        return res.status(404).json({ message: "Reminder not found" });
+      }
+      
+      // Create history entry with 'skipped' status
+      await storage.createNotificationHistory({
+        reminderId: reminder.id,
+        userId: user.id,
+        title: reminder.title,
+        scheduledAt: reminder.nextOccurrence || new Date(),
+        status: "skipped",
+        completedAt: new Date(),
+      });
+      
+      // Calculate next occurrence (same logic as complete)
+      let nextOccurrence: Date | null = null;
+      
+      if (reminder.reminderType === "cycle" && reminder.cycleDayStart && reminder.cycleDayEnd && reminder.cycleStartDate) {
+        const cycleConfig = {
+          cycleDayStart: reminder.cycleDayStart,
+          cycleDayEnd: reminder.cycleDayEnd,
+          cycleStartDate: new Date(reminder.cycleStartDate),
+          cycleEndDate: reminder.cycleEndDate ? new Date(reminder.cycleEndDate) : null,
+        };
+        
+        const reminderTimes = (reminder.reminderTimes as string[]) || [reminder.reminderTime];
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const nextTimes = getNextNotificationTimes(cycleConfig, reminderTimes, tomorrow);
+        
+        if (nextTimes.length > 0) {
+          nextOccurrence = nextTimes.reduce((earliest, current) => 
+            current < earliest ? current : earliest
+          );
+        }
+      } else if (reminder.reminderType === "calendar") {
+        nextOccurrence = calculateNextCalendarOccurrence(reminder);
+      }
+      
+      const updatedReminder = await storage.updateReminder(reminder.id, { nextOccurrence });
+      
+      res.json(updatedReminder);
+    } catch (error) {
+      console.error("Skip reminder error:", error);
+      res.status(500).json({ message: "Failed to skip reminder" });
+    }
+  });
+
   app.get("/api/reminders/:id/cycle-status", async (req: Request, res: Response) => {
     try {
       const reminder = await storage.getReminder(req.params.id);
