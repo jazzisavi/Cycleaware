@@ -24,11 +24,13 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/Button";
 import { AppHeader } from "@/components/AppHeader";
 import { useTheme } from "@/hooks/useTheme";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { Reminder } from "@shared/schema";
+import { Text } from "react-native";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,6 +43,8 @@ export default function RemindersScreen() {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
 
   // Reset selection mode when navigating away from the screen
   useFocusEffect(
@@ -56,6 +60,14 @@ export default function RemindersScreen() {
   const { data: reminders = [], isLoading, refetch } = useQuery<Reminder[]>({
     queryKey: ["/api/reminders"],
   });
+
+  // Only show banner if: notifications are available, permission not granted, reminders exist, and user hasn't dismissed
+  const hasReminders = reminders.length > 0;
+  const showNotificationWarning = notificationsAvailable && 
+    permissionStatus !== "granted" && 
+    permissionStatus !== "unavailable" && 
+    hasReminders && 
+    !bannerDismissed;
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
@@ -219,11 +231,13 @@ export default function RemindersScreen() {
   );
 
   const renderItem = ({ item }: { item: Reminder }) => (
-    <View
+    <Pressable
       style={[
         styles.card,
         { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight },
       ]}
+      onPress={() => !isSelecting && handleEditPress(item)}
+      testID={`card-reminder-${item.id}`}
     >
       {isSelecting ? (
         <Pressable
@@ -253,6 +267,11 @@ export default function RemindersScreen() {
         <ThemedText type="small" style={{ color: theme.textSecondary }}>
           {formatReminderDescription(item)}
         </ThemedText>
+        {showNotificationWarning ? (
+          <Text style={styles.notificationsDisabledText}>
+            {Copy.home.notificationsDisabled}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.cardActions}>
@@ -263,17 +282,9 @@ export default function RemindersScreen() {
           thumbColor={item.isActive ? theme.primary : theme.textTertiary}
           style={styles.switch}
         />
-        <Pressable
-          onPress={() => handleEditPress(item)}
-          hitSlop={8}
-          testID={`button-edit-${item.id}`}
-        >
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            {Copy.common.edit}
-          </ThemedText>
-        </Pressable>
+        <Feather name="chevron-right" size={20} color={theme.textTertiary} />
       </View>
-    </View>
+    </Pressable>
   );
 
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
@@ -318,6 +329,35 @@ export default function RemindersScreen() {
   return (
     <ThemedView style={styles.container}>
       <AppHeader title={Copy.navigation.reminders} />
+      
+      {showNotificationWarning ? (
+        <View style={styles.notificationBanner}>
+          <View style={styles.notificationBannerHeader}>
+            <Text style={styles.notificationBannerTitle}>
+              {Copy.home.notificationBannerTitle}
+            </Text>
+            <Pressable 
+              onPress={() => setBannerDismissed(true)}
+              style={styles.notificationBannerClose}
+              hitSlop={8}
+            >
+              <Feather name="x" size={18} color="#666666" />
+            </Pressable>
+          </View>
+          <Text style={styles.notificationBannerText}>
+            {Copy.home.notificationBannerText}
+          </Text>
+          <Pressable 
+            onPress={openSettings}
+            style={styles.notificationBannerButton}
+          >
+            <Text style={styles.notificationBannerButtonText}>
+              {Copy.home.notificationBannerButton}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      
       <FlatList
         data={reminders}
         renderItem={renderItem}
@@ -392,5 +432,50 @@ const styles = StyleSheet.create({
   },
   switch: {
     transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
+  },
+  notificationBanner: {
+    backgroundColor: "#FFF5F5",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    padding: Spacing.md,
+  },
+  notificationBannerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
+  },
+  notificationBannerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#DC2626",
+  },
+  notificationBannerClose: {
+    padding: 4,
+  },
+  notificationBannerText: {
+    color: "#666666",
+    fontSize: 14,
+    marginBottom: Spacing.md,
+  },
+  notificationBannerButton: {
+    backgroundColor: "#DC2626",
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+  },
+  notificationBannerButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  notificationsDisabledText: {
+    color: "#DC2626",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: Spacing.xs,
   },
 });
