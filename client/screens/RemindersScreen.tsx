@@ -282,7 +282,6 @@ export default function RemindersScreen() {
           thumbColor={item.isActive ? theme.primary : theme.textTertiary}
           style={styles.switch}
         />
-        <Feather name="chevron-right" size={20} color={theme.textTertiary} />
       </View>
     </Pressable>
   );
