@@ -188,16 +188,14 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Create Reminder Button - only show when no active reminders */}
-        {reminders.length === 0 ? (
-          <Button
-            onPress={() => navigation.navigate("TypeSelector")}
-            testID="button-create-reminder"
-            icon="plus"
-          >
-            {Copy.home.createReminderButton}
-          </Button>
-        ) : null}
+        {/* Create Reminder Button */}
+        <Button
+          onPress={() => navigation.navigate("TypeSelector")}
+          testID="button-create-reminder"
+          icon="plus"
+        >
+          {Copy.home.createReminderButton}
+        </Button>
 
         {/* Today's Reminders */}
         {todaysReminders.length > 0 ? (
