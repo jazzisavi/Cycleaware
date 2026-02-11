@@ -27,7 +27,7 @@ function isNotificationsAvailable(): boolean {
 async function logToServer(event: string, data: Record<string, any> = {}): Promise<void> {
   try {
     const baseUrl = getNotificationApiUrl();
-    const url = new URL("/api/debug-log", baseUrl);
+    const url = `${baseUrl}/api/debug-log`;
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -211,11 +211,10 @@ export async function handleNotificationAction(
         await logToServer("action_skip_start", { reminderId });
         try {
           const baseUrl = getNotificationApiUrl();
-          const url = new URL(`/api/reminders/${reminderId}/skip`, baseUrl);
+          const url = `${baseUrl}/api/reminders/${reminderId}/skip`;
           const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include",
           });
           
           if (response.ok) {
@@ -248,11 +247,10 @@ export async function handleNotificationAction(
           await cancelPendingNotificationsForReminder(reminderId);
           
           const baseUrl = getNotificationApiUrl();
-          const url = new URL(`/api/reminders/${reminderId}/complete`, baseUrl);
+          const url = `${baseUrl}/api/reminders/${reminderId}/complete`;
           const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include",
           });
           
           if (response.ok) {
