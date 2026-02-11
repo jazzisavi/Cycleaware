@@ -562,6 +562,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/debug-log", (req: Request, res: Response) => {
+    const { event, ...rest } = req.body;
+    console.log(`[DEBUG-LOG] ${event}`, JSON.stringify(rest));
+    res.json({ ok: true });
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

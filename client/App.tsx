@@ -29,8 +29,8 @@ export default function App() {
       receivedCleanup = await setupNotificationReceivedListener();
       
       responseCleanup = await setupNotificationResponseListener(
-        async (actionId, reminderId, reminderTitle, soundEnabled) => {
-          const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled);
+        async (actionId, reminderId, reminderTitle, soundEnabled, notificationId) => {
+          const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId);
           if (result.success && result.message) {
             console.log(result.message);
           }
