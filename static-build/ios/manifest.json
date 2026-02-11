@@ -1,0 +1,121 @@
+{
+  "id": "ffb53e15-e5f6-45d9-b94e-8a8204326b60",
+  "createdAt": "2026-02-11T17:21:13.558Z",
+  "runtimeVersion": "exposdk:54.0.0",
+  "launchAsset": {
+    "key": "bundle-1770830473558-3763",
+    "contentType": "application/javascript",
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1770830473558-3763/_expo/static/js/ios/bundle.js"
+  },
+  "assets": [],
+  "metadata": {},
+  "extra": {
+    "eas": {
+      "projectId": "ab866bb4-8300-49c4-848f-a9315f9e8784"
+    },
+    "expoClient": {
+      "name": "GoFlo",
+      "slug": "goflo",
+      "version": "1.0.6",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "goflo",
+      "userInterfaceStyle": "automatic",
+      "newArchEnabled": true,
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.goflo.app"
+      },
+      "android": {
+        "adaptiveIcon": {
+          "backgroundColor": "#6B9BD1",
+          "foregroundImage": "./assets/images/icon.png",
+          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png"
+        },
+        "edgeToEdgeEnabled": true,
+        "predictiveBackGestureEnabled": false,
+        "package": "com.goflo.app"
+      },
+      "web": {
+        "output": "single",
+        "favicon": "./assets/images/icon.png"
+      },
+      "plugins": [
+        [
+          "expo-splash-screen",
+          {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#FAFBFC",
+            "dark": {
+              "backgroundColor": "#1F2123"
+            }
+          }
+        ],
+        "expo-web-browser",
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/images/icon.png",
+            "color": "#6B9BD1",
+            "defaultChannel": "reminders"
+          }
+        ]
+      ],
+      "experiments": {
+        "reactCompiler": true
+      },
+      "extra": {
+        "eas": {
+          "projectId": "ab866bb4-8300-49c4-848f-a9315f9e8784"
+        }
+      },
+      "owner": "savidesign",
+      "_internal": {
+        "isDebug": false,
+        "projectRoot": "/home/runner/workspace",
+        "dynamicConfigPath": {},
+        "staticConfigPath": "/home/runner/workspace/app.json",
+        "packageJsonPath": "/home/runner/workspace/package.json",
+        "pluginHistory": {
+          "expo-splash-screen": {
+            "name": "expo-splash-screen",
+            "version": "31.0.11"
+          },
+          "expo-web-browser": {
+            "name": "expo-web-browser",
+            "version": "15.0.9"
+          },
+          "expo-notifications": {
+            "name": "expo-notifications",
+            "version": "0.32.16"
+          }
+        }
+      },
+      "sdkVersion": "54.0.0",
+      "platforms": [
+        "ios",
+        "android",
+        "web"
+      ],
+      "androidStatusBar": {
+        "backgroundColor": "#FAFBFC"
+      },
+      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/ios"
+    },
+    "expoGo": {
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/ios",
+      "developer": {
+        "tool": "expo-cli",
+        "projectRoot": "/home/runner/workspace"
+      },
+      "packagerOpts": {
+        "dev": false
+      },
+      "mainModuleName": "client/index"
+    },
+    "scopeKey": "@anonymous/goflo-066c80ee-00e3-4086-a3cc-8311e5b8a5c5"
+  }
+}
