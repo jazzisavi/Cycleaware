@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -15,8 +15,17 @@ import {
   setupNotificationCategories, 
   setupNotificationResponseListener,
   setupNotificationReceivedListener,
-  handleNotificationAction 
+  handleNotificationAction,
+  checkLastNotificationResponse,
 } from "@/services/notifications";
+
+const actionHandler = async (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string) => {
+  const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId);
+  if (result.success) {
+    queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/notification-history"] });
+  }
+};
 
 export default function App() {
   useEffect(() => {
@@ -28,14 +37,9 @@ export default function App() {
     const setupListeners = async () => {
       receivedCleanup = await setupNotificationReceivedListener();
       
-      responseCleanup = await setupNotificationResponseListener(
-        async (actionId, reminderId, reminderTitle, soundEnabled, notificationId) => {
-          const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId);
-          if (result.success && result.message) {
-            console.log(result.message);
-          }
-        }
-      );
+      responseCleanup = await setupNotificationResponseListener(actionHandler);
+
+      await checkLastNotificationResponse(actionHandler);
     };
     
     setupListeners();

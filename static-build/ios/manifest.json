@@ -1,11 +1,11 @@
 {
-  "id": "4f8995a4-4061-42aa-b35f-fe148f8d11b3",
-  "createdAt": "2026-02-12T21:54:17.100Z",
+  "id": "0ce2c4d1-3a93-4b84-b3a8-6fa11ad282bb",
+  "createdAt": "2026-02-12T22:44:04.598Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1770933257100-1852",
+    "key": "bundle-1770936244598-5467",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1770933257100-1852/_expo/static/js/ios/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1770936244598-5467/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -71,7 +71,7 @@
           "projectId": "ab866bb4-8300-49c4-848f-a9315f9e8784"
         }
       },
-      "owner": "savidesign",
+      "owner": "savi-design",
       "_internal": {
         "isDebug": false,
         "projectRoot": "/home/runner/workspace",
