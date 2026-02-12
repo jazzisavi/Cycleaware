@@ -138,21 +138,27 @@ async function handleSnoozeAction(reminderId: string, reminderTitle: string, sou
   }
 }
 
-TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
+TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }: { data: any; error: any }) => {
   if (error) {
     await logToServer("background_task_error", { error: String(error) });
     return;
   }
 
   const taskData = data as any;
+
+  await logToServer("background_task_raw_data", { rawData: JSON.stringify(taskData) });
+
+  const isResponse = taskData && "actionIdentifier" in taskData;
   const actionIdentifier = taskData?.actionIdentifier;
-  const notificationData = taskData?.notification?.request?.content?.data;
-  const reminderId = notificationData?.reminderId as string;
-  const reminderTitle = taskData?.notification?.request?.content?.title || "";
-  const soundEnabled = notificationData?.soundEnabled as boolean || false;
+  const notificationData = isResponse
+    ? taskData?.notification?.request?.content?.data
+    : taskData?.data;
+  const reminderId = (notificationData?.reminderId || taskData?.reminderId) as string;
+  const reminderTitle = taskData?.notification?.request?.content?.title || taskData?.title || "";
+  const soundEnabled = (notificationData?.soundEnabled || false) as boolean;
   const notificationId = taskData?.notification?.request?.identifier;
 
-  await logToServer("background_task_fired", { actionIdentifier, reminderId, notificationId });
+  await logToServer("background_task_fired", { actionIdentifier, reminderId, notificationId, isResponse });
 
   await AlarmService.stopAlarm();
 
