@@ -1,7 +1,10 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as TaskManager from "expo-task-manager";
 import { AlarmService } from "./AlarmService";
+
+const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND_NOTIFICATION_TASK";
 
 function getNotificationApiUrl(): string {
   let host = process.env.EXPO_PUBLIC_DOMAIN;
@@ -60,6 +63,124 @@ export async function getSnoozeDuration(): Promise<number> {
   return DEFAULT_SNOOZE_DURATION;
 }
 
+async function handleTakeAction(reminderId: string, reminderTitle: string): Promise<{ success: boolean; message?: string }> {
+  await logToServer("action_take_start", { reminderId });
+  try {
+    try {
+      await cancelPendingNotificationsForReminder(reminderId);
+    } catch (_e) {
+    }
+
+    const baseUrl = getNotificationApiUrl();
+    const url = `${baseUrl}/api/reminders/${reminderId}/complete`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (response.ok) {
+      await logToServer("action_take_success", { reminderId });
+      return { success: true, message: "Marked as taken" };
+    } else {
+      const body = await response.text().catch(() => "");
+      await logToServer("action_take_failed", { reminderId, status: response.status, body });
+      return { success: false, message: "Failed to mark as taken" };
+    }
+  } catch (apiError: any) {
+    await logToServer("action_take_error", { reminderId, error: apiError?.message || String(apiError) });
+    return { success: false, message: "Error marking as taken" };
+  }
+}
+
+async function handleSkipAction(reminderId: string): Promise<{ success: boolean; message?: string }> {
+  await logToServer("action_skip_start", { reminderId });
+  try {
+    const baseUrl = getNotificationApiUrl();
+    const url = `${baseUrl}/api/reminders/${reminderId}/skip`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (response.ok) {
+      await logToServer("action_skip_success", { reminderId });
+      return { success: true, message: "Reminder skipped" };
+    } else {
+      const body = await response.text().catch(() => "");
+      await logToServer("action_skip_failed", { reminderId, status: response.status, body });
+      return { success: false, message: "Failed to skip reminder" };
+    }
+  } catch (apiError: any) {
+    await logToServer("action_skip_error", { reminderId, error: apiError?.message || String(apiError) });
+    return { success: false, message: "Error skipping reminder" };
+  }
+}
+
+async function handleSnoozeAction(reminderId: string, reminderTitle: string, soundEnabled: boolean): Promise<{ success: boolean; message?: string }> {
+  await logToServer("action_snooze_start", { reminderId });
+  try {
+    const snoozeDuration = await getSnoozeDuration();
+    const snoozeTime = new Date(Date.now() + snoozeDuration * 60 * 1000);
+
+    await scheduleReminderNotification(
+      reminderId,
+      reminderTitle,
+      `Snoozed - will remind again in ${snoozeDuration} minutes`,
+      snoozeTime,
+      soundEnabled
+    );
+
+    await logToServer("action_snooze_done", { reminderId, snoozeDuration });
+    return { success: true, message: `Next reminder in ${snoozeDuration} mins` };
+  } catch (error: any) {
+    await logToServer("action_snooze_error", { reminderId, error: error?.message || String(error) });
+    return { success: false, message: "Error snoozing reminder" };
+  }
+}
+
+TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
+  if (error) {
+    await logToServer("background_task_error", { error: String(error) });
+    return;
+  }
+
+  const taskData = data as any;
+  const actionIdentifier = taskData?.actionIdentifier;
+  const notificationData = taskData?.notification?.request?.content?.data;
+  const reminderId = notificationData?.reminderId as string;
+  const reminderTitle = taskData?.notification?.request?.content?.title || "";
+  const soundEnabled = notificationData?.soundEnabled as boolean || false;
+  const notificationId = taskData?.notification?.request?.identifier;
+
+  await logToServer("background_task_fired", { actionIdentifier, reminderId, notificationId });
+
+  await AlarmService.stopAlarm();
+
+  if (notificationId) {
+    await dismissNotification(notificationId);
+  }
+
+  if (!reminderId) {
+    await logToServer("background_task_no_reminder_id", { actionIdentifier });
+    return;
+  }
+
+  switch (actionIdentifier) {
+    case "take":
+      await handleTakeAction(reminderId, reminderTitle);
+      break;
+    case "skip":
+      await handleSkipAction(reminderId);
+      break;
+    case "snooze":
+      await handleSnoozeAction(reminderId, reminderTitle, soundEnabled);
+      break;
+    default:
+      await logToServer("background_task_default", { actionIdentifier, reminderId });
+      break;
+  }
+});
+
 export async function setupNotificationCategories(): Promise<void> {
   if (!isNotificationsAvailable()) {
     console.log("Notifications not available on this platform");
@@ -69,8 +190,6 @@ export async function setupNotificationCategories(): Promise<void> {
   try {
     const Notifications = await import("expo-notifications");
 
-    const opensApp = Platform.OS === "android";
-
     await Notifications.setNotificationCategoryAsync("reminder", [
       {
         identifier: "take",
@@ -78,7 +197,7 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-          opensAppToForeground: opensApp,
+          opensAppToForeground: false,
         },
       },
       {
@@ -87,7 +206,7 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-          opensAppToForeground: opensApp,
+          opensAppToForeground: false,
         },
       },
       {
@@ -96,12 +215,13 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-          opensAppToForeground: opensApp,
+          opensAppToForeground: false,
         },
       },
     ]);
 
-    console.log("Notification categories set up successfully");
+    await Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK);
+    console.log("Notification categories and background task set up successfully");
   } catch (error) {
     console.log("Error setting up notification categories:", error);
   }
@@ -115,7 +235,7 @@ export async function cancelPendingNotificationsForReminder(reminderId: string):
   try {
     const Notifications = await import("expo-notifications");
     const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    
+
     for (const notification of scheduledNotifications) {
       if (notification.content.data?.reminderId === reminderId) {
         await Notifications.cancelScheduledNotificationAsync(notification.identifier);
@@ -170,120 +290,26 @@ export async function handleNotificationAction(
   notificationId?: string
 ): Promise<{ success: boolean; message?: string }> {
   console.log(`[Notification Action] actionIdentifier: ${actionIdentifier}, reminderId: ${reminderId}`);
-  
+
   await logToServer("action_received", { actionIdentifier, reminderId, reminderTitle });
-  
+
   await AlarmService.stopAlarm();
 
   if (notificationId) {
     await dismissNotification(notificationId);
   }
-  
-  if (!isNotificationsAvailable()) {
-    return { success: false, message: "Notifications not available" };
-  }
 
-  try {
-    switch (actionIdentifier) {
-      case "snooze": {
-        console.log("[Notification Action] Handling snooze");
-        await logToServer("action_snooze_start", { reminderId });
-        const snoozeDuration = await getSnoozeDuration();
-        const snoozeTime = new Date(Date.now() + snoozeDuration * 60 * 1000);
-        
-        await scheduleReminderNotification(
-          reminderId,
-          reminderTitle,
-          `Snoozed - will remind again in ${snoozeDuration} minutes`,
-          snoozeTime,
-          soundEnabled
-        );
-        
-        await logToServer("action_snooze_done", { reminderId, snoozeDuration });
-        return { 
-          success: true, 
-          message: `Next reminder in ${snoozeDuration} mins` 
-        };
-      }
-      
-      case "skip": {
-        console.log("[Notification Action] Handling skip - calling API");
-        await logToServer("action_skip_start", { reminderId });
-        try {
-          const baseUrl = getNotificationApiUrl();
-          const url = `${baseUrl}/api/reminders/${reminderId}/skip`;
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          });
-          
-          if (response.ok) {
-            await logToServer("action_skip_success", { reminderId });
-            return { 
-              success: true, 
-              message: "Reminder skipped" 
-            };
-          } else {
-            const body = await response.text().catch(() => "");
-            await logToServer("action_skip_failed", { reminderId, status: response.status, body });
-            return { 
-              success: false, 
-              message: "Failed to skip reminder" 
-            };
-          }
-        } catch (apiError: any) {
-          await logToServer("action_skip_error", { reminderId, error: apiError?.message || String(apiError) });
-          return { 
-            success: false, 
-            message: "Error skipping reminder" 
-          };
-        }
-      }
-      
-      case "take": {
-        console.log("[Notification Action] Handling take - calling API");
-        await logToServer("action_take_start", { reminderId });
-        try {
-          await cancelPendingNotificationsForReminder(reminderId);
-          
-          const baseUrl = getNotificationApiUrl();
-          const url = `${baseUrl}/api/reminders/${reminderId}/complete`;
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          });
-          
-          if (response.ok) {
-            await logToServer("action_take_success", { reminderId });
-            return { 
-              success: true, 
-              message: "Marked as taken" 
-            };
-          } else {
-            const body = await response.text().catch(() => "");
-            await logToServer("action_take_failed", { reminderId, status: response.status, body });
-            return { 
-              success: false, 
-              message: "Failed to mark as taken" 
-            };
-          }
-        } catch (apiError: any) {
-          await logToServer("action_take_error", { reminderId, error: apiError?.message || String(apiError) });
-          return { 
-            success: false, 
-            message: "Error marking as taken" 
-          };
-        }
-      }
-      
-      case "expo.modules.notifications.actions.DEFAULT":
-      default:
-        await logToServer("action_default", { actionIdentifier, reminderId });
-        return { success: true, message: "Notification tapped" };
-    }
-  } catch (error: any) {
-    await logToServer("action_error", { actionIdentifier, reminderId, error: error?.message || String(error) });
-    return { success: false, message: "Error processing action" };
+  switch (actionIdentifier) {
+    case "take":
+      return handleTakeAction(reminderId, reminderTitle);
+    case "skip":
+      return handleSkipAction(reminderId);
+    case "snooze":
+      return handleSnoozeAction(reminderId, reminderTitle, soundEnabled);
+    case "expo.modules.notifications.actions.DEFAULT":
+    default:
+      await logToServer("action_default", { actionIdentifier, reminderId });
+      return { success: true, message: "Notification tapped" };
   }
 }
 
@@ -326,7 +352,7 @@ export async function setupNotificationResponseListener(
     const subscription = Notifications.addNotificationResponseReceivedListener(
       async (response) => {
         await AlarmService.stopAlarm();
-        
+
         const actionIdentifier = response.actionIdentifier;
         const data = response.notification.request.content.data;
         const reminderId = data?.reminderId as string;
