@@ -2,14 +2,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AlarmService } from "./AlarmService";
-
-function getNotificationApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
-  if (!host) {
-    host = "cycle-reminder.replit.app";
-  }
-  return `https://${host}`;
-}
+import { LocalDatabase } from "./LocalDatabase";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -22,19 +15,6 @@ function isNotificationsAvailable(): boolean {
   if (Platform.OS === "web") return false;
   if (Platform.OS === "android" && isExpoGo()) return false;
   return true;
-}
-
-async function logToServer(event: string, data: Record<string, any> = {}): Promise<void> {
-  try {
-    const baseUrl = getNotificationApiUrl();
-    const url = `${baseUrl}/api/debug-log`;
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, ...data, timestamp: new Date().toISOString(), platform: Platform.OS }),
-    });
-  } catch (_e) {
-  }
 }
 
 async function dismissNotification(notificationId: string): Promise<void> {
@@ -61,63 +41,90 @@ export async function getSnoozeDuration(): Promise<number> {
 }
 
 async function handleTakeAction(reminderId: string, reminderTitle: string): Promise<{ success: boolean; message?: string }> {
-  await logToServer("action_take_start", { reminderId });
   try {
     try {
       await cancelPendingNotificationsForReminder(reminderId);
     } catch (_e) {
     }
 
-    const baseUrl = getNotificationApiUrl();
-    const url = `${baseUrl}/api/reminders/${reminderId}/complete`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const reminder = LocalDatabase.getReminder(reminderId);
+    if (!reminder) {
+      return { success: false, message: "Reminder not found" };
+    }
+
+    LocalDatabase.addHistoryEntry({
+      reminderId,
+      title: reminderTitle,
+      scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+      status: "completed",
+      completedAt: new Date().toISOString(),
     });
 
-    if (response.ok) {
-      await logToServer("action_take_success", { reminderId });
-      return { success: true, message: "Marked as taken" };
-    } else {
-      const body = await response.text().catch(() => "");
-      await logToServer("action_take_failed", { reminderId, status: response.status, body });
-      return { success: false, message: "Failed to mark as taken" };
+    const updated = LocalDatabase.updateReminder(reminderId, {
+      completedOccurrences: (reminder.completedOccurrences || 0) + 1,
+    });
+
+    if (updated?.nextOccurrence) {
+      await scheduleReminderNotification(
+        updated.id,
+        updated.title,
+        updated.notes || null,
+        new Date(updated.nextOccurrence),
+        updated.soundEnabled
+      );
     }
-  } catch (apiError: any) {
-    await logToServer("action_take_error", { reminderId, error: apiError?.message || String(apiError) });
+
+    return { success: true, message: "Marked as taken" };
+  } catch (error: any) {
+    console.error("action_take_error", error);
     return { success: false, message: "Error marking as taken" };
   }
 }
 
 async function handleSkipAction(reminderId: string): Promise<{ success: boolean; message?: string }> {
-  await logToServer("action_skip_start", { reminderId });
   try {
-    const baseUrl = getNotificationApiUrl();
-    const url = `${baseUrl}/api/reminders/${reminderId}/skip`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const reminder = LocalDatabase.getReminder(reminderId);
+    if (!reminder) {
+      return { success: false, message: "Reminder not found" };
+    }
+
+    LocalDatabase.addHistoryEntry({
+      reminderId,
+      title: reminder.title,
+      scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+      status: "skipped",
     });
 
-    if (response.ok) {
-      await logToServer("action_skip_success", { reminderId });
-      return { success: true, message: "Reminder skipped" };
-    } else {
-      const body = await response.text().catch(() => "");
-      await logToServer("action_skip_failed", { reminderId, status: response.status, body });
-      return { success: false, message: "Failed to skip reminder" };
+    const updated = LocalDatabase.updateReminder(reminderId, {});
+
+    if (updated?.nextOccurrence) {
+      await scheduleReminderNotification(
+        updated.id,
+        updated.title,
+        updated.notes || null,
+        new Date(updated.nextOccurrence),
+        updated.soundEnabled
+      );
     }
-  } catch (apiError: any) {
-    await logToServer("action_skip_error", { reminderId, error: apiError?.message || String(apiError) });
+
+    return { success: true, message: "Reminder skipped" };
+  } catch (error: any) {
+    console.error("action_skip_error", error);
     return { success: false, message: "Error skipping reminder" };
   }
 }
 
 async function handleSnoozeAction(reminderId: string, reminderTitle: string, soundEnabled: boolean): Promise<{ success: boolean; message?: string }> {
-  await logToServer("action_snooze_start", { reminderId });
   try {
     const snoozeDuration = await getSnoozeDuration();
     const snoozeTime = new Date(Date.now() + snoozeDuration * 60 * 1000);
+
+    LocalDatabase.addHistoryEntry({
+      reminderId,
+      title: reminderTitle,
+      scheduledAt: new Date().toISOString(),
+      status: "snoozed",
+    });
 
     await scheduleReminderNotification(
       reminderId,
@@ -127,10 +134,9 @@ async function handleSnoozeAction(reminderId: string, reminderTitle: string, sou
       soundEnabled
     );
 
-    await logToServer("action_snooze_done", { reminderId, snoozeDuration });
     return { success: true, message: `Next reminder in ${snoozeDuration} mins` };
   } catch (error: any) {
-    await logToServer("action_snooze_error", { reminderId, error: error?.message || String(error) });
+    console.error("action_snooze_error", error);
     return { success: false, message: "Error snoozing reminder" };
   }
 }
@@ -241,8 +247,6 @@ export async function handleNotificationAction(
   soundEnabled: boolean = false,
   notificationId?: string
 ): Promise<{ success: boolean; message?: string }> {
-  await logToServer("action_received", { actionIdentifier, reminderId, reminderTitle });
-
   await AlarmService.stopAlarm();
 
   if (notificationId) {
@@ -258,7 +262,6 @@ export async function handleNotificationAction(
       return handleSnoozeAction(reminderId, reminderTitle, soundEnabled);
     case "expo.modules.notifications.actions.DEFAULT":
     default:
-      await logToServer("action_default", { actionIdentifier, reminderId });
       return { success: true, message: "Notification tapped" };
   }
 }
@@ -281,8 +284,6 @@ export async function checkLastNotificationResponse(
       const reminderTitle = lastResponse.notification.request.content.title || "";
       const soundEnabled = data?.soundEnabled as boolean || false;
       const notificationId = lastResponse.notification.request.identifier;
-
-      await logToServer("last_response_check", { actionIdentifier, reminderId, notificationId });
 
       if (reminderId && actionIdentifier !== "expo.modules.notifications.actions.DEFAULT") {
         await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
@@ -340,12 +341,8 @@ export async function setupNotificationResponseListener(
         const soundEnabled = data?.soundEnabled as boolean || false;
         const notificationId = response.notification.request.identifier;
 
-        await logToServer("response_listener_fired", { actionIdentifier, reminderId, notificationId });
-
         if (reminderId) {
           await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
-        } else {
-          await logToServer("response_listener_no_reminder_id", { actionIdentifier, data });
         }
       }
     );
@@ -354,6 +351,52 @@ export async function setupNotificationResponseListener(
   } catch (error) {
     console.error("Error setting up notification listener:", error);
     return null;
+  }
+}
+
+export async function syncAllNotifications(): Promise<void> {
+  if (!isNotificationsAvailable()) {
+    return;
+  }
+
+  try {
+    LocalDatabase.initDatabase();
+    const reminders = LocalDatabase.getAllReminders();
+    const now = new Date();
+
+    for (const reminder of reminders) {
+      if (!reminder.isActive || !reminder.nextOccurrence) continue;
+
+      const nextDate = new Date(reminder.nextOccurrence);
+      if (nextDate <= now) {
+        LocalDatabase.updateReminder(reminder.id, {});
+        const updated = LocalDatabase.getReminder(reminder.id);
+        if (updated?.nextOccurrence) {
+          const updatedDate = new Date(updated.nextOccurrence);
+          if (updatedDate > now) {
+            await scheduleReminderNotification(
+              updated.id,
+              updated.title,
+              updated.notes || null,
+              updatedDate,
+              updated.soundEnabled
+            );
+          }
+        }
+      } else {
+        await scheduleReminderNotification(
+          reminder.id,
+          reminder.title,
+          reminder.notes || null,
+          nextDate,
+          reminder.soundEnabled
+        );
+      }
+    }
+
+    console.log(`Synced notifications for ${reminders.filter(r => r.isActive).length} active reminders`);
+  } catch (error) {
+    console.error("Error syncing notifications:", error);
   }
 }
 
