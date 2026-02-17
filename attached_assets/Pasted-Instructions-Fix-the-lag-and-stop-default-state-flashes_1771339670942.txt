@@ -1,0 +1,36 @@
+Instructions: Fix the lag and stop default state flashes
+Problem (current behaviour)
+On cold launch and on edit screens, the UI renders default empty state or default form values, then 3–5 seconds later it updates with saved data. This is happening because screens render before the reminder data load completes.
+Non negotiable outcome
+The app must never show “no reminders” or default form values if saved reminders exist. It must either:
+show a loading/skeleton state until reminders are loaded, then render the correct saved state once, or
+render cached state immediately, then refresh in background
+Direct code fixes required (based on current code patterns)
+Reminders list screen
+Stop defaulting to an empty array and immediately rendering empty state.
+When data is not ready, show a loading component and do not show the empty state.
+Acceptance:
+On launch, user sees either saved reminders or a loading skeleton, never “no reminders” first.
+Edit reminder form screen
+Do not render the form with default values and then patch in saved values later.
+Gate the form rendering until the reminder data has been loaded and applied to state.
+Acceptance:
+When editing, the form opens with saved values on first render. No default flash.
+Do not block reminders UI with account/profile/subscription
+Any future email capture/login/subscription checks must run in parallel and must not delay loading reminders UI.
+Reminder UI hydration must be independent.
+Acceptance:
+Reminders load instantly regardless of login state or subscription status.
+
+Architecture instruction: Reminders must be local-first
+Required design
+Reminders are stored locally on device and loaded from local storage for initial rendering.
+Use expo-sqlite (preferred) or another local store.
+Local reminders are the source of truth for the reminder list and edit forms.
+Scheduling notifications is local (expo-notifications) and driven from local reminders.
+What goes on the server (future)
+Server should store only:
+user email
+consent flags (marketing opt-in)
+subscription entitlement status (premium true/false)
+Do not store cycle schedule or reminder content server-side at this stage.
