@@ -6,18 +6,17 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
-import { apiRequest } from "@/lib/query-client";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import type { Reminder } from "@shared/schema";
 import { scheduleReminderNotification } from "@/services/notifications";
+import { LocalDatabase } from "@/services/LocalDatabase";
+import { useLocalReminder } from "@/hooks/useLocalReminders";
+import type { LocalReminder } from "@/services/LocalDatabase";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateCalendarReminder">;
@@ -27,7 +26,6 @@ export default function CreateCalendarReminderScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
-  const queryClient = useQueryClient();
   const { requestPermission } = useNotificationPermission();
 
   const params = route.params || {};
@@ -41,6 +39,7 @@ export default function CreateCalendarReminderScreen() {
   const [editingTimeIndex, setEditingTimeIndex] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [repeatInterval, setRepeatInterval] = useState(params.repeatInterval || 1);
   const [repeatUnit, setRepeatUnit] = useState<"week" | "day">(params.repeatUnit || "week");
@@ -68,16 +67,13 @@ export default function CreateCalendarReminderScreen() {
     if (params.occurrences !== undefined) setOccurrences(params.occurrences);
   }, [params]);
 
-  const { data: existingReminder } = useQuery<Reminder>({
-    queryKey: ["/api/reminders", reminderId],
-    enabled: isEditMode,
-  });
+  const { reminder: existingReminder } = useLocalReminder(isEditMode ? reminderId : undefined);
 
   useEffect(() => {
     if (existingReminder && isEditMode) {
       setTitle(existingReminder.title);
       setNotes(existingReminder.notes || "");
-      setSoundEnabled(existingReminder.soundEnabled ?? true);
+      setSoundEnabled(existingReminder.soundEnabled);
       
       if (existingReminder.reminderTimes && existingReminder.reminderTimes.length > 0) {
         const times = existingReminder.reminderTimes.map((t) => {
@@ -91,82 +87,6 @@ export default function CreateCalendarReminderScreen() {
     }
   }, [existingReminder, isEditMode]);
 
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      console.log("Calendar: Creating reminder with data:", JSON.stringify(data));
-      const response = await apiRequest("POST", "/api/reminders", data);
-      console.log("Calendar: Create reminder response status:", response.status);
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      // Request notification permission and schedule notification
-      await requestPermission();
-      if (data.nextOccurrence) {
-        await scheduleReminderNotification(
-          data.id,
-          data.title,
-          data.notes || null,
-          new Date(data.nextOccurrence),
-          data.soundEnabled
-        );
-      }
-      
-      navigation.navigate("Main", { screen: "Reminders" });
-    },
-    onError: (error: any) => {
-      console.error("Failed to create reminder:", error);
-      Alert.alert("Save Error", `Failed to save: ${error?.message || String(error)}`);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest("PUT", `/api/reminders/${reminderId}`, data);
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      // Request notification permission and schedule notification
-      await requestPermission();
-      if (data.nextOccurrence) {
-        await scheduleReminderNotification(
-          data.id,
-          data.title,
-          data.notes || null,
-          new Date(data.nextOccurrence),
-          data.soundEnabled
-        );
-      }
-      
-      navigation.navigate("Main", { screen: "Reminders" });
-    },
-    onError: (error: any) => {
-      console.error("Failed to update reminder:", error);
-      Alert.alert("Update Error", `Failed to update: ${error?.message || String(error)}`);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", `/api/reminders/${reminderId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.navigate("Main", { screen: "Reminders" });
-    },
-    onError: (error) => {
-      console.error("Failed to delete reminder:", error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    },
-  });
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
     if (Platform.OS === "android") {
@@ -268,51 +188,74 @@ export default function CreateCalendarReminderScreen() {
     return new Date().toISOString();
   };
 
-  const handleSave = () => {
-    Alert.alert("CAL DEBUG 1", "handleSave called");
-    
-    if (!title.trim() || reminderTimes.length === 0) {
-      Alert.alert("CAL DEBUG 2", "Validation failed");
-      return;
-    }
+  const handleSave = async () => {
+    if (!title.trim() || reminderTimes.length === 0 || isSaving) return;
+    setIsSaving(true);
 
-    const reminderTimesArray = reminderTimes.map((t) => 
-      `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`
-    );
-    const primaryTimeString = reminderTimesArray[0] || "09:00";
+    try {
+      const reminderTimesArray = reminderTimes.map((t) => 
+        `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`
+      );
+      const primaryTimeString = reminderTimesArray[0] || "09:00";
 
-    const reminderData = {
-      title: title.trim(),
-      notes: notes.trim() || null,
-      reminderType: "calendar",
-      reminderTime: primaryTimeString,
-      reminderTimes: reminderTimesArray,
-      soundEnabled,
-      isActive: true,
-      weeklyRepeatDays: selectedDays,
-      repeatInterval,
-      repeatUnit,
-      calendarStartDate: calculateStartDate(),
-      calendarEndDate: ends === "on" ? endDate : null,
-      calendarEndsType: ends,
-      maxOccurrences: ends === "after" ? occurrences : null,
-    };
+      const reminderDataPayload = {
+        title: title.trim(),
+        notes: notes.trim() || null,
+        reminderType: "calendar" as const,
+        reminderTime: primaryTimeString,
+        reminderTimes: reminderTimesArray,
+        soundEnabled,
+        isActive: true,
+        weeklyRepeatDays: selectedDays,
+        repeatInterval,
+        repeatUnit,
+        calendarStartDate: calculateStartDate(),
+        calendarEndDate: ends === "on" ? endDate : null,
+        calendarEndsType: ends,
+        maxOccurrences: ends === "after" ? occurrences : null,
+      };
 
-    Alert.alert("CAL DEBUG 3", `About to mutate. isEditMode: ${isEditMode}`);
+      let savedReminder;
+      if (isEditMode) {
+        savedReminder = LocalDatabase.updateReminder(reminderId!, reminderDataPayload);
+      } else {
+        savedReminder = LocalDatabase.createReminder(reminderDataPayload);
+      }
 
-    if (isEditMode) {
-      updateMutation.mutate(reminderData);
-    } else {
-      createMutation.mutate(reminderData);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      await requestPermission();
+      if (savedReminder?.nextOccurrence) {
+        await scheduleReminderNotification(
+          savedReminder.id,
+          savedReminder.title,
+          savedReminder.notes || null,
+          new Date(savedReminder.nextOccurrence),
+          savedReminder.soundEnabled
+        );
+      }
+
+      navigation.navigate("Main", { screen: "Reminders" });
+    } catch (error: any) {
+      console.error("Failed to save reminder:", error);
+      Alert.alert("Save Error", `Failed to save: ${error?.message || String(error)}`);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    deleteMutation.mutate();
+    try {
+      LocalDatabase.deleteReminder(reminderId!);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.navigate("Main", { screen: "Reminders" });
+    } catch (error) {
+      console.error("Failed to delete reminder:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
   };
-
-  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: theme.backgroundDefault }]}>
@@ -592,7 +535,7 @@ export default function CreateCalendarReminderScreen() {
           <Pressable 
             style={[styles.deleteButton, { borderColor: theme.error }]}
             onPress={handleDelete}
-            disabled={deleteMutation.isPending}
+            disabled={isSaving}
             testID="button-delete"
           >
             <ThemedText type="body" style={{ color: theme.error, fontWeight: "500" }}>

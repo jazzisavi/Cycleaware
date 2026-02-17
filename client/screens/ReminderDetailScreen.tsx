@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -17,14 +16,14 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
-import { apiRequest } from "@/lib/query-client";
+import { LocalDatabase } from "@/services/LocalDatabase";
+import { useLocalReminder } from "@/hooks/useLocalReminders";
+import type { LocalReminder } from "@/services/LocalDatabase";
+import { scheduleReminderNotification } from "@/services/notifications";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
-import type { Reminder } from "@shared/schema";
 
 type RouteProps = RouteProp<RootStackParamList, "ReminderDetail">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export default function ReminderDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -32,37 +31,65 @@ export default function ReminderDetailScreen() {
   const { theme } = useTheme();
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavigationProp>();
-  const queryClient = useQueryClient();
 
   const { reminderId } = route.params;
 
-  const { data: reminder, isLoading } = useQuery<Reminder>({
-    queryKey: ["/api/reminders", reminderId],
-  });
+  const { reminder, isLoaded } = useLocalReminder(reminderId);
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", `/api/reminders/${reminderId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      LocalDatabase.deleteReminder(reminderId);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
-    },
-  });
+    } catch (error) {
+      console.error("Failed to delete:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-  const completeMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", `/api/reminders/${reminderId}/complete`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/notification-history"] });
+  const handleComplete = async () => {
+    if (!reminder) return;
+    setIsCompleting(true);
+    try {
+      LocalDatabase.addHistoryEntry({
+        reminderId: reminder.id,
+        title: reminder.title,
+        scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+      });
+
+      const updated = LocalDatabase.updateReminder(reminder.id, {
+        completedOccurrences: (reminder.completedOccurrences || 0) + 1,
+      });
+
+      if (updated?.nextOccurrence) {
+        await scheduleReminderNotification(
+          updated.id,
+          updated.title,
+          updated.notes || null,
+          new Date(updated.nextOccurrence),
+          updated.soundEnabled
+        );
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    },
-  });
+      navigation.goBack();
+    } catch (error) {
+      console.error("Failed to complete:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsCompleting(false);
+    }
+  };
 
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <ThemedView style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={theme.primary} />
@@ -102,7 +129,10 @@ export default function ReminderDetailScreen() {
       return Copy.reminderDetail.everyNDays(reminder.cycleIntervalDays || 1);
     }
     if (reminder.weeklyRepeatDays && reminder.weeklyRepeatDays.length > 0) {
-      const days = (reminder.weeklyRepeatDays as unknown as number[]).map((d) => WEEKDAYS[d].slice(0, 3));
+      const dayNameMap: Record<string, string> = {
+        sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat"
+      };
+      const days = reminder.weeklyRepeatDays.map((d: string) => dayNameMap[d] || d);
       return Copy.reminderDetail.everyDays(days.join(", "));
     }
     return Copy.reminderDetail.customSchedule;
@@ -182,16 +212,16 @@ export default function ReminderDetailScreen() {
 
         <View style={styles.actions}>
           <Button
-            onPress={() => completeMutation.mutate()}
-            loading={completeMutation.isPending}
+            onPress={handleComplete}
+            loading={isCompleting}
             testID="button-complete"
           >
             {Copy.reminderDetail.markAsComplete}
           </Button>
           <Button
             variant="outline"
-            onPress={() => deleteMutation.mutate()}
-            loading={deleteMutation.isPending}
+            onPress={handleDelete}
+            loading={isDeleting}
             style={{ borderColor: theme.error }}
             testID="button-delete"
           >
