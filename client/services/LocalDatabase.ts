@@ -1,6 +1,19 @@
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
-const db = SQLite.openDatabaseSync('goflo.db');
+const isWeb = Platform.OS === 'web';
+
+let db: any = null;
+
+function getDb(): any {
+  if (!db) {
+    if (isWeb) {
+      throw new Error('SQLite is not supported on web');
+    }
+    const SQLite = require('expo-sqlite');
+    db = SQLite.openDatabaseSync('goflo.db');
+  }
+  return db;
+}
 
 const generateId = () =>
   'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -380,7 +393,8 @@ function rowToHistory(row: any): LocalHistoryEntry {
 
 export const LocalDatabase = {
   initDatabase(): void {
-    db.execSync(`
+    if (isWeb) return;
+    getDb().execSync(`
       CREATE TABLE IF NOT EXISTS reminders (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
@@ -411,7 +425,7 @@ export const LocalDatabase = {
       );
     `);
 
-    db.execSync(`
+    getDb().execSync(`
       CREATE TABLE IF NOT EXISTS notification_history (
         id TEXT PRIMARY KEY,
         reminder_id TEXT NOT NULL,
@@ -424,7 +438,7 @@ export const LocalDatabase = {
       );
     `);
 
-    db.execSync(`
+    getDb().execSync(`
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT
@@ -433,12 +447,14 @@ export const LocalDatabase = {
   },
 
   getAllReminders(): LocalReminder[] {
-    const rows = db.getAllSync('SELECT * FROM reminders ORDER BY created_at DESC');
+    if (isWeb) return [];
+    const rows = getDb().getAllSync('SELECT * FROM reminders ORDER BY created_at DESC');
     return rows.map(rowToReminder);
   },
 
   getReminder(id: string): LocalReminder | null {
-    const row = db.getFirstSync('SELECT * FROM reminders WHERE id = ?', [id]);
+    if (isWeb) return null;
+    const row = getDb().getFirstSync('SELECT * FROM reminders WHERE id = ?', [id]);
     return row ? rowToReminder(row) : null;
   },
 
@@ -466,7 +482,7 @@ export const LocalDatabase = {
 
     const nextOccurrence = calculateNextOccurrence(partial);
 
-    db.runSync(
+    getDb().runSync(
       `INSERT INTO reminders (
         id, title, notes, reminder_type, cycle_interval_days, cycle_day_start, cycle_day_end,
         cycle_start_date, cycle_end_date, weekly_repeat_days, repeat_interval, repeat_unit,
@@ -563,13 +579,14 @@ export const LocalDatabase = {
 
     values.push(id);
 
-    db.runSync(`UPDATE reminders SET ${setClauses.join(', ')} WHERE id = ?`, values);
+    getDb().runSync(`UPDATE reminders SET ${setClauses.join(', ')} WHERE id = ?`, values);
 
     return this.getReminder(id);
   },
 
   deleteReminder(id: string): void {
-    db.runSync('DELETE FROM reminders WHERE id = ?', [id]);
+    if (isWeb) return;
+    getDb().runSync('DELETE FROM reminders WHERE id = ?', [id]);
   },
 
   toggleReminderActive(id: string, isActive: boolean): LocalReminder | null {
@@ -583,8 +600,9 @@ export const LocalDatabase = {
     status: string;
     completedAt?: string;
   }): void {
+    if (isWeb) return;
     const id = generateId();
-    db.runSync(
+    getDb().runSync(
       `INSERT INTO notification_history (id, reminder_id, title, scheduled_at, status, completed_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [id, data.reminderId, data.title, data.scheduledAt, data.status, data.completedAt ?? null]
@@ -592,16 +610,19 @@ export const LocalDatabase = {
   },
 
   getHistory(): LocalHistoryEntry[] {
-    const rows = db.getAllSync('SELECT * FROM notification_history ORDER BY created_at DESC');
+    if (isWeb) return [];
+    const rows = getDb().getAllSync('SELECT * FROM notification_history ORDER BY created_at DESC');
     return rows.map(rowToHistory);
   },
 
   getSetting(key: string): string | null {
-    const row = db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
+    if (isWeb) return null;
+    const row = getDb().getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
     return row ? row.value : null;
   },
 
   setSetting(key: string, value: string): void {
-    db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
+    if (isWeb) return;
+    getDb().runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
   },
 };
