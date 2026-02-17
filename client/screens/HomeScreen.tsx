@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -22,43 +21,25 @@ import { Copy } from "@/constants/copy";
 import { Card } from "@/components/Card";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/Button";
-import { apiRequest } from "@/lib/query-client";
 import { stopAlarm } from "@/services/notifications";
+import { useLocalReminders, useLocalHistory } from "@/hooks/useLocalReminders";
+import { LocalDatabase } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
-
-interface Reminder {
-  id: number;
-  title: string;
-  notes?: string;
-  reminderType: "cycle" | "calendar";
-  nextOccurrence: string;
-  reminderTime: string;
-  reminderTimes?: string[];
-}
-
-interface NotificationHistoryItem {
-  id: number;
-  status: string;
-  scheduledFor: string;
-}
 
 export default function HomeScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const queryClient = useQueryClient();
   const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
   const [showWelcome, setShowWelcome] = useState(true);
-  const [completedIds, setCompletedIds] = useState<Set<number>>(new Set());
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  const { data: reminders = [] } = useQuery<Reminder[]>({
-    queryKey: ["/api/reminders"],
-  });
+  const { reminders, refresh } = useLocalReminders();
+  const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
   
-  // Only show banner if: notifications are available, permission not granted, reminders exist, and user hasn't dismissed
   const hasReminders = reminders.length > 0;
   const showNotificationWarning = notificationsAvailable && 
     permissionStatus !== "granted" && 
@@ -66,28 +47,28 @@ export default function HomeScreen() {
     hasReminders && 
     !bannerDismissed;
 
-  const { data: notificationHistory = [] } = useQuery<NotificationHistoryItem[]>({
-    queryKey: ["/api/notification-history"],
-  });
-
   const incompleteCount = notificationHistory.filter(
     (item) => item.status !== "completed"
   ).length;
 
-  const completeMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("POST", `/api/reminders/${id}/complete`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-    },
-  });
-
-  const handleComplete = async (id: number) => {
+  const handleComplete = async (id: string) => {
     await stopAlarm();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCompletedIds(prev => new Set(prev).add(id));
-    completeMutation.mutate(id);
+
+    const reminder = reminders.find(r => r.id === id);
+    if (reminder) {
+      LocalDatabase.addHistoryEntry({
+        reminderId: id,
+        title: reminder.title,
+        scheduledAt: new Date().toISOString(),
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+      });
+      LocalDatabase.updateReminder(id, {});
+    }
+    refresh();
+    refreshHistory();
   };
 
   const today = new Date();
@@ -100,13 +81,13 @@ export default function HomeScreen() {
   threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
   const todaysReminders = reminders.filter((r) => {
-    const next = new Date(r.nextOccurrence);
+    const next = new Date(r.nextOccurrence || "");
     next.setHours(0, 0, 0, 0);
     return next.getTime() === today.getTime();
   });
 
   const upcomingReminders = reminders.filter((r) => {
-    const next = new Date(r.nextOccurrence);
+    const next = new Date(r.nextOccurrence || "");
     next.setHours(0, 0, 0, 0);
     return next > today && next <= threeDaysFromNow;
   });
@@ -169,7 +150,6 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Welcome Message Card */}
         {showWelcome ? (
           <View style={[styles.welcomeCard, { backgroundColor: theme.backgroundDefault }]}>
             <Pressable 
@@ -188,7 +168,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Create Reminder Button */}
         <Button
           onPress={() => navigation.navigate("TypeSelector")}
           testID="button-create-reminder"
@@ -197,7 +176,6 @@ export default function HomeScreen() {
           {Copy.home.createReminderButton}
         </Button>
 
-        {/* Today's Reminders */}
         {todaysReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -255,7 +233,7 @@ export default function HomeScreen() {
                         }
                       ]}
                       onPress={() => handleComplete(reminder.id)}
-                      disabled={isCompleted || completeMutation.isPending}
+                      disabled={isCompleted}
                       testID={`button-complete-${reminder.id}`}
                     >
                       <Text style={styles.takenButtonText}>
@@ -269,7 +247,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Upcoming Reminders */}
         {upcomingReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -294,7 +271,7 @@ export default function HomeScreen() {
                       {reminder.title}
                     </Text>
                     <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
-                      {Copy.home.dateAtTime(formatDate(reminder.nextOccurrence), formatTime(reminder.reminderTime))}
+                      {Copy.home.dateAtTime(formatDate(reminder.nextOccurrence || ""), formatTime(reminder.reminderTime))}
                     </Text>
                     {reminder.notes ? (
                       <Text 
@@ -316,7 +293,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Check out your History Banner - only show when more than 3 incomplete reminders */}
         {notificationHistory.length > 0 && incompleteCount > 3 ? (
           <Pressable 
             style={[styles.historyBanner, { backgroundColor: theme.backgroundDefault }]}
@@ -335,7 +311,6 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
-        {/* Empty State - only show if no reminders and welcome is dismissed */}
         {reminders.length === 0 && !showWelcome ? (
           <View style={styles.emptyState}>
             <Image
@@ -352,7 +327,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {/* Version Number for debugging */}
         <Text style={[styles.versionText, { color: theme.textTertiary }]}>
           v1.0.6
         </Text>

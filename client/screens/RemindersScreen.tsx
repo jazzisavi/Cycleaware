@@ -14,7 +14,6 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -27,9 +26,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
-import { apiRequest } from "@/lib/query-client";
+import { useLocalReminders } from "@/hooks/useLocalReminders";
+import { LocalDatabase } from "@/services/LocalDatabase";
+import type { LocalReminder } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
-import type { Reminder } from "@shared/schema";
 import { Text } from "react-native";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -39,29 +39,24 @@ export default function RemindersScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const queryClient = useQueryClient();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
 
-  // Reset selection mode when navigating away from the screen
+  const { reminders, isLoaded, refresh } = useLocalReminders();
+
   useFocusEffect(
     useCallback(() => {
+      refresh();
       return () => {
-        // Cleanup when screen loses focus
         setIsSelecting(false);
         setSelectedIds(new Set());
       };
-    }, [])
+    }, [refresh])
   );
 
-  const { data: reminders = [], isLoading, refetch } = useQuery<Reminder[]>({
-    queryKey: ["/api/reminders"],
-  });
-
-  // Only show banner if: notifications are available, permission not granted, reminders exist, and user hasn't dismissed
   const hasReminders = reminders.length > 0;
   const showNotificationWarning = notificationsAvailable && 
     permissionStatus !== "granted" && 
@@ -69,46 +64,7 @@ export default function RemindersScreen() {
     hasReminders && 
     !bannerDismissed;
 
-  const toggleMutation = useMutation({
-    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      return apiRequest("PUT", `/api/reminders/${id}`, { isActive });
-    },
-    onMutate: async ({ id, isActive }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["/api/reminders"] });
-      
-      // Snapshot the previous value
-      const previousReminders = queryClient.getQueryData<Reminder[]>(["/api/reminders"]);
-      
-      // Optimistically update the cache
-      queryClient.setQueryData<Reminder[]>(["/api/reminders"], (old) => 
-        old?.map((r) => r.id === id ? { ...r, isActive } : r) ?? []
-      );
-      
-      return { previousReminders };
-    },
-    onError: (err, variables, context) => {
-      // Rollback on error
-      if (context?.previousReminders) {
-        queryClient.setQueryData(["/api/reminders"], context.previousReminders);
-      }
-    },
-    onSettled: () => {
-      // Refetch after error or success
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/reminders/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reminders"] });
-    },
-  });
-
-  const handleEditPress = (reminder: Reminder) => {
+  const handleEditPress = (reminder: LocalReminder) => {
     if (reminder.reminderType === "cycle") {
       navigation.navigate("CreateCycleReminder", { reminderId: reminder.id });
     } else {
@@ -120,9 +76,10 @@ export default function RemindersScreen() {
     navigation.navigate("TypeSelector");
   };
 
-  const handleToggle = (reminder: Reminder) => {
+  const handleToggle = (reminder: LocalReminder) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleMutation.mutate({ id: reminder.id, isActive: !reminder.isActive });
+    LocalDatabase.toggleReminderActive(reminder.id, !reminder.isActive);
+    refresh();
   };
 
   const handleSelectAll = () => {
@@ -151,8 +108,9 @@ export default function RemindersScreen() {
     const performDelete = async () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       for (const id of selectedIds) {
-        await deleteMutation.mutateAsync(id);
+        LocalDatabase.deleteReminder(id);
       }
+      refresh();
       setSelectedIds(new Set());
       setIsSelecting(false);
     };
@@ -188,7 +146,7 @@ export default function RemindersScreen() {
     return dayNames[day] || day;
   };
 
-  const formatReminderDescription = (reminder: Reminder) => {
+  const formatReminderDescription = (reminder: LocalReminder) => {
     if (reminder.reminderType === "cycle") {
       const startDay = reminder.cycleDayStart || 1;
       const endDay = reminder.cycleDayEnd || startDay;
@@ -230,7 +188,7 @@ export default function RemindersScreen() {
     />
   );
 
-  const renderItem = ({ item }: { item: Reminder }) => (
+  const renderItem = ({ item }: { item: LocalReminder }) => (
     <Pressable
       style={[
         styles.card,
@@ -310,7 +268,6 @@ export default function RemindersScreen() {
             if (isSelecting) {
               handleSelectAll();
             } else {
-              // Enter selection mode AND select all items immediately
               setIsSelecting(true);
               setSelectedIds(new Set(reminders.map((r) => r.id)));
             }
@@ -373,7 +330,7 @@ export default function RemindersScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
+          <RefreshControl refreshing={!isLoaded} onRefresh={refresh} />
         }
       />
     </ThemedView>

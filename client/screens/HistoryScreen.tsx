@@ -2,7 +2,6 @@ import React from "react";
 import { FlatList, StyleSheet, View, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,15 +9,14 @@ import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
-import type { NotificationHistory } from "@shared/schema";
+import { useLocalHistory } from "@/hooks/useLocalReminders";
+import type { LocalHistoryEntry } from "@/services/LocalDatabase";
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
-  const { data: history = [], isLoading, refetch } = useQuery<NotificationHistory[]>({
-    queryKey: ["/api/notification-history"],
-  });
+  const { history, isLoaded, refresh } = useLocalHistory();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -63,7 +61,7 @@ export default function HistoryScreen() {
     });
   };
 
-  const renderItem = ({ item }: { item: NotificationHistory }) => (
+  const renderItem = ({ item }: { item: LocalHistoryEntry }) => (
     <View
       style={[
         styles.historyItem,
@@ -107,7 +105,6 @@ export default function HistoryScreen() {
     </ThemedText>
   );
 
-  // Group history by date
   const groupedHistory = history.reduce((acc, item) => {
     const date = formatDate(item.scheduledAt);
     if (!acc[date]) {
@@ -115,7 +112,7 @@ export default function HistoryScreen() {
     }
     acc[date].push(item);
     return acc;
-  }, {} as Record<string, NotificationHistory[]>);
+  }, {} as Record<string, LocalHistoryEntry[]>);
 
   const sections = Object.entries(groupedHistory).map(([date, items]) => ({
     date,
@@ -139,7 +136,7 @@ export default function HistoryScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
+          <RefreshControl refreshing={!isLoaded} onRefresh={refresh} />
         }
       />
     </ThemedView>
