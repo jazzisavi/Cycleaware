@@ -328,7 +328,7 @@ export default function HomeScreen() {
         ) : null}
 
         <Text style={[styles.versionText, { color: theme.textTertiary }]}>
-          v1.0.6
+          v1.0.7
         </Text>
       </ScrollView>
     </View>
