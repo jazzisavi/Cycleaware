@@ -1,11 +1,11 @@
 {
-  "id": "14de5f2b-b4aa-4ed0-922a-c14016a9ee00",
-  "createdAt": "2026-02-26T12:10:01.282Z",
+  "id": "8f89b267-b0a1-477f-b883-f3fbcec88734",
+  "createdAt": "2026-02-26T12:20:35.290Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772107801282-5099",
+    "key": "bundle-1772108435290-7117",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772107801282-5099/_expo/static/js/ios/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772108435290-7117/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -81,11 +81,11 @@
         "pluginHistory": {
           "expo-splash-screen": {
             "name": "expo-splash-screen",
-            "version": "31.0.11"
+            "version": "31.0.13"
           },
           "expo-web-browser": {
             "name": "expo-web-browser",
-            "version": "15.0.9"
+            "version": "15.0.10"
           },
           "expo-notifications": {
             "name": "expo-notifications",
