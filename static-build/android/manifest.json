@@ -1,11 +1,11 @@
 {
-  "id": "1fbe7014-99a2-4fad-a918-fda6334aa2b1",
-  "createdAt": "2026-02-26T11:46:25.846Z",
+  "id": "680ad9eb-0666-4268-b36c-2062e5f592c5",
+  "createdAt": "2026-02-26T12:10:01.282Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772106385846-2280",
+    "key": "bundle-1772107801282-5099",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772106385846-2280/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772107801282-5099/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -16,7 +16,7 @@
     "expoClient": {
       "name": "GoFlo",
       "slug": "goflo",
-      "version": "1.0.8",
+      "version": "1.0.9",
       "orientation": "portrait",
       "icon": "./assets/images/icon.png",
       "scheme": "goflo",
@@ -30,7 +30,7 @@
         "adaptiveIcon": {
           "backgroundColor": "#6B9BD1",
           "foregroundImage": "./assets/images/icon.png",
-          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png"
+          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -102,7 +102,7 @@
       "androidStatusBar": {
         "backgroundColor": "#FAFBFC"
       },
-      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
+      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
       "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/android"
     },
     "expoGo": {
