@@ -243,6 +243,25 @@ export const Copy = {
     },
   },
 
+  // Notification Action Confirmations
+  actionConfirmation: {
+    taken: "Taken, Good job!",
+    skipped: "Reminder Skipped",
+    snoozed: (duration: string) => `Snoozed for ${duration}`,
+    snoozeTip: "Tip: Durations can be amended in the app",
+  },
+
+  // Re-prompt
+  reprompt: {
+    titlePrefix: "Reminder:",
+  },
+
+  // Offline / Buffer Warning
+  offlineBuffer: {
+    warningTitle: "Reminders pausing soon",
+    warningBody: "While offline, we can only schedule a limited number of reminders ahead. Reconnect and open the app to continue.",
+  },
+
   // Error Messages
   errors: {
     reminderNotFound: "Reminder not found",

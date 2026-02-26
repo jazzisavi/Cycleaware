@@ -14,6 +14,10 @@ export function useLocalReminders() {
   useEffect(() => {
     LocalDatabase.initDatabase();
     refresh();
+    LocalDatabase.subscribe(refresh);
+    return () => {
+      LocalDatabase.unsubscribe(refresh);
+    };
   }, [refresh]);
 
   return { reminders, isLoaded, refresh };
@@ -23,16 +27,26 @@ export function useLocalReminder(id: string | undefined) {
   const [reminder, setReminder] = useState<LocalReminder | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     if (id) {
-      LocalDatabase.initDatabase();
       const data = LocalDatabase.getReminder(id);
       setReminder(data);
       setIsLoaded(true);
     }
   }, [id]);
 
-  return { reminder, isLoaded };
+  useEffect(() => {
+    if (id) {
+      LocalDatabase.initDatabase();
+      refresh();
+      LocalDatabase.subscribe(refresh);
+      return () => {
+        LocalDatabase.unsubscribe(refresh);
+      };
+    }
+  }, [id, refresh]);
+
+  return { reminder, isLoaded, refresh };
 }
 
 export function useLocalHistory() {
@@ -48,6 +62,10 @@ export function useLocalHistory() {
   useEffect(() => {
     LocalDatabase.initDatabase();
     refresh();
+    LocalDatabase.subscribe(refresh);
+    return () => {
+      LocalDatabase.unsubscribe(refresh);
+    };
   }, [refresh]);
 
   return { history, isLoaded, refresh };

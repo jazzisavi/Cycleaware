@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AlarmService } from "./AlarmService";
 import { LocalDatabase } from "./LocalDatabase";
+import { Copy } from "@/constants/copy";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -40,10 +41,27 @@ export async function getSnoozeDuration(): Promise<number> {
   return DEFAULT_SNOOZE_DURATION;
 }
 
+async function cancelRepromptsForReminder(reminderId: string): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const Notifications = await import("expo-notifications");
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      if (
+        n.content.data?.reminderId === reminderId &&
+        n.content.data?.isReprompt === true
+      ) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+  } catch (_e) {}
+}
+
 async function handleTakeAction(reminderId: string, reminderTitle: string): Promise<{ success: boolean; message?: string }> {
   try {
     try {
       await cancelPendingNotificationsForReminder(reminderId);
+      await cancelRepromptsForReminder(reminderId);
     } catch (_e) {
     }
 
@@ -65,16 +83,10 @@ async function handleTakeAction(reminderId: string, reminderTitle: string): Prom
     });
 
     if (updated?.nextOccurrence) {
-      await scheduleReminderNotification(
-        updated.id,
-        updated.title,
-        updated.notes || null,
-        new Date(updated.nextOccurrence),
-        updated.soundEnabled
-      );
+      await scheduleAllTimesForReminder(updated);
     }
 
-    return { success: true, message: "Marked as taken" };
+    return { success: true, message: "taken" };
   } catch (error: any) {
     console.error("action_take_error", error);
     return { success: false, message: "Error marking as taken" };
@@ -88,6 +100,8 @@ async function handleSkipAction(reminderId: string): Promise<{ success: boolean;
       return { success: false, message: "Reminder not found" };
     }
 
+    await cancelRepromptsForReminder(reminderId);
+
     LocalDatabase.addHistoryEntry({
       reminderId,
       title: reminder.title,
@@ -98,16 +112,10 @@ async function handleSkipAction(reminderId: string): Promise<{ success: boolean;
     const updated = LocalDatabase.updateReminder(reminderId, {});
 
     if (updated?.nextOccurrence) {
-      await scheduleReminderNotification(
-        updated.id,
-        updated.title,
-        updated.notes || null,
-        new Date(updated.nextOccurrence),
-        updated.soundEnabled
-      );
+      await scheduleAllTimesForReminder(updated);
     }
 
-    return { success: true, message: "Reminder skipped" };
+    return { success: true, message: "skipped" };
   } catch (error: any) {
     console.error("action_skip_error", error);
     return { success: false, message: "Error skipping reminder" };
@@ -119,6 +127,8 @@ async function handleSnoozeAction(reminderId: string, reminderTitle: string, sou
     const snoozeDuration = await getSnoozeDuration();
     const snoozeTime = new Date(Date.now() + snoozeDuration * 60 * 1000);
 
+    await cancelRepromptsForReminder(reminderId);
+
     LocalDatabase.addHistoryEntry({
       reminderId,
       title: reminderTitle,
@@ -126,15 +136,38 @@ async function handleSnoozeAction(reminderId: string, reminderTitle: string, sou
       status: "snoozed",
     });
 
+    const reminder = LocalDatabase.getReminder(reminderId);
     await scheduleReminderNotification(
       reminderId,
       reminderTitle,
-      `Snoozed - will remind again in ${snoozeDuration} minutes`,
+      reminder?.notes || null,
       snoozeTime,
       soundEnabled
     );
 
-    return { success: true, message: `Next reminder in ${snoozeDuration} mins` };
+    const now = new Date();
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+    const repromptTime = new Date(snoozeTime.getTime() + 60 * 60 * 1000);
+    if (repromptTime <= endOfDay) {
+      try {
+        const Notifications = await import("expo-notifications");
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `Reminder: ${reminderTitle}`,
+            body: reminder?.notes || "",
+            data: { reminderId, soundEnabled, isReprompt: true },
+            categoryIdentifier: "reminder",
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: repromptTime,
+          },
+        });
+      } catch (_e) {}
+    }
+
+    return { success: true, message: `snoozed:${snoozeDuration}` };
   } catch (error: any) {
     console.error("action_snooze_error", error);
     return { success: false, message: "Error snoozing reminder" };
@@ -157,7 +190,7 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-          opensAppToForeground: true,
+          opensAppToForeground: false,
         },
       },
       {
@@ -166,7 +199,7 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-          opensAppToForeground: true,
+          opensAppToForeground: false,
         },
       },
       {
@@ -175,7 +208,7 @@ export async function setupNotificationCategories(): Promise<void> {
         options: {
           isDestructive: false,
           isAuthenticationRequired: false,
-          opensAppToForeground: true,
+          opensAppToForeground: false,
         },
       },
     ]);
@@ -223,7 +256,7 @@ export async function scheduleReminderNotification(
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: title,
-        body: notes || "Time for your reminder",
+        body: notes || "",
         data: { reminderId, soundEnabled },
         categoryIdentifier: "reminder",
       },
@@ -354,43 +387,308 @@ export async function setupNotificationResponseListener(
   }
 }
 
+function getScheduleDatesForReminder(reminder: { nextOccurrence: string | null; reminderTimes: string[] | null; reminderTime: string }): Date[] {
+  if (!reminder.nextOccurrence) return [];
+
+  const baseDate = new Date(reminder.nextOccurrence);
+  const times = reminder.reminderTimes && reminder.reminderTimes.length > 0
+    ? reminder.reminderTimes
+    : [reminder.reminderTime];
+
+  const now = new Date();
+  const dates: Date[] = [];
+
+  for (const time of times) {
+    const [hours, minutes] = time.split(":").map(Number);
+    const scheduleDate = new Date(baseDate);
+    scheduleDate.setHours(hours, minutes, 0, 0);
+    if (scheduleDate > now) {
+      dates.push(scheduleDate);
+    }
+  }
+
+  return dates;
+}
+
+export async function scheduleAllTimesForReminder(reminder: {
+  id: string;
+  title: string;
+  notes: string | null;
+  nextOccurrence: string | null;
+  reminderTimes: string[] | null;
+  reminderTime: string;
+  soundEnabled: boolean;
+}): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+
+  const dates = getScheduleDatesForReminder(reminder);
+  const now = new Date();
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
+  const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  for (const date of dates) {
+    await scheduleReminderNotification(
+      reminder.id,
+      reminder.title,
+      reminder.notes,
+      date,
+      reminder.soundEnabled
+    );
+
+    if (date <= twentyFourHoursFromNow) {
+      const repromptTime = new Date(date.getTime() + 60 * 60 * 1000);
+      if (repromptTime <= endOfDay && repromptTime > now) {
+        try {
+          const Notifications = await import("expo-notifications");
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: `Reminder: ${reminder.title}`,
+              body: reminder.notes || "",
+              data: {
+                reminderId: reminder.id,
+                soundEnabled: reminder.soundEnabled,
+                isReprompt: true,
+              },
+              categoryIdentifier: "reminder",
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: repromptTime,
+            },
+          });
+        } catch (error) {
+          console.error("Error scheduling re-prompt:", error);
+        }
+      }
+    }
+  }
+}
+
+const BUFFER_DAYS = 5;
+const WARNING_DAYS_BEFORE_END = 1;
+
+function checkCycleDayLocal(
+  cycleDayStart: number,
+  cycleDayEnd: number,
+  cycleStartDate: Date,
+  cycleEndDate: Date | null,
+  checkDate: Date
+): { isActiveDay: boolean; nextActiveDate: Date | null } {
+  const cycleLength = cycleDayEnd;
+  const startDateOnly = new Date(cycleStartDate);
+  startDateOnly.setHours(0, 0, 0, 0);
+  const checkDateOnly = new Date(checkDate);
+  checkDateOnly.setHours(0, 0, 0, 0);
+
+  if (cycleEndDate) {
+    const endDateOnly = new Date(cycleEndDate);
+    endDateOnly.setHours(0, 0, 0, 0);
+    if (checkDateOnly > endDateOnly) {
+      return { isActiveDay: false, nextActiveDate: null };
+    }
+  }
+
+  if (checkDateOnly < startDateOnly) {
+    const daysUntilStart = Math.floor((startDateOnly.getTime() - checkDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilActive = daysUntilStart + (cycleDayStart - 1);
+    const nextActiveDate = new Date(startDateOnly);
+    nextActiveDate.setDate(nextActiveDate.getDate() + (cycleDayStart - 1));
+    return { isActiveDay: false, nextActiveDate };
+  }
+
+  const daysSinceStart = Math.floor((checkDateOnly.getTime() - startDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+  const dayInCurrentCycle = (daysSinceStart % cycleLength) + 1;
+  const isActiveDay = dayInCurrentCycle >= cycleDayStart && dayInCurrentCycle <= cycleDayEnd;
+
+  if (isActiveDay) {
+    return { isActiveDay: true, nextActiveDate: new Date(checkDateOnly) };
+  } else if (dayInCurrentCycle < cycleDayStart) {
+    const daysUntil = cycleDayStart - dayInCurrentCycle;
+    const nextActive = new Date(checkDateOnly);
+    nextActive.setDate(nextActive.getDate() + daysUntil);
+    return { isActiveDay: false, nextActiveDate: nextActive };
+  } else {
+    const daysLeft = cycleLength - dayInCurrentCycle;
+    const daysUntil = daysLeft + cycleDayStart;
+    const nextActive = new Date(checkDateOnly);
+    nextActive.setDate(nextActive.getDate() + daysUntil);
+    return { isActiveDay: false, nextActiveDate: nextActive };
+  }
+}
+
+function getCycleBufferDates(reminder: {
+  cycleDayStart: number | null;
+  cycleDayEnd: number | null;
+  cycleStartDate: string | null;
+  cycleEndDate: string | null;
+  reminderTime: string;
+  reminderTimes: string[] | null;
+}): Date[] {
+  if (!reminder.cycleDayStart || !reminder.cycleDayEnd || !reminder.cycleStartDate) return [];
+
+  const times = reminder.reminderTimes && reminder.reminderTimes.length > 0
+    ? reminder.reminderTimes
+    : [reminder.reminderTime];
+  const now = new Date();
+  const bufferEnd = new Date(now);
+  bufferEnd.setDate(bufferEnd.getDate() + BUFFER_DAYS);
+  const dates: Date[] = [];
+
+  for (let dayOffset = 0; dayOffset <= BUFFER_DAYS; dayOffset++) {
+    const checkDate = new Date(now);
+    checkDate.setDate(checkDate.getDate() + dayOffset);
+    checkDate.setHours(0, 0, 0, 0);
+
+    const { isActiveDay } = checkCycleDayLocal(
+      reminder.cycleDayStart,
+      reminder.cycleDayEnd,
+      new Date(reminder.cycleStartDate),
+      reminder.cycleEndDate ? new Date(reminder.cycleEndDate) : null,
+      checkDate
+    );
+
+    if (!isActiveDay) continue;
+
+    for (const time of times) {
+      const [hours, minutes] = time.split(":").map(Number);
+      const scheduleDate = new Date(checkDate);
+      scheduleDate.setHours(hours, minutes, 0, 0);
+      if (scheduleDate > now) {
+        dates.push(scheduleDate);
+      }
+    }
+  }
+
+  return dates;
+}
+
+async function scheduleBufferWarning(reminder: {
+  id: string;
+  cycleDayStart: number | null;
+  cycleDayEnd: number | null;
+  cycleStartDate: string | null;
+  cycleEndDate: string | null;
+  reminderTime: string;
+}): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+
+  try {
+    const Notifications = await import("expo-notifications");
+
+    const warningDate = new Date();
+    warningDate.setDate(warningDate.getDate() + BUFFER_DAYS - WARNING_DAYS_BEFORE_END);
+    const [hours, minutes] = reminder.reminderTime.split(":").map(Number);
+    warningDate.setHours(hours, minutes, 0, 0);
+
+    if (warningDate <= new Date()) return;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: Copy.offlineBuffer.warningTitle,
+        body: Copy.offlineBuffer.warningBody,
+        data: { type: "buffer_warning", reminderId: reminder.id },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: warningDate,
+      },
+    });
+
+    console.log(`Scheduled buffer warning for ${warningDate.toISOString()}`);
+  } catch (error) {
+    console.error("Error scheduling buffer warning:", error);
+  }
+}
+
 export async function syncAllNotifications(): Promise<void> {
   if (!isNotificationsAvailable()) {
     return;
   }
 
   try {
+    const Notifications = await import("expo-notifications");
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
     LocalDatabase.initDatabase();
     const reminders = LocalDatabase.getAllReminders();
     const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const history = LocalDatabase.getHistory();
 
     for (const reminder of reminders) {
       if (!reminder.isActive || !reminder.nextOccurrence) continue;
+      if (reminder.reminderType === "cycle") continue;
+
+      const nextDate = new Date(reminder.nextOccurrence);
+      nextDate.setHours(0, 0, 0, 0);
+
+      if (nextDate < todayStart) {
+        const missedDateStr = reminder.nextOccurrence;
+        const hasHistoryForDate = history.some((h) => {
+          if (h.reminderId !== reminder.id) return false;
+          const hDate = new Date(h.scheduledAt);
+          hDate.setHours(0, 0, 0, 0);
+          return hDate.getTime() === nextDate.getTime();
+        });
+
+        if (!hasHistoryForDate) {
+          LocalDatabase.addHistoryEntry({
+            reminderId: reminder.id,
+            title: reminder.title,
+            scheduledAt: missedDateStr,
+            status: "missed",
+          });
+        }
+      }
+    }
+
+    let cycleBufferScheduled = false;
+
+    for (const reminder of reminders) {
+      if (!reminder.isActive) continue;
+
+      if (reminder.reminderType === "cycle") {
+        await cancelPendingNotificationsForReminder(reminder.id);
+
+        const bufferDates = getCycleBufferDates(reminder);
+        for (const date of bufferDates) {
+          await scheduleReminderNotification(
+            reminder.id,
+            reminder.title,
+            reminder.notes,
+            date,
+            reminder.soundEnabled
+          );
+        }
+
+        if (bufferDates.length > 0 && !cycleBufferScheduled) {
+          await scheduleBufferWarning(reminder);
+          cycleBufferScheduled = true;
+        }
+
+        if (!reminder.nextOccurrence) {
+          LocalDatabase.updateReminder(reminder.id, {});
+        }
+
+        continue;
+      }
+
+      if (!reminder.nextOccurrence) continue;
 
       const nextDate = new Date(reminder.nextOccurrence);
       if (nextDate <= now) {
         LocalDatabase.updateReminder(reminder.id, {});
         const updated = LocalDatabase.getReminder(reminder.id);
         if (updated?.nextOccurrence) {
-          const updatedDate = new Date(updated.nextOccurrence);
-          if (updatedDate > now) {
-            await scheduleReminderNotification(
-              updated.id,
-              updated.title,
-              updated.notes || null,
-              updatedDate,
-              updated.soundEnabled
-            );
-          }
+          await cancelPendingNotificationsForReminder(reminder.id);
+          await scheduleAllTimesForReminder(updated);
         }
       } else {
-        await scheduleReminderNotification(
-          reminder.id,
-          reminder.title,
-          reminder.notes || null,
-          nextDate,
-          reminder.soundEnabled
-        );
+        await cancelPendingNotificationsForReminder(reminder.id);
+        await scheduleAllTimesForReminder(reminder);
       }
     }
 

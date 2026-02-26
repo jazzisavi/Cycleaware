@@ -19,7 +19,8 @@ import { Copy } from "@/constants/copy";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { useLocalReminder } from "@/hooks/useLocalReminders";
 import type { LocalReminder } from "@/services/LocalDatabase";
-import { scheduleReminderNotification } from "@/services/notifications";
+import { scheduleReminderNotification, cancelPendingNotificationsForReminder } from "@/services/notifications";
+import { syncCycleConfigsToServer } from "@/services/pushSync";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type RouteProps = RouteProp<RootStackParamList, "ReminderDetail">;
@@ -42,7 +43,12 @@ export default function ReminderDetailScreen() {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
+      await cancelPendingNotificationsForReminder(reminderId);
+      const wasType = reminder?.reminderType;
       LocalDatabase.deleteReminder(reminderId);
+      if (wasType === "cycle") {
+        syncCycleConfigsToServer();
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error) {

@@ -13,10 +13,11 @@ import { Spacing, Colors } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { scheduleReminderNotification } from "@/services/notifications";
+import { scheduleAllTimesForReminder, cancelPendingNotificationsForReminder, syncAllNotifications } from "@/services/notifications";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { useLocalReminder } from "@/hooks/useLocalReminders";
 import type { LocalReminder } from "@/services/LocalDatabase";
+import { syncCycleConfigsToServer } from "@/services/pushSync";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateCycleReminder">;
@@ -252,30 +253,33 @@ export default function CreateReminderScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       await requestPermission();
-      if (savedReminder?.nextOccurrence) {
-        await scheduleReminderNotification(
-          savedReminder.id,
-          savedReminder.title,
-          savedReminder.notes || null,
-          new Date(savedReminder.nextOccurrence),
-          savedReminder.soundEnabled
-        );
+      if (savedReminder) {
+        await syncAllNotifications();
       }
+
+      syncCycleConfigsToServer();
 
       navigation.navigate("Main", { screen: "Reminders" });
     } catch (error: any) {
       console.error("Failed to save reminder:", error);
-      Alert.alert("Save Error", `Failed to save: ${error?.message || String(error)}`);
+      const msg = `Failed to save: ${error?.message || String(error)}`;
+      if (Platform.OS === "web") {
+        window.alert(msg);
+      } else {
+        Alert.alert("Save Error", msg);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
+      await cancelPendingNotificationsForReminder(reminderId!);
       LocalDatabase.deleteReminder(reminderId!);
+      syncCycleConfigsToServer();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate("Main", { screen: "Reminders" });
     } catch (error) {
@@ -425,18 +429,27 @@ export default function CreateReminderScreen() {
             <Feather name="bell" size={20} color={theme.textSecondary} />
           </View>
           <View style={styles.groupContent}>
-            {/* Existing reminder times */}
             {reminderTimes.map((reminderTime, index) => (
-              <Pressable 
-                key={index}
-                style={[styles.groupRow, styles.timeRow]}
-                onPress={() => handleOpenTimePicker(index)}
-                testID={`time-row-${index}`}
-              >
-                <ThemedText type="body" style={{ color: theme.text }}>
-                  {Copy.createCycleReminder.remindMeAt(formatTime(reminderTime))}
-                </ThemedText>
-              </Pressable>
+              <View key={index} style={[styles.groupRow, styles.timeRow, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
+                <Pressable 
+                  style={{ flex: 1 }}
+                  onPress={() => handleOpenTimePicker(index)}
+                  testID={`time-row-${index}`}
+                >
+                  <ThemedText type="body" style={{ color: theme.text }}>
+                    {Copy.createCycleReminder.remindMeAt(formatTime(reminderTime))}
+                  </ThemedText>
+                </Pressable>
+                {reminderTimes.length > 1 ? (
+                  <Pressable
+                    onPress={() => handleRemoveTime(index)}
+                    hitSlop={8}
+                    testID={`remove-time-${index}`}
+                  >
+                    <Feather name="x" size={18} color={theme.textSecondary} />
+                  </Pressable>
+                ) : null}
+              </View>
             ))}
 
             {/* Add reminder time */}
@@ -593,7 +606,7 @@ export default function CreateReminderScreen() {
             disabled={isSaving}
             testID="button-delete-reminder"
           >
-            <ThemedText type="body" style={{ color: Colors.light.error, fontWeight: "500" }}>
+            <ThemedText type="body" style={{ color: theme.error, fontWeight: "500" }}>
               Delete Reminder
             </ThemedText>
           </Pressable>

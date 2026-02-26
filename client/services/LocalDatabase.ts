@@ -1,6 +1,14 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const isWeb = Platform.OS === 'web';
+
+type Listener = () => void;
+const listeners: Set<Listener> = new Set();
+
+function notifyListeners() {
+  listeners.forEach((listener) => listener());
+}
 
 let db: any = null;
 
@@ -13,6 +21,44 @@ function getDb(): any {
     db = SQLite.openDatabaseSync('goflo.db');
   }
   return db;
+}
+
+const WEB_REMINDERS_KEY = 'goflo_reminders';
+const WEB_HISTORY_KEY = 'goflo_history';
+const WEB_SETTINGS_KEY = 'goflo_settings';
+
+let webReminders: LocalReminder[] = [];
+let webHistory: LocalHistoryEntry[] = [];
+let webSettings: Record<string, string> = {};
+let webDataLoaded = false;
+
+async function loadWebData() {
+  if (webDataLoaded) return;
+  try {
+    const [r, h, s] = await Promise.all([
+      AsyncStorage.getItem(WEB_REMINDERS_KEY),
+      AsyncStorage.getItem(WEB_HISTORY_KEY),
+      AsyncStorage.getItem(WEB_SETTINGS_KEY),
+    ]);
+    if (r) webReminders = JSON.parse(r);
+    if (h) webHistory = JSON.parse(h);
+    if (s) webSettings = JSON.parse(s);
+  } catch (e) {
+    console.warn('Failed to load web data:', e);
+  }
+  webDataLoaded = true;
+}
+
+function saveWebReminders() {
+  AsyncStorage.setItem(WEB_REMINDERS_KEY, JSON.stringify(webReminders)).catch(() => {});
+}
+
+function saveWebHistory() {
+  AsyncStorage.setItem(WEB_HISTORY_KEY, JSON.stringify(webHistory)).catch(() => {});
+}
+
+function saveWebSettings() {
+  AsyncStorage.setItem(WEB_SETTINGS_KEY, JSON.stringify(webSettings)).catch(() => {});
 }
 
 const generateId = () =>
@@ -392,8 +438,19 @@ function rowToHistory(row: any): LocalHistoryEntry {
 }
 
 export const LocalDatabase = {
+  subscribe(listener: Listener): void {
+    listeners.add(listener);
+  },
+
+  unsubscribe(listener: Listener): void {
+    listeners.delete(listener);
+  },
+
   initDatabase(): void {
-    if (isWeb) return;
+    if (isWeb) {
+      loadWebData().then(() => notifyListeners());
+      return;
+    }
     getDb().execSync(`
       CREATE TABLE IF NOT EXISTS reminders (
         id TEXT PRIMARY KEY,
@@ -447,13 +504,13 @@ export const LocalDatabase = {
   },
 
   getAllReminders(): LocalReminder[] {
-    if (isWeb) return [];
+    if (isWeb) return [...webReminders].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const rows = getDb().getAllSync('SELECT * FROM reminders ORDER BY created_at DESC');
     return rows.map(rowToReminder);
   },
 
   getReminder(id: string): LocalReminder | null {
-    if (isWeb) return null;
+    if (isWeb) return webReminders.find((r) => r.id === id) ?? null;
     const row = getDb().getFirstSync('SELECT * FROM reminders WHERE id = ?', [id]);
     return row ? rowToReminder(row) : null;
   },
@@ -481,6 +538,41 @@ export const LocalDatabase = {
     };
 
     const nextOccurrence = calculateNextOccurrence(partial);
+
+    if (isWeb) {
+      const reminder: LocalReminder = {
+        id,
+        title: data.title,
+        notes: data.notes ?? null,
+        reminderType: data.reminderType,
+        cycleIntervalDays: data.cycleIntervalDays ?? null,
+        cycleDayStart: data.cycleDayStart ?? null,
+        cycleDayEnd: data.cycleDayEnd ?? null,
+        cycleStartDate: data.cycleStartDate ?? null,
+        cycleEndDate: data.cycleEndDate ?? null,
+        weeklyRepeatDays: data.weeklyRepeatDays ?? null,
+        repeatInterval: data.repeatInterval ?? 1,
+        repeatUnit: data.repeatUnit ?? 'week',
+        calendarStartDate: data.calendarStartDate ?? null,
+        calendarEndDate: data.calendarEndDate ?? null,
+        calendarEndsType: data.calendarEndsType ?? 'never',
+        maxOccurrences: data.maxOccurrences ?? null,
+        completedOccurrences: data.completedOccurrences ?? 0,
+        specificDates: data.specificDates ?? null,
+        reminderTime: data.reminderTime,
+        reminderTimes: data.reminderTimes ?? null,
+        alarmType: data.alarmType ?? 'notification',
+        soundEnabled: data.soundEnabled ?? false,
+        nextOccurrence,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      webReminders.push(reminder);
+      saveWebReminders();
+      notifyListeners();
+      return reminder;
+    }
 
     getDb().runSync(
       `INSERT INTO reminders (
@@ -520,7 +612,9 @@ export const LocalDatabase = {
       ]
     );
 
-    return this.getReminder(id)!;
+    const result = this.getReminder(id)!;
+    notifyListeners();
+    return result;
   },
 
   updateReminder(id: string, data: Partial<CreateReminderInput>): LocalReminder | null {
@@ -534,6 +628,16 @@ export const LocalDatabase = {
 
     const nextOccurrence = calculateNextOccurrence(merged);
     const now = new Date().toISOString();
+
+    if (isWeb) {
+      const idx = webReminders.findIndex((r) => r.id === id);
+      if (idx === -1) return null;
+      const updated: LocalReminder = { ...webReminders[idx], ...data, nextOccurrence, updatedAt: now } as LocalReminder;
+      webReminders[idx] = updated;
+      saveWebReminders();
+      notifyListeners();
+      return updated;
+    }
 
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -581,12 +685,20 @@ export const LocalDatabase = {
 
     getDb().runSync(`UPDATE reminders SET ${setClauses.join(', ')} WHERE id = ?`, values);
 
-    return this.getReminder(id);
+    const result = this.getReminder(id);
+    notifyListeners();
+    return result;
   },
 
   deleteReminder(id: string): void {
-    if (isWeb) return;
+    if (isWeb) {
+      webReminders = webReminders.filter((r) => r.id !== id);
+      saveWebReminders();
+      notifyListeners();
+      return;
+    }
     getDb().runSync('DELETE FROM reminders WHERE id = ?', [id]);
+    notifyListeners();
   },
 
   toggleReminderActive(id: string, isActive: boolean): LocalReminder | null {
@@ -600,29 +712,51 @@ export const LocalDatabase = {
     status: string;
     completedAt?: string;
   }): void {
-    if (isWeb) return;
+    if (isWeb) {
+      const entry: LocalHistoryEntry = {
+        id: generateId(),
+        reminderId: data.reminderId,
+        title: data.title,
+        scheduledAt: data.scheduledAt,
+        status: data.status,
+        snoozedUntil: null,
+        completedAt: data.completedAt ?? null,
+        createdAt: new Date().toISOString(),
+      };
+      webHistory.unshift(entry);
+      saveWebHistory();
+      notifyListeners();
+      return;
+    }
     const id = generateId();
     getDb().runSync(
       `INSERT INTO notification_history (id, reminder_id, title, scheduled_at, status, completed_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [id, data.reminderId, data.title, data.scheduledAt, data.status, data.completedAt ?? null]
     );
+    notifyListeners();
   },
 
   getHistory(): LocalHistoryEntry[] {
-    if (isWeb) return [];
+    if (isWeb) return [...webHistory];
     const rows = getDb().getAllSync('SELECT * FROM notification_history ORDER BY created_at DESC');
     return rows.map(rowToHistory);
   },
 
   getSetting(key: string): string | null {
-    if (isWeb) return null;
+    if (isWeb) return webSettings[key] ?? null;
     const row = getDb().getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', [key]);
     return row ? row.value : null;
   },
 
   setSetting(key: string, value: string): void {
-    if (isWeb) return;
+    if (isWeb) {
+      webSettings[key] = value;
+      saveWebSettings();
+      notifyListeners();
+      return;
+    }
     getDb().runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
+    notifyListeners();
   },
 };

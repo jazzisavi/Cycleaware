@@ -29,6 +29,8 @@ import { Copy } from "@/constants/copy";
 import { useLocalReminders } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
+import { cancelPendingNotificationsForReminder, scheduleAllTimesForReminder } from "@/services/notifications";
+import { syncCycleConfigsToServer } from "@/services/pushSync";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { Text } from "react-native";
 
@@ -76,9 +78,18 @@ export default function RemindersScreen() {
     navigation.navigate("TypeSelector");
   };
 
-  const handleToggle = (reminder: LocalReminder) => {
+  const handleToggle = async (reminder: LocalReminder) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    LocalDatabase.toggleReminderActive(reminder.id, !reminder.isActive);
+    const newActive = !reminder.isActive;
+    LocalDatabase.toggleReminderActive(reminder.id, newActive);
+    if (!newActive) {
+      await cancelPendingNotificationsForReminder(reminder.id);
+    } else {
+      const updated = LocalDatabase.getReminder(reminder.id);
+      if (updated && updated.nextOccurrence) {
+        await scheduleAllTimesForReminder(updated);
+      }
+    }
     refresh();
   };
 
@@ -107,8 +118,15 @@ export default function RemindersScreen() {
     
     const performDelete = async () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      let hasCycle = false;
       for (const id of selectedIds) {
+        const r = LocalDatabase.getReminder(id);
+        if (r?.reminderType === "cycle") hasCycle = true;
+        await cancelPendingNotificationsForReminder(id);
         LocalDatabase.deleteReminder(id);
+      }
+      if (hasCycle) {
+        syncCycleConfigsToServer();
       }
       refresh();
       setSelectedIds(new Set());
@@ -147,23 +165,37 @@ export default function RemindersScreen() {
   };
 
   const formatReminderDescription = (reminder: LocalReminder) => {
+    const times = reminder.reminderTimes && reminder.reminderTimes.length > 0
+      ? reminder.reminderTimes.map(formatTime).join(", ")
+      : formatTime(reminder.reminderTime);
+
     if (reminder.reminderType === "cycle") {
       const startDay = reminder.cycleDayStart || 1;
       const endDay = reminder.cycleDayEnd || startDay;
-      const time = formatTime(reminder.reminderTime);
       const startDate = reminder.cycleStartDate ? ` - Started ${formatStartDate(reminder.cycleStartDate)}` : "";
-      return `Day ${startDay} to ${endDay} at ${time}${startDate}`;
+      return `Day ${startDay} to ${endDay} at ${times}${startDate}`;
     } else {
-      const time = formatTime(reminder.reminderTime);
       const weeklyDays = (reminder.weeklyRepeatDays as string[]) || [];
       const startDate = reminder.calendarStartDate ? ` - Started ${formatStartDate(reminder.calendarStartDate)}` : "";
+      const unit = reminder.repeatUnit || "week";
+      const interval = reminder.repeatInterval || 1;
+      
+      if (unit === "day") {
+        if (interval === 1) {
+          return `Daily at ${times}${startDate}`;
+        }
+        return `Every ${interval} days at ${times}${startDate}`;
+      }
       
       if (weeklyDays.length > 0) {
         const dayLabels = weeklyDays.map(formatDayName).join(", ");
-        return `${dayLabels} at ${time}${startDate}`;
+        if (interval > 1) {
+          return `Every ${interval} weeks on ${dayLabels} at ${times}${startDate}`;
+        }
+        return `${dayLabels} at ${times}${startDate}`;
       }
       
-      return `Daily at ${time}${startDate}`;
+      return `Daily at ${times}${startDate}`;
     }
   };
 
@@ -226,7 +258,7 @@ export default function RemindersScreen() {
           {formatReminderDescription(item)}
         </ThemedText>
         {showNotificationWarning ? (
-          <Text style={styles.notificationsDisabledText}>
+          <Text style={[styles.notificationsDisabledText, { color: theme.error }]}>
             {Copy.home.notificationsDisabled}
           </Text>
         ) : null}
@@ -287,9 +319,9 @@ export default function RemindersScreen() {
       <AppHeader title={Copy.navigation.reminders} />
       
       {showNotificationWarning ? (
-        <View style={styles.notificationBanner}>
+        <View style={[styles.notificationBanner, { backgroundColor: theme.error + "10", borderColor: theme.error + "30" }]}>
           <View style={styles.notificationBannerHeader}>
-            <Text style={styles.notificationBannerTitle}>
+            <Text style={[styles.notificationBannerTitle, { color: theme.error }]}>
               {Copy.home.notificationBannerTitle}
             </Text>
             <Pressable 
@@ -297,15 +329,15 @@ export default function RemindersScreen() {
               style={styles.notificationBannerClose}
               hitSlop={8}
             >
-              <Feather name="x" size={18} color="#666666" />
+              <Feather name="x" size={18} color={theme.textSecondary} />
             </Pressable>
           </View>
-          <Text style={styles.notificationBannerText}>
+          <Text style={[styles.notificationBannerText, { color: theme.textSecondary }]}>
             {Copy.home.notificationBannerText}
           </Text>
           <Pressable 
             onPress={openSettings}
-            style={styles.notificationBannerButton}
+            style={[styles.notificationBannerButton, { backgroundColor: theme.error }]}
           >
             <Text style={styles.notificationBannerButtonText}>
               {Copy.home.notificationBannerButton}
@@ -390,12 +422,10 @@ const styles = StyleSheet.create({
     transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
   },
   notificationBanner: {
-    backgroundColor: "#FFF5F5",
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: "#FECACA",
     padding: Spacing.md,
   },
   notificationBannerHeader: {
@@ -407,18 +437,15 @@ const styles = StyleSheet.create({
   notificationBannerTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#DC2626",
   },
   notificationBannerClose: {
     padding: 4,
   },
   notificationBannerText: {
-    color: "#666666",
     fontSize: 14,
     marginBottom: Spacing.md,
   },
   notificationBannerButton: {
-    backgroundColor: "#DC2626",
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     alignItems: "center",
@@ -429,7 +456,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   notificationsDisabledText: {
-    color: "#DC2626",
     fontSize: 12,
     fontWeight: "500",
     marginTop: Spacing.xs,

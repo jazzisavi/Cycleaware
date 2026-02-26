@@ -1,5 +1,6 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
@@ -199,7 +200,14 @@ function configureExpoAndLanding(app: express.Application) {
   });
 
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
-  app.use(express.static(path.resolve(process.cwd(), "static-build")));
+  app.use(express.static(path.resolve(process.cwd(), "static-build"), {
+    maxAge: '1d',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      }
+    }
+  }));
 
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
@@ -226,6 +234,7 @@ function setupErrorHandler(app: express.Application) {
 }
 
 (async () => {
+  app.use(compression());
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);

@@ -13,7 +13,7 @@ import { Spacing } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { scheduleReminderNotification } from "@/services/notifications";
+import { scheduleAllTimesForReminder, cancelPendingNotificationsForReminder } from "@/services/notifications";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { useLocalReminder } from "@/hooks/useLocalReminders";
 import type { LocalReminder } from "@/services/LocalDatabase";
@@ -84,6 +84,15 @@ export default function CreateCalendarReminderScreen() {
         });
         setReminderTimes(times);
       }
+
+      if (existingReminder.repeatInterval !== undefined) setRepeatInterval(existingReminder.repeatInterval);
+      if (existingReminder.repeatUnit) setRepeatUnit(existingReminder.repeatUnit as "week" | "day");
+      if (existingReminder.repeatUnit === "week" && existingReminder.weeklyRepeatDays && (existingReminder.weeklyRepeatDays as string[]).length > 0) {
+        setSelectedDays(existingReminder.weeklyRepeatDays as string[]);
+      }
+      if (existingReminder.calendarEndsType) setEnds(existingReminder.calendarEndsType as "never" | "on" | "after");
+      if (existingReminder.calendarEndDate) setEndDate(existingReminder.calendarEndDate);
+      if (existingReminder.maxOccurrences) setOccurrences(existingReminder.maxOccurrences);
     }
   }, [existingReminder, isEditMode]);
 
@@ -206,7 +215,7 @@ export default function CreateCalendarReminderScreen() {
         reminderTimes: reminderTimesArray,
         soundEnabled,
         isActive: true,
-        weeklyRepeatDays: selectedDays,
+        weeklyRepeatDays: repeatUnit === "day" ? null : selectedDays,
         repeatInterval,
         repeatUnit,
         calendarStartDate: calculateStartDate(),
@@ -226,28 +235,28 @@ export default function CreateCalendarReminderScreen() {
 
       await requestPermission();
       if (savedReminder?.nextOccurrence) {
-        await scheduleReminderNotification(
-          savedReminder.id,
-          savedReminder.title,
-          savedReminder.notes || null,
-          new Date(savedReminder.nextOccurrence),
-          savedReminder.soundEnabled
-        );
+        await scheduleAllTimesForReminder(savedReminder);
       }
 
       navigation.navigate("Main", { screen: "Reminders" });
     } catch (error: any) {
       console.error("Failed to save reminder:", error);
-      Alert.alert("Save Error", `Failed to save: ${error?.message || String(error)}`);
+      const msg = `Failed to save: ${error?.message || String(error)}`;
+      if (Platform.OS === "web") {
+        window.alert(msg);
+      } else {
+        Alert.alert("Save Error", msg);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
+      await cancelPendingNotificationsForReminder(reminderId!);
       LocalDatabase.deleteReminder(reminderId!);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate("Main", { screen: "Reminders" });
@@ -372,16 +381,26 @@ export default function CreateCalendarReminderScreen() {
           </View>
           <View style={styles.groupContent}>
             {reminderTimes.map((reminderTime, index) => (
-              <Pressable 
-                key={index}
-                style={[styles.groupRow, styles.timeRow]}
-                onPress={() => handleOpenTimePicker(index)}
-                testID={`time-row-${index}`}
-              >
-                <ThemedText type="body" style={{ color: theme.text }}>
-                  {Copy.createCalendarReminder.remindMeAt(formatTime(reminderTime))}
-                </ThemedText>
-              </Pressable>
+              <View key={index} style={[styles.groupRow, styles.timeRow, { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }]}>
+                <Pressable 
+                  style={{ flex: 1 }}
+                  onPress={() => handleOpenTimePicker(index)}
+                  testID={`time-row-${index}`}
+                >
+                  <ThemedText type="body" style={{ color: theme.text }}>
+                    {Copy.createCalendarReminder.remindMeAt(formatTime(reminderTime))}
+                  </ThemedText>
+                </Pressable>
+                {reminderTimes.length > 1 ? (
+                  <Pressable
+                    onPress={() => handleRemoveTime(index)}
+                    hitSlop={8}
+                    testID={`remove-time-${index}`}
+                  >
+                    <Feather name="x" size={18} color={theme.textSecondary} />
+                  </Pressable>
+                ) : null}
+              </View>
             ))}
 
             {/* Add reminder time */}

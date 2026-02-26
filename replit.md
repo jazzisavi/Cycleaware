@@ -2,7 +2,20 @@
 
 ## Overview
 
-GoFlo is a cross-platform habit reminder app built with Expo/React Native and Express. The core feature is a dual-mode reminder system: **Cycle-based** (repeat every X days) and **Calendar-based** (specific weekdays or dates). The app follows a soft pastel design aesthetic with editorial precision, aiming to reduce stress around task management.
+GoFlo is a cross-platform habit reminder app built with Expo/React Native and Express. The core feature is a dual-mode reminder system: **Cycle-based** (repeat every X days) and **Calendar-based** (specific weekdays or dates). The app uses a warm, earthy color palette, aiming to reduce stress around task management.
+
+### Branding Colors
+- **Warm Linen** `#F5F0E8` — App background
+- **Dark Bark** `#2C2118` — Primary text/font
+- **Golden Hour** `#F0A020` — CTAs, highlights, active switches, links, tab bar active
+- **Warm Stone** `#EDE7DA` — Cards/containers (secondary bg)
+- **White** `#FFFFFF` — Regular cards
+- **CTA Card** `#A4BCBC` — Card with CTA button (e.g., welcome/empty state)
+- **Fired Terracotta** `#C03A2B` — Cycle type indicator, error states
+- **Deep Emerald** `#2E7D52` — Calendar type indicator (follicular phase)
+- **Saffron** `#C47D0A` — Warning states (ovulatory phase)
+- **Warm Ocean** `#2A6E7A` — Info color (luteal phase)
+- **Spring Fern** `#52B07A` — Success states
 
 ## User Preferences
 
@@ -26,10 +39,18 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Drizzle ORM (used only for user/subscription data, not reminders)
 - **Schema Location**: `shared/schema.ts` (legacy server schema, not used by client screens)
 
+### CRITICAL: Static Bundle Deployment
+- **Mobile Expo Go** loads pre-built static JS bundles from `static-build/` folder, NOT the live Metro dev server
+- **After ANY code change**, you MUST run `node scripts/build.js` to rebuild the static bundles, then restart the backend (`Start Backend` workflow) so mobile devices pick up the changes
+- The Metro dev server (`Start Frontend`) only serves the web version; mobile gets served from the backend's static files
+- Build version: v1.0.9
+
 ### Local-First Data Flow
 - **Reminders**: Created, read, updated, deleted via `LocalDatabase` (SQLite) — no server API calls
-- **History**: Notification actions (take/skip/snooze) write history entries to local SQLite
-- **Notifications**: Scheduled locally via expo-notifications; `syncAllNotifications()` runs on app startup to reschedule
+- **History**: Notification actions (take/skip/snooze) write history entries to local SQLite; missed reminders auto-detected on app launch
+- **Notifications**: Scheduled locally via expo-notifications; `syncAllNotifications()` runs on app startup to reschedule and detect missed reminders
+- **Background Task**: `expo-task-manager` handles Take/Skip/Snooze actions in background without opening app (headless JS)
+- **Re-prompts**: 1 hour after a notification with no action, one follow-up is sent (today's reminders only); cancelled if user acts
 - **IDs**: UUID strings (generated client-side), not auto-increment numbers
 - **Next Occurrence**: Calculated client-side in `LocalDatabase.ts` when creating/updating reminders
 
@@ -43,16 +64,22 @@ client/           # React Native app code
   services/       # LocalDatabase.ts (SQLite), notifications.ts, AlarmService.ts
   lib/            # Utilities (query client kept for legacy compatibility)
   constants/      # Theme, design tokens, and copy.ts
-server/           # Express backend (minimal — serves static files)
-  routes.ts       # API endpoints (legacy, not used by reminder screens)
-  storage.ts      # Database operations (legacy)
+server/           # Express backend (serves static files + push notification API)
+  routes.ts       # API endpoints: POST /api/push-token, POST /api/cycle-configs/sync
+  storage.ts      # Database operations
   db.ts           # Drizzle/PostgreSQL connection
+  utils/
+    pushScheduler.ts   # Server-side push notification scheduler (runs every 60s)
+    cycleCalculator.ts # Cycle day calculation logic
 shared/           # Code shared between client and server
-  schema.ts       # Drizzle schema (legacy server schema)
+  schema.ts       # Drizzle schema (users, push_tokens, cycle_reminder_configs)
 ```
 
 ### Key Design Decisions
+- **Hybrid Notification Architecture**: Cycle reminders use server-side Expo Push API (via pushScheduler) for indefinite delivery without app interaction; calendar reminders remain 100% local
 - **Local-First Architecture**: All reminder data stored on-device via expo-sqlite for instant access and offline support
+- **5-Day Local Buffer**: Cycle reminders also schedule 5 days of local notifications as an offline safety net, with a warning notification 1 day before the buffer runs out
+- **Push Sync**: `client/services/pushSync.ts` handles push token registration and cycle config syncing to server on app launch and on create/edit/delete
 - **Reminder Types**: Two distinct reminder modes (cycle and calendar) stored in single SQLite table with conditional fields
 - **Component Pattern**: Themed components (`ThemedText`, `ThemedView`) that automatically adapt to color scheme
 - **Centralized Copy**: All user-facing text is managed through `client/constants/copy.ts` for easy maintenance and future i18n support

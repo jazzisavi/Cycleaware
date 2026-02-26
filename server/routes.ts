@@ -1,10 +1,13 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { storage } from "./storage";
-import { insertReminderSchema } from "@shared/schema";
+import { insertReminderSchema, pushTokens, cycleReminderConfigs } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { checkCycleDay, getNextNotificationTimes } from "./utils/cycleCalculator";
+import { startScheduler } from "./utils/pushScheduler";
+import { db } from "./db";
+import { eq, and, notInArray, inArray } from "drizzle-orm";
 
 // Simple session store (in production, use Redis or database sessions)
 const sessions = new Map<string, string>();
@@ -567,6 +570,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`[DEBUG-LOG] ${event}`, JSON.stringify(rest));
     res.json({ ok: true });
   });
+
+  app.post("/api/push-token", async (req: Request, res: Response) => {
+    try {
+      const { token, platform } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+
+      const [existing] = await db
+        .select()
+        .from(pushTokens)
+        .where(eq(pushTokens.token, token));
+
+      if (existing) {
+        await db
+          .update(pushTokens)
+          .set({ platform, updatedAt: new Date() })
+          .where(eq(pushTokens.id, existing.id));
+        return res.json({ id: existing.id, status: "updated" });
+      }
+
+      const [newToken] = await db
+        .insert(pushTokens)
+        .values({ token, platform })
+        .returning();
+
+      res.json({ id: newToken.id, status: "created" });
+    } catch (error) {
+      console.error("Push token registration error:", error);
+      res.status(500).json({ message: "Failed to register push token" });
+    }
+  });
+
+  app.post("/api/cycle-configs/sync", async (req: Request, res: Response) => {
+    try {
+      const { pushTokenId, configs } = req.body;
+
+      if (!pushTokenId || !Array.isArray(configs)) {
+        return res.status(400).json({ message: "pushTokenId and configs array required" });
+      }
+
+      const [tokenExists] = await db
+        .select()
+        .from(pushTokens)
+        .where(eq(pushTokens.id, pushTokenId));
+
+      if (!tokenExists) {
+        return res.status(404).json({ message: "Push token not found" });
+      }
+
+      const activeConfigIds: string[] = [];
+
+      for (const config of configs) {
+        const {
+          id,
+          title,
+          notes,
+          cycleDayStart,
+          cycleDayEnd,
+          cycleStartDate,
+          cycleEndDate,
+          reminderTimes,
+          soundEnabled,
+          isActive,
+        } = config;
+
+        if (!id || !title || !cycleDayStart || !cycleDayEnd || !cycleStartDate || !reminderTimes) {
+          continue;
+        }
+
+        activeConfigIds.push(id);
+
+        const [existing] = await db
+          .select()
+          .from(cycleReminderConfigs)
+          .where(eq(cycleReminderConfigs.id, id));
+
+        if (existing) {
+          await db
+            .update(cycleReminderConfigs)
+            .set({
+              pushTokenId,
+              title,
+              notes: notes || null,
+              cycleDayStart,
+              cycleDayEnd,
+              cycleStartDate,
+              cycleEndDate: cycleEndDate || null,
+              reminderTimes,
+              soundEnabled: soundEnabled ?? false,
+              isActive: isActive ?? true,
+              updatedAt: new Date(),
+            })
+            .where(eq(cycleReminderConfigs.id, id));
+        } else {
+          await db.insert(cycleReminderConfigs).values({
+            id,
+            pushTokenId,
+            title,
+            notes: notes || null,
+            cycleDayStart,
+            cycleDayEnd,
+            cycleStartDate,
+            cycleEndDate: cycleEndDate || null,
+            reminderTimes,
+            soundEnabled: soundEnabled ?? false,
+            isActive: isActive ?? true,
+          });
+        }
+      }
+
+      if (activeConfigIds.length > 0) {
+        await db
+          .delete(cycleReminderConfigs)
+          .where(
+            and(
+              eq(cycleReminderConfigs.pushTokenId, pushTokenId),
+              notInArray(cycleReminderConfigs.id, activeConfigIds)
+            )
+          );
+      } else {
+        await db
+          .delete(cycleReminderConfigs)
+          .where(eq(cycleReminderConfigs.pushTokenId, pushTokenId));
+      }
+
+      console.log(`[CycleSync] Synced ${activeConfigIds.length} configs for token ${pushTokenId}`);
+      res.json({ synced: activeConfigIds.length });
+    } catch (error) {
+      console.error("Cycle config sync error:", error);
+      res.status(500).json({ message: "Failed to sync cycle configs" });
+    }
+  });
+
+  startScheduler();
 
   const httpServer = createServer(app);
 

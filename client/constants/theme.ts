@@ -1,93 +1,77 @@
 import { Platform } from "react-native";
 
-// GoFlo Design System
-// Soft/Pastel with Editorial Precision
-
-// Primary brand colors
-const primaryBlue = "#6B9BD1";
-const secondaryBlue = "#B4CFE0";
-const accentCoral = "#F4A261";
-const accentMint = "#A8DADC";
-
-// Semantic colors
-const success = "#48BB78";
-const warning = "#ED8936";
-const error = "#F56565";
-const info = "#4299E1";
+const warmLinen = "#F5F0E8";
+const darkBark = "#2C2118";
+const firedTerracotta = "#C03A2B";
+const deepEmerald = "#2E7D52";
+const saffron = "#C47D0A";
+const warmOcean = "#2A6E7A";
+const goldenHour = "#F0A020";
+const springFern = "#52B07A";
+const warmStone = "#EDE7DA";
+const ctaCard = "#A4BCBC";
 
 export const Colors = {
   light: {
-    // Core
-    text: "#2D3748",
-    textSecondary: "#718096",
-    textTertiary: "#A0AEC0",
+    text: darkBark,
+    textSecondary: "#6B5D4F",
+    textTertiary: "#9A8D7F",
     buttonText: "#FFFFFF",
-    
-    // Tab bar
-    tabIconDefault: "#718096",
-    tabIconSelected: primaryBlue,
-    
-    // Links & accents
-    link: primaryBlue,
-    primary: primaryBlue,
-    secondary: secondaryBlue,
-    accentCoral: accentCoral,
-    accentMint: accentMint,
-    
-    // Backgrounds (elevation system)
-    backgroundRoot: "#FAFBFC",
+
+    tabIconDefault: "#9A8D7F",
+    tabIconSelected: goldenHour,
+
+    link: goldenHour,
+    primary: goldenHour,
+    secondary: warmStone,
+    accentCoral: firedTerracotta,
+    accentMint: deepEmerald,
+
+    backgroundRoot: warmLinen,
     backgroundDefault: "#FFFFFF",
-    backgroundSecondary: "#F7F8FA",
-    backgroundTertiary: "#EDF0F4",
-    
-    // Semantic
-    success: success,
-    warning: warning,
-    error: error,
-    info: info,
-    
-    // Borders
-    border: "#E2E8F0",
-    borderLight: "#EDF2F7",
-    
-    // Overlay
-    overlay: "rgba(45, 55, 72, 0.4)",
+    backgroundSecondary: warmStone,
+    backgroundTertiary: warmLinen,
+    ctaCard: ctaCard,
+
+    success: springFern,
+    warning: saffron,
+    error: firedTerracotta,
+    info: warmOcean,
+
+    border: "#D9D0C3",
+    borderLight: "#E8E1D6",
+
+    overlay: "rgba(44, 33, 24, 0.4)",
   },
   dark: {
-    // Core
-    text: "#F7FAFC",
-    textSecondary: "#A0AEC0",
-    textTertiary: "#718096",
+    text: "#F5F0E8",
+    textSecondary: "#C4B8A8",
+    textTertiary: "#9A8D7F",
     buttonText: "#FFFFFF",
-    
-    // Tab bar
-    tabIconDefault: "#718096",
-    tabIconSelected: "#90CDF4",
-    
-    // Links & accents
-    link: "#90CDF4",
-    primary: "#90CDF4",
-    secondary: "#4A5568",
-    accentCoral: "#FBD38D",
-    accentMint: "#81E6D9",
-    
-    // Backgrounds (elevation system)
-    backgroundRoot: "#1A202C",
-    backgroundDefault: "#2D3748",
-    backgroundSecondary: "#4A5568",
-    backgroundTertiary: "#718096",
-    
-    // Semantic
+
+    tabIconDefault: "#9A8D7F",
+    tabIconSelected: goldenHour,
+
+    link: goldenHour,
+    primary: goldenHour,
+    secondary: "#4A3D30",
+    accentCoral: "#E07B5A",
+    accentMint: "#52B07A",
+
+    backgroundRoot: "#1E1812",
+    backgroundDefault: "#2C2118",
+    backgroundSecondary: "#3D3228",
+    backgroundTertiary: "#4E4236",
+    ctaCard: "#3A5555",
+
     success: "#68D391",
     warning: "#F6AD55",
     error: "#FC8181",
     info: "#63B3ED",
-    
-    // Borders
-    border: "#4A5568",
-    borderLight: "#2D3748",
-    
-    // Overlay
+
+    border: "#4E4236",
+    borderLight: "#3D3228",
+
     overlay: "rgba(0, 0, 0, 0.6)",
   },
 };

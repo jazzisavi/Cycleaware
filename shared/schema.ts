@@ -66,6 +66,37 @@ export const reminders = pgTable("reminders", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Push tokens for Expo push notifications
+export const pushTokens = pgTable("push_tokens", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  token: text("token").notNull().unique(),
+  platform: text("platform"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Server-side cycle reminder configs for push notification scheduling
+export const cycleReminderConfigs = pgTable("cycle_reminder_configs", {
+  id: varchar("id").primaryKey(),
+  pushTokenId: varchar("push_token_id").notNull().references(() => pushTokens.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  notes: text("notes"),
+  cycleDayStart: integer("cycle_day_start").notNull(),
+  cycleDayEnd: integer("cycle_day_end").notNull(),
+  cycleStartDate: text("cycle_start_date").notNull(),
+  cycleEndDate: text("cycle_end_date"),
+  reminderTimes: jsonb("reminder_times").$type<string[]>().notNull(),
+  soundEnabled: boolean("sound_enabled").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastSentAt: text("last_sent_at"),
+  lastSentDate: text("last_sent_date"),
+  lastRepromptAt: text("last_reprompt_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Notification history
 export const notificationHistory = pgTable("notification_history", {
   id: varchar("id")
@@ -131,3 +162,5 @@ export type InsertReminder = z.infer<typeof insertReminderSchema>;
 export type Reminder = typeof reminders.$inferSelect;
 export type InsertNotificationHistory = z.infer<typeof insertNotificationHistorySchema>;
 export type NotificationHistory = typeof notificationHistory.$inferSelect;
+export type PushToken = typeof pushTokens.$inferSelect;
+export type CycleReminderConfig = typeof cycleReminderConfigs.$inferSelect;
