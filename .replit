@@ -78,15 +78,14 @@ waitForPort = 5000
 [[workflows.workflow]]
 name = "Start Frontend"
 author = "agent"
-mode = "sequential"
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "tail -f /dev/null | EXPO_NO_DOCTOR=1 npm run expo:dev -- --port 8080"
 waitForPort = 8080
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [userenv]
 
