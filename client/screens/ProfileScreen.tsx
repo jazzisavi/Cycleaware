@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { StyleSheet, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
@@ -11,10 +13,16 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import type { RootStackParamList } from "@/navigation/RootStackNavigator";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
+  const { isSubscribed, currentPlan } = useSubscription();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -67,9 +75,11 @@ export default function ProfileScreen() {
         />
 
         <SectionHeader title={Copy.profile.subscriptionSection} />
-        <View style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.primary }]}>
+        <View style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: isSubscribed ? theme.success : theme.primary }]}>
           <View style={styles.subscriptionRow}>
-            <ThemedText type="h3">{Copy.profile.freeTrialTitle}</ThemedText>
+            <ThemedText type="h3">
+              {isSubscribed ? `GoFlo Pro (${currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel})` : Copy.profile.freeTrialTitle}
+            </ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
               <ThemedText type="caption" style={{ color: theme.success }}>
                 {Copy.common.active}
@@ -77,15 +87,15 @@ export default function ProfileScreen() {
             </View>
           </View>
           <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-            {Copy.profile.trialEndsMessage}
+            {isSubscribed ? Copy.paywall.subscribedMessage : Copy.profile.trialEndsMessage}
           </ThemedText>
           <Button
             variant="outline"
             style={{ marginTop: Spacing.lg }}
-            onPress={() => {}}
+            onPress={() => navigation.navigate("Paywall")}
             testID="button-upgrade"
           >
-            {Copy.profile.viewPlans}
+            {isSubscribed ? Copy.paywall.manageSubscription : Copy.profile.viewPlans}
           </Button>
         </View>
 

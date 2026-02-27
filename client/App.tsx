@@ -10,6 +10,7 @@ import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { ActionConfirmationProvider, useActionConfirmation } from "@/contexts/ActionConfirmationContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ActionConfirmationToast } from "@/components/ActionConfirmationToast";
 import { 
   setupNotificationCategories, 
@@ -85,9 +86,11 @@ export default function App() {
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
-            <ActionConfirmationProvider>
-              <AppContent />
-            </ActionConfirmationProvider>
+            <SubscriptionProvider>
+              <ActionConfirmationProvider>
+                <AppContent />
+              </ActionConfirmationProvider>
+            </SubscriptionProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>

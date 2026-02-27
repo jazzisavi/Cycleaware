@@ -13,6 +13,7 @@ import HistoryScreen from "@/screens/HistoryScreen";
 import SnoozeSettingsScreen from "@/screens/SnoozeSettingsScreen";
 import AlarmSoundsScreen from "@/screens/AlarmSoundsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import PaywallScreen from "@/screens/PaywallScreen";
 import RepeatingDaysScreen from "@/screens/RepeatingDaysScreen";
 import RepeatFrequencyScreen from "@/screens/RepeatFrequencyScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -70,6 +71,7 @@ export type RootStackParamList = {
   SnoozeSettings: undefined;
   AlarmSounds: undefined;
   Profile: undefined;
+  Paywall: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -201,6 +203,19 @@ export default function RootStackNavigator() {
         options={({ navigation }) => ({
           ...opaqueScreenOptions,
           headerTitle: "Profile",
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Feather name="arrow-left" size={24} color={theme.text} />
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={({ navigation }) => ({
+          ...opaqueScreenOptions,
+          headerTitle: "",
           headerLeft: () => (
             <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
               <Feather name="arrow-left" size={24} color={theme.text} />

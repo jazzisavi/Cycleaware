@@ -262,6 +262,36 @@ export const Copy = {
     warningBody: "While offline, we can only schedule a limited number of reminders ahead. Reconnect and open the app to continue.",
   },
 
+  // Paywall Screen
+  paywall: {
+    title: "Upgrade to GoFlo Pro",
+    subtitle: "Get the most out of your reminders",
+    monthlyLabel: "Monthly",
+    yearlyLabel: "Yearly",
+    yearlyBadge: "Save 40%",
+    perMonth: "/month",
+    perYear: "/year",
+    subscribeButton: "Subscribe",
+    restoreButton: "Restore Purchases",
+    features: [
+      "Unlimited reminders",
+      "Custom alarm sounds",
+      "Advanced cycle tracking",
+      "Extended history",
+      "Priority support",
+    ],
+    termsNotice: "Payment will be charged to your App Store or Google Play account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.",
+    purchaseSuccess: "Welcome to GoFlo Pro!",
+    purchaseError: "Something went wrong. Please try again.",
+    restoreSuccess: "Purchases restored successfully!",
+    restoreNoActive: "No active subscriptions found.",
+    webNotice: "Subscriptions are available in the Expo Go app on your device.",
+    loadingPlans: "Loading plans...",
+    subscribedTitle: "You're a Pro!",
+    subscribedMessage: "Thank you for supporting GoFlo. You have access to all features.",
+    manageSubscription: "Manage Subscription",
+  },
+
   // Error Messages
   errors: {
     reminderNotFound: "Reminder not found",

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, ScrollView } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -11,6 +11,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -19,6 +20,7 @@ export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const { isSubscribed, currentPlan } = useSubscription();
 
   return (
     <ThemedView style={styles.container}>
@@ -59,19 +61,25 @@ export default function MoreScreen() {
         />
 
         <SectionHeader title={Copy.more.accountSection} />
-        <View style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
+        <Pressable
+          onPress={() => navigation.navigate("Paywall")}
+          style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: isSubscribed ? theme.success : theme.borderLight }]}
+          testID="card-subscription"
+        >
           <View style={styles.subscriptionHeader}>
-            <ThemedText type="h4">{Copy.more.freeTrialTitle}</ThemedText>
+            <ThemedText type="h4">
+              {isSubscribed ? `GoFlo Pro` : Copy.more.freeTrialTitle}
+            </ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
               <ThemedText type="caption" style={{ color: theme.success }}>
-                {Copy.common.active}
+                {isSubscribed ? (currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel) : Copy.common.active}
               </ThemedText>
             </View>
           </View>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {Copy.more.trialRemaining(30)}
+            {isSubscribed ? Copy.paywall.subscribedMessage : Copy.more.trialRemaining(30)}
           </ThemedText>
-        </View>
+        </Pressable>
 
         <SettingsRow
           icon="user"
