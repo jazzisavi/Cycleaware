@@ -90,7 +90,7 @@ shared/           # Code shared between client and server
 - **Structure**: Organized by screen/feature with nested objects (e.g., `Copy.home.welcomeTitle`, `Copy.profile.saveChanges`)
 - **Dynamic Text**: Use functions for parameterized strings (e.g., `Copy.home.checkHistoryText(count)`)
 - **IMPORTANT**: All new user-facing text MUST be added to the copy file first, then referenced in components
-- **Categories**: `common` (shared), `navigation`, `home`, `typeSelector`, `createCycleReminder`, `createCalendarReminder`, `soundSettings`, `repeatingDays`, `repeatFrequency`, `remindersScreen`, `reminderDetail`, `history`, `more`, `profile`, `snoozeSettings`, `alarmSounds`, `emptyState`, `errors`
+- **Categories**: `common` (shared), `navigation`, `home`, `typeSelector`, `createCycleReminder`, `createCalendarReminder`, `soundSettings`, `repeatingDays`, `repeatFrequency`, `remindersScreen`, `reminderDetail`, `history`, `more`, `profile`, `snoozeSettings`, `alarmSounds`, `emptyState`, `paywall`, `errors`
 
 ## External Dependencies
 
@@ -101,6 +101,20 @@ shared/           # Code shared between client and server
 ### Core Services
 - **Expo Notifications**: Push notification scheduling for reminders
 - **Expo Haptics**: Tactile feedback on interactions
+- **RevenueCat (react-native-purchases)**: In-app subscription management for iOS App Store and Google Play
+
+### Subscriptions & Payments
+- **Provider**: RevenueCat via `react-native-purchases` SDK
+- **Plans**: Monthly and Yearly subscriptions
+- **Entitlement ID**: `"pro"` — used to check if user has active subscription
+- **API Key**: Stored as `EXPO_PUBLIC_REVENUECAT_API_KEY` environment secret
+- **Files**:
+  - `client/services/subscriptionService.ts` — RevenueCat SDK initialization, purchase/restore/status functions
+  - `client/contexts/SubscriptionContext.tsx` — React Context providing `useSubscription()` hook app-wide
+  - `client/screens/PaywallScreen.tsx` — Paywall UI with plan selection, purchase, and restore
+- **Integration Points**: ProfileScreen "View Plans" button, MoreScreen subscription card both navigate to Paywall
+- **Web Behavior**: RevenueCat works in Expo Go preview mode; on web, paywall shows a "use Expo Go" message
+- **RevenueCat Dashboard Setup Required**: Create products (monthly/yearly), an entitlement named "pro", and an offering with both packages
 
 ### Development
 - **TanStack React Query**: API data fetching and caching
