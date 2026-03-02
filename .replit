@@ -79,13 +79,13 @@ waitForPort = 5000
 name = "Start Frontend"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "tail -f /dev/null | EXPO_NO_DOCTOR=1 npm run expo:dev -- --port 8080"
 waitForPort = 8080
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [userenv]
 
