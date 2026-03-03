@@ -1,11 +1,11 @@
 {
-  "id": "ee14d32d-17c3-4fc3-9a82-83b62581aa55",
-  "createdAt": "2026-02-27T11:07:24.360Z",
+  "id": "0ce095bb-0a61-4c8f-83bf-22c7ce3fdaad",
+  "createdAt": "2026-03-03T20:05:18.291Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772190444360-733",
+    "key": "bundle-1772568318291-1144",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772190444360-733/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772568318291-1144/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -54,6 +54,7 @@
           }
         ],
         "expo-web-browser",
+        "expo-task-manager",
         [
           "expo-notifications",
           {
@@ -87,6 +88,10 @@
             "name": "expo-web-browser",
             "version": "15.0.10"
           },
+          "expo-task-manager": {
+            "name": "expo-task-manager",
+            "version": "14.0.9"
+          },
           "expo-notifications": {
             "name": "expo-notifications",
             "version": "0.32.16"
@@ -116,6 +121,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-cf49bacd-231c-4363-a030-8edb3f1ef960"
+    "scopeKey": "@anonymous/goflo-1e2a2857-5ff3-4ec6-8460-5a3e077b47ea"
   }
 }
