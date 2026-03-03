@@ -39,13 +39,16 @@ function stripProtocol(domain) {
 }
 
 function getDeploymentDomain() {
-  // Check Replit deployment environment variables first
   if (process.env.REPLIT_INTERNAL_APP_DOMAIN) {
     return stripProtocol(process.env.REPLIT_INTERNAL_APP_DOMAIN);
   }
 
   if (process.env.REPLIT_DEV_DOMAIN) {
-    return stripProtocol(process.env.REPLIT_DEV_DOMAIN);
+    const domain = stripProtocol(process.env.REPLIT_DEV_DOMAIN);
+    if (!domain.includes(":")) {
+      return `${domain}:5000`;
+    }
+    return domain;
   }
 
   if (process.env.EXPO_PUBLIC_DOMAIN) {

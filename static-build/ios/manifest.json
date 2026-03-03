@@ -1,11 +1,11 @@
 {
-  "id": "6f28140e-ed22-4000-98c4-bdf1c204d275",
-  "createdAt": "2026-03-03T21:40:40.746Z",
+  "id": "53f98f3b-ef59-43e4-a674-124dd2f048e6",
+  "createdAt": "2026-03-03T22:22:18.761Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772574040746-4269",
+    "key": "bundle-1772576538761-2502",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772574040746-4269/_expo/static/js/ios/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1772576538761-2502/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -108,10 +108,10 @@
         "backgroundColor": "#FAFBFC"
       },
       "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
-      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/ios"
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios"
     },
     "expoGo": {
-      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/ios",
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios",
       "developer": {
         "tool": "expo-cli",
         "projectRoot": "/home/runner/workspace"
@@ -121,6 +121,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-1e2a2857-5ff3-4ec6-8460-5a3e077b47ea"
+    "scopeKey": "@anonymous/goflo-bf544dd7-cff0-4e7b-9719-6765fc00dca9"
   }
 }
