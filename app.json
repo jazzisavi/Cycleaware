@@ -39,6 +39,7 @@
         }
       ],
       "expo-web-browser",
+      "expo-task-manager",
       [
         "expo-notifications",
         {
