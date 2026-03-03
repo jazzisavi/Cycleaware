@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Expo Go** loads pre-built static JS bundles from `static-build/` folder, NOT the live Metro dev server
 - **After ANY code change**, you MUST run `node scripts/build.js` to rebuild the static bundles, then restart the backend (`Start Backend` workflow) so mobile devices pick up the changes
 - The Metro dev server (`Start Frontend`) only serves the web version; mobile gets served from the backend's static files
-- Build version: v1.0.9
+- Build version: v1.0.10
 
 ### Local-First Data Flow
 - **Reminders**: Created, read, updated, deleted via `LocalDatabase` (SQLite) — no server API calls
