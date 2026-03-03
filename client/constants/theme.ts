@@ -11,14 +11,22 @@ const springFern = "#52B07A";
 const warmStone = "#EDE7DA";
 const ctaCard = "#A4BCBC";
 
+export const FontFamily = {
+  serifBold: "PlayfairDisplay_700Bold",
+  sansRegular: "PlusJakartaSans_400Regular",
+  sansMedium: "PlusJakartaSans_500Medium",
+  sansSemiBold: "PlusJakartaSans_600SemiBold",
+  sansBold: "PlusJakartaSans_700Bold",
+};
+
 export const Colors = {
   light: {
     text: darkBark,
-    textSecondary: "#6B5D4F",
-    textTertiary: "#9A8D7F",
+    textSecondary: "#6B5744",
+    textTertiary: "#6B5744",
     buttonText: "#FFFFFF",
 
-    tabIconDefault: "#9A8D7F",
+    tabIconDefault: "#6B5744",
     tabIconSelected: goldenHour,
 
     link: goldenHour,
@@ -42,6 +50,13 @@ export const Colors = {
     borderLight: "#E8E1D6",
 
     overlay: "rgba(44, 33, 24, 0.4)",
+
+    iconEmpty: "#6B5744",
+    iconFilled: "#E8614F",
+    pillActiveBg: "#F9E8E4",
+    pillActiveBorder: "#E8614F",
+    saveButtonActive: "#E8614F",
+    saveButtonDisabled: "#E8C4B8",
   },
   dark: {
     text: "#F5F0E8",
@@ -73,6 +88,13 @@ export const Colors = {
     borderLight: "#3D3228",
 
     overlay: "rgba(0, 0, 0, 0.6)",
+
+    iconEmpty: "#9A8D7F",
+    iconFilled: "#E8614F",
+    pillActiveBg: "#3D2A25",
+    pillActiveBorder: "#E8614F",
+    saveButtonActive: "#E8614F",
+    saveButtonDisabled: "#4E4236",
   },
 };
 
@@ -108,51 +130,61 @@ export const Typography = {
     fontSize: 32,
     lineHeight: 40,
     fontWeight: "700" as const,
+    fontFamily: FontFamily.serifBold,
   },
   h1: {
     fontSize: 24,
     lineHeight: 32,
     fontWeight: "700" as const,
+    fontFamily: FontFamily.serifBold,
   },
   h2: {
     fontSize: 20,
     lineHeight: 28,
-    fontWeight: "600" as const,
+    fontWeight: "700" as const,
+    fontFamily: FontFamily.serifBold,
   },
   h3: {
     fontSize: 18,
     lineHeight: 26,
-    fontWeight: "600" as const,
+    fontWeight: "700" as const,
+    fontFamily: FontFamily.serifBold,
   },
   h4: {
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: "600" as const,
+    fontWeight: "700" as const,
+    fontFamily: FontFamily.serifBold,
   },
   body: {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "400" as const,
+    fontFamily: FontFamily.sansRegular,
   },
   small: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "400" as const,
+    fontFamily: FontFamily.sansRegular,
   },
   caption: {
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "400" as const,
+    fontFamily: FontFamily.sansRegular,
   },
   button: {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "600" as const,
+    fontFamily: FontFamily.sansSemiBold,
   },
   link: {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "400" as const,
+    fontFamily: FontFamily.sansRegular,
   },
 };
 
@@ -182,21 +214,21 @@ export const Shadows = {
 
 export const Fonts = Platform.select({
   ios: {
-    sans: "system-ui",
-    serif: "ui-serif",
+    sans: FontFamily.sansRegular,
+    serif: FontFamily.serifBold,
     rounded: "ui-rounded",
     mono: "ui-monospace",
   },
   default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
+    sans: FontFamily.sansRegular,
+    serif: FontFamily.serifBold,
+    rounded: FontFamily.sansRegular,
     mono: "monospace",
   },
   web: {
-    sans: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, sans-serif",
+    sans: FontFamily.sansRegular,
+    serif: FontFamily.serifBold,
+    rounded: FontFamily.sansRegular,
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace",
   },
 });

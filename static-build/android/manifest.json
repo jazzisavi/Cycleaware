@@ -1,11 +1,11 @@
 {
-  "id": "0ce095bb-0a61-4c8f-83bf-22c7ce3fdaad",
-  "createdAt": "2026-03-03T20:05:18.291Z",
+  "id": "a25e25d3-a35c-4743-8881-65c6e04908ee",
+  "createdAt": "2026-03-03T22:51:38.713Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772568318291-1144",
+    "key": "bundle-1772578298713-7388",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/1772568318291-1144/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1772578298713-7388/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -16,7 +16,7 @@
     "expoClient": {
       "name": "GoFlo",
       "slug": "goflo",
-      "version": "1.0.9",
+      "version": "1.0.10",
       "orientation": "portrait",
       "icon": "./assets/images/icon.png",
       "scheme": "goflo",
@@ -108,10 +108,10 @@
         "backgroundColor": "#FAFBFC"
       },
       "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
-      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/android"
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android"
     },
     "expoGo": {
-      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/android",
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android",
       "developer": {
         "tool": "expo-cli",
         "projectRoot": "/home/runner/workspace"
@@ -121,6 +121,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-1e2a2857-5ff3-4ec6-8460-5a3e077b47ea"
+    "scopeKey": "@anonymous/goflo-bf544dd7-cff0-4e7b-9719-6765fc00dca9"
   }
 }

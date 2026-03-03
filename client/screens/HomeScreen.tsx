@@ -176,7 +176,7 @@ export default function HomeScreen() {
             </Text>
             <Pressable
               style={[styles.ctaButton, { backgroundColor: theme.primary }]}
-              onPress={() => navigation.navigate("TypeSelector")}
+              onPress={() => navigation.navigate("CreateReminder")}
               testID="button-create-reminder"
             >
               <Text style={styles.ctaButtonText}>
@@ -322,7 +322,7 @@ export default function HomeScreen() {
         ) : null}
 
         <Text style={[styles.versionText, { color: theme.textTertiary }]}>
-          v1.0.9
+          v1.0.10
         </Text>
       </ScrollView>
     </View>

@@ -82,7 +82,7 @@ export function ActionConfirmationToast({
       ]}
     >
       <View style={styles.content}>
-        <ThemedText type="body" style={[styles.title, { color: theme.text, fontWeight: "600" }]}>
+        <ThemedText type="body" style={[styles.title, { color: theme.text, fontWeight: "600", fontFamily: "PlusJakartaSans_600SemiBold" }]}>
           {content.title}
         </ThemedText>
         {content.subtitle ? (

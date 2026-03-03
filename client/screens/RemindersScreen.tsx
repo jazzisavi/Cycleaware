@@ -67,15 +67,11 @@ export default function RemindersScreen() {
     !bannerDismissed;
 
   const handleEditPress = (reminder: LocalReminder) => {
-    if (reminder.reminderType === "cycle") {
-      navigation.navigate("CreateCycleReminder", { reminderId: reminder.id });
-    } else {
-      navigation.navigate("CreateCalendarReminder", { reminderId: reminder.id });
-    }
+    navigation.navigate("CreateReminder", { reminderId: reminder.id });
   };
 
   const handleCreatePress = () => {
-    navigation.navigate("TypeSelector");
+    navigation.navigate("CreateReminder");
   };
 
   const handleToggle = async (reminder: LocalReminder) => {

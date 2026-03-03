@@ -49,10 +49,12 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 18,
     fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold",
   },
   navTitle: {
     fontSize: 17,
     fontWeight: "600",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
   moreButton: {
     flex: 1,
