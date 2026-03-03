@@ -376,7 +376,7 @@ export default function CreateReminderScreen() {
     <View style={styles.stepperContainer}>
       <View style={[styles.stepperValueBox, { borderColor: theme.border }]}>
         <RNTextInput
-          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.serifBold }]}
+          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
           keyboardType="number-pad"
           value={String(value)}
           onChangeText={(text) => {
@@ -512,7 +512,7 @@ export default function CreateReminderScreen() {
                   <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
                   <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
                     <RNTextInput
-                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.serifBold }]}
+                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
                       keyboardType="number-pad"
                       value={String(cycleDayStart)}
                       onChangeText={(text) => {
@@ -536,7 +536,7 @@ export default function CreateReminderScreen() {
                   <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
                   <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
                     <RNTextInput
-                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.serifBold }]}
+                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
                       keyboardType="number-pad"
                       value={String(cycleDayEnd)}
                       onChangeText={(text) => {
@@ -560,16 +560,7 @@ export default function CreateReminderScreen() {
 
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-              <Pressable style={styles.dateRow} onPress={() => handleOpenDatePicker("cycleStart")}>
-                <Feather name="calendar" size={20} color={iconColor(!!cycleStartDate)} />
-                <View style={styles.dateRowText}>
-                  <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.cycleStart}</ThemedText>
-                  <ThemedText type="small" style={{ color: "#6B5744" }}>
-                    {cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate}
-                  </ThemedText>
-                </View>
-                <Feather name="chevron-right" size={20} color="#6B5744" />
-              </Pressable>
+              {renderDetailRow("calendar", Copy.createReminder.cycleStart, cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate, !!cycleStartDate, () => handleOpenDatePicker("cycleStart"))}
 
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
