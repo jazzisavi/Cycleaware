@@ -176,7 +176,7 @@ export default function HomeScreen() {
             </Text>
             <Pressable
               style={[styles.ctaButton, { backgroundColor: theme.primary }]}
-              onPress={() => navigation.navigate("TypeSelector")}
+              onPress={() => navigation.navigate("CreateReminder")}
               testID="button-create-reminder"
             >
               <Text style={styles.ctaButtonText}>
