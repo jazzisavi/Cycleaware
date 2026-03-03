@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -82,24 +82,26 @@ export default function CreateReminderScreen() {
 
   const { reminder: reminderData } = useLocalReminder(isEditMode ? reminderId : undefined);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const sound = await AlarmService.getSelectedSound();
-        setSoundName(SOUND_LABELS[sound] || "Gentle Chime");
-        const snooze = await AsyncStorage.getItem(SNOOZE_KEY);
-        if (snooze) {
-          const mins = parseInt(snooze, 10);
-          if (mins >= 60) {
-            setSnoozeDuration(`${mins / 60} hour${mins > 60 ? "s" : ""}`);
-          } else {
-            setSnoozeDuration(`${mins} min`);
+  useFocusEffect(
+    useCallback(() => {
+      const loadSettings = async () => {
+        try {
+          const sound = await AlarmService.getSelectedSound();
+          setSoundName(SOUND_LABELS[sound] || "Gentle Chime");
+          const snooze = await AsyncStorage.getItem(SNOOZE_KEY);
+          if (snooze) {
+            const mins = parseInt(snooze, 10);
+            if (mins >= 60) {
+              setSnoozeDuration(`${mins / 60} hour${mins > 60 ? "s" : ""}`);
+            } else {
+              setSnoozeDuration(`${mins} min`);
+            }
           }
-        }
-      } catch (_e) {}
-    };
-    loadSettings();
-  }, []);
+        } catch (_e) {}
+      };
+      loadSettings();
+    }, [])
+  );
 
   useEffect(() => {
     if (reminderData && isEditMode && !isLoaded) {
@@ -370,10 +372,23 @@ export default function CreateReminderScreen() {
     return hasData ? "#E8614F" : "#6B5744";
   }, []);
 
-  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string) => (
+  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 999) => (
     <View style={styles.stepperContainer}>
       <View style={[styles.stepperValueBox, { borderColor: theme.border }]}>
-        <ThemedText type="h2" style={styles.stepperValue}>{value}</ThemedText>
+        <RNTextInput
+          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.serifBold }]}
+          keyboardType="number-pad"
+          value={String(value)}
+          onChangeText={(text) => {
+            const num = parseInt(text, 10);
+            if (!isNaN(num)) {
+              onChangeValue(Math.max(min, Math.min(max, num)));
+            } else if (text === "") {
+              onChangeValue(min);
+            }
+          }}
+          selectTextOnFocus
+        />
         <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
       </View>
       <Pressable
@@ -483,6 +498,7 @@ export default function CreateReminderScreen() {
                 () => setCycleLength(Math.max(1, cycleLength - 1)),
                 () => setCycleLength(cycleLength + 1),
                 Copy.createReminder.daysLabel,
+                setCycleLength,
               )}
 
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -495,7 +511,17 @@ export default function CreateReminderScreen() {
                 <View style={styles.dayRangeItem}>
                   <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
                   <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
-                    <ThemedText type="h2">{cycleDayStart}</ThemedText>
+                    <RNTextInput
+                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.serifBold }]}
+                      keyboardType="number-pad"
+                      value={String(cycleDayStart)}
+                      onChangeText={(text) => {
+                        const num = parseInt(text, 10);
+                        if (!isNaN(num)) setCycleDayStart(Math.max(1, Math.min(cycleLength, num)));
+                        else if (text === "") setCycleDayStart(1);
+                      }}
+                      selectTextOnFocus
+                    />
                   </View>
                   <View style={styles.dayRangeSteppers}>
                     <Pressable onPress={() => setCycleDayStart(Math.max(1, cycleDayStart - 1))}>
@@ -509,7 +535,17 @@ export default function CreateReminderScreen() {
                 <View style={styles.dayRangeItem}>
                   <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
                   <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
-                    <ThemedText type="h2">{cycleDayEnd}</ThemedText>
+                    <RNTextInput
+                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.serifBold }]}
+                      keyboardType="number-pad"
+                      value={String(cycleDayEnd)}
+                      onChangeText={(text) => {
+                        const num = parseInt(text, 10);
+                        if (!isNaN(num)) setCycleDayEnd(Math.max(cycleDayStart, Math.min(cycleLength, num)));
+                        else if (text === "") setCycleDayEnd(cycleDayStart);
+                      }}
+                      selectTextOnFocus
+                    />
                   </View>
                   <View style={styles.dayRangeSteppers}>
                     <Pressable onPress={() => setCycleDayEnd(Math.max(cycleDayStart, cycleDayEnd - 1))}>
@@ -534,10 +570,9 @@ export default function CreateReminderScreen() {
                 </View>
                 <Feather name="chevron-right" size={20} color="#6B5744" />
               </Pressable>
-            </View>
 
-            <ThemedText type="h2" style={[styles.sectionTitle, { marginTop: Spacing.xl, marginBottom: Spacing.md }]}>Details</ThemedText>
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
               {renderTimeRows()}
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
               {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
@@ -553,17 +588,6 @@ export default function CreateReminderScreen() {
 
         {frequency === "interval" ? (
           <>
-            <Pressable style={[styles.standaloneRow, { borderColor: theme.borderLight }]} onPress={() => handleOpenDatePicker("start")}>
-              <Feather name="calendar" size={20} color={iconColor(!!startDate)} />
-              <View style={styles.dateRowText}>
-                <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.start}</ThemedText>
-                <ThemedText type="small" style={{ color: "#6B5744" }}>
-                  {startDate ? formatDate(startDate) : Copy.createReminder.selectDate}
-                </ThemedText>
-              </View>
-              <Feather name="chevron-right" size={20} color="#6B5744" />
-            </Pressable>
-
             <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
               <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>{Copy.createReminder.repeatsEvery}</ThemedText>
               {renderStepper(
@@ -571,6 +595,7 @@ export default function CreateReminderScreen() {
                 () => setIntervalDays(Math.max(1, intervalDays - 1)),
                 () => setIntervalDays(intervalDays + 1),
                 Copy.createReminder.daysUnit,
+                setIntervalDays,
               )}
 
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -602,13 +627,13 @@ export default function CreateReminderScreen() {
                     key={key}
                     style={[
                       styles.weekdayCircle,
-                      isSelected && { backgroundColor: theme.text },
+                      isSelected && { backgroundColor: "#F9E8E4" },
                       !isSelected && { backgroundColor: theme.backgroundDefault, borderWidth: 1, borderColor: theme.border },
                     ]}
                     onPress={() => toggleWeekday(key)}
                     testID={`weekday-${key}`}
                   >
-                    <ThemedText type="small" style={[styles.weekdayText, isSelected && { color: "#FFFFFF" }]}>{label}</ThemedText>
+                    <ThemedText type="small" style={[styles.weekdayText, isSelected && { color: "#E8614F" }]}>{label}</ThemedText>
                   </Pressable>
                 );
               })}
@@ -908,7 +933,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     minWidth: 90,
   },
-  stepperValue: {},
+  stepperValueInput: {
+    fontSize: 22,
+    minWidth: 30,
+    textAlign: "center",
+    padding: 0,
+  },
   stepperUnit: {
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -943,6 +973,12 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
     alignItems: "center",
+  },
+  dayRangeInputText: {
+    fontSize: 22,
+    textAlign: "center",
+    padding: 0,
+    minWidth: 30,
   },
   dayRangeSteppers: {
     flexDirection: "row",
