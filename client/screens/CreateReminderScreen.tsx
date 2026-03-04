@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert } from "react-native";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert, KeyboardAvoidingView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,6 +21,7 @@ import { syncCycleConfigsToServer } from "@/services/pushSync";
 import { AlarmService } from "@/services/AlarmService";
 
 type FrequencyType = "cycle" | "interval" | "weekdays" | null;
+type IntervalUnit = "day" | "week";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateReminder">;
@@ -47,6 +48,7 @@ export default function CreateReminderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { requestPermission } = useNotificationPermission();
+  const titleInputRef = useRef<RNTextInput>(null);
 
   const reminderId = route.params?.reminderId;
   const isEditMode = !!reminderId;
@@ -60,6 +62,7 @@ export default function CreateReminderScreen() {
   const [cycleStartDate, setCycleStartDate] = useState<Date | null>(null);
 
   const [intervalDays, setIntervalDays] = useState(1);
+  const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>("day");
 
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
 
@@ -81,6 +84,12 @@ export default function CreateReminderScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const { reminder: reminderData } = useLocalReminder(isEditMode ? reminderId : undefined);
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setTimeout(() => titleInputRef.current?.focus(), 300);
+    }
+  }, [isEditMode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -133,9 +142,16 @@ export default function CreateReminderScreen() {
         if (reminderData.repeatUnit === "day") {
           setFrequency("interval");
           setIntervalDays(reminderData.repeatInterval || 1);
+          setIntervalUnit("day");
         } else {
-          setFrequency("weekdays");
-          setSelectedWeekdays(reminderData.weeklyRepeatDays || []);
+          if (reminderData.weeklyRepeatDays && reminderData.weeklyRepeatDays.length > 0) {
+            setFrequency("weekdays");
+            setSelectedWeekdays(reminderData.weeklyRepeatDays || []);
+          } else {
+            setFrequency("interval");
+            setIntervalDays(reminderData.repeatInterval || 1);
+            setIntervalUnit("week");
+          }
         }
         if (reminderData.calendarStartDate) {
           setStartDate(new Date(reminderData.calendarStartDate));
@@ -158,9 +174,16 @@ export default function CreateReminderScreen() {
     setCycleDayEnd(28);
     setCycleStartDate(null);
     setIntervalDays(1);
+    setIntervalUnit("day");
     setSelectedWeekdays([]);
-    setStartDate(null);
     setEndDate(null);
+    if (f === "interval" || f === "weekdays") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setStartDate(today);
+    } else {
+      setStartDate(null);
+    }
   };
 
   const toggleWeekday = (day: string) => {
@@ -263,6 +286,11 @@ export default function CreateReminderScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const handleClearEndDate = () => {
+    setEndDate(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const canSave = title.trim() && frequency !== null;
 
   const handleSave = async () => {
@@ -302,7 +330,7 @@ export default function CreateReminderScreen() {
         payload = {
           ...payload,
           reminderType: "calendar" as const,
-          repeatUnit: "day",
+          repeatUnit: intervalUnit,
           repeatInterval: intervalDays,
           calendarStartDate: start.toISOString(),
           calendarEndDate: endDate ? endDate.toISOString() : null,
@@ -372,9 +400,12 @@ export default function CreateReminderScreen() {
     return hasData ? "#E8614F" : "#6B5744";
   }, []);
 
-  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 999) => (
+  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 999, onUnitPress?: () => void) => (
     <View style={styles.stepperContainer}>
-      <View style={[styles.stepperValueBox, { borderColor: theme.border }]}>
+      <Pressable
+        style={[styles.stepperValueBox, { backgroundColor: "#EDE7DA" }]}
+        onPress={onUnitPress}
+      >
         <RNTextInput
           style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
           keyboardType="number-pad"
@@ -390,18 +421,18 @@ export default function CreateReminderScreen() {
           selectTextOnFocus
         />
         <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
-      </View>
+      </Pressable>
       <Pressable
         style={[styles.stepperButton, { borderColor: theme.border }]}
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
       >
-        <Feather name="minus" size={18} color={theme.text} />
+        <Feather name="minus" size={20} color={theme.text} />
       </Pressable>
       <Pressable
         style={[styles.stepperButton, { borderColor: theme.border }]}
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
       >
-        <Feather name="plus" size={18} color={theme.text} />
+        <Feather name="plus" size={20} color={theme.text} />
       </Pressable>
     </View>
   );
@@ -428,6 +459,28 @@ export default function CreateReminderScreen() {
     </Pressable>
   );
 
+  const renderEndDateRow = () => {
+    const endDateExtra = endDate ? (
+      <Pressable
+        onPress={handleClearEndDate}
+        hitSlop={8}
+        style={{ marginRight: Spacing.xs }}
+      >
+        <Feather name="x-circle" size={20} color="#6B5744" />
+      </Pressable>
+    ) : undefined;
+
+    return renderDetailRow(
+      "calendar",
+      Copy.createReminder.endDate,
+      endDate ? formatDate(endDate) : Copy.common.never,
+      true,
+      () => handleOpenDatePicker("end"),
+      true,
+      endDateExtra,
+    );
+  };
+
   const renderFrequencyPill = (type: FrequencyType, label: string) => {
     const isActive = frequency === type;
     return (
@@ -445,6 +498,15 @@ export default function CreateReminderScreen() {
       </Pressable>
     );
   };
+
+  const toggleIntervalUnit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIntervalUnit((prev) => (prev === "day" ? "week" : "day"));
+  };
+
+  const intervalUnitLabel = intervalUnit === "day"
+    ? (intervalDays === 1 ? "DAY" : "DAYS")
+    : (intervalDays === 1 ? "WEEK" : "WEEKS");
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -465,6 +527,7 @@ export default function CreateReminderScreen() {
       >
         <View style={[styles.nameCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
           <RNTextInput
+            ref={titleInputRef}
             style={[styles.nameInput, { color: theme.text, fontFamily: FontFamily.sansRegular }]}
             placeholder={Copy.createReminder.namePlaceholder}
             placeholderTextColor="#6B5744"
@@ -510,7 +573,7 @@ export default function CreateReminderScreen() {
               <View style={styles.dayRangeRow}>
                 <View style={styles.dayRangeItem}>
                   <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
-                  <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
+                  <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
                     <RNTextInput
                       style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
                       keyboardType="number-pad"
@@ -523,18 +586,10 @@ export default function CreateReminderScreen() {
                       selectTextOnFocus
                     />
                   </View>
-                  <View style={styles.dayRangeSteppers}>
-                    <Pressable onPress={() => setCycleDayStart(Math.max(1, cycleDayStart - 1))}>
-                      <Feather name="minus" size={16} color={theme.text} />
-                    </Pressable>
-                    <Pressable onPress={() => setCycleDayStart(Math.min(cycleLength, cycleDayStart + 1))}>
-                      <Feather name="plus" size={16} color={theme.text} />
-                    </Pressable>
-                  </View>
                 </View>
                 <View style={styles.dayRangeItem}>
                   <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
-                  <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
+                  <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
                     <RNTextInput
                       style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
                       keyboardType="number-pad"
@@ -546,14 +601,6 @@ export default function CreateReminderScreen() {
                       }}
                       selectTextOnFocus
                     />
-                  </View>
-                  <View style={styles.dayRangeSteppers}>
-                    <Pressable onPress={() => setCycleDayEnd(Math.max(cycleDayStart, cycleDayEnd - 1))}>
-                      <Feather name="minus" size={16} color={theme.text} />
-                    </Pressable>
-                    <Pressable onPress={() => setCycleDayEnd(Math.min(cycleLength, cycleDayEnd + 1))}>
-                      <Feather name="plus" size={16} color={theme.text} />
-                    </Pressable>
                   </View>
                 </View>
               </View>
@@ -572,7 +619,7 @@ export default function CreateReminderScreen() {
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
               {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("calendar", Copy.createReminder.endDate, endDate ? formatDate(endDate) : Copy.common.never, !!endDate, () => handleOpenDatePicker("end"))}
+              {renderEndDateRow()}
             </View>
           </>
         ) : null}
@@ -585,8 +632,11 @@ export default function CreateReminderScreen() {
                 intervalDays,
                 () => setIntervalDays(Math.max(1, intervalDays - 1)),
                 () => setIntervalDays(intervalDays + 1),
-                Copy.createReminder.daysUnit,
+                intervalUnitLabel,
                 setIntervalDays,
+                1,
+                999,
+                toggleIntervalUnit,
               )}
 
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -601,7 +651,7 @@ export default function CreateReminderScreen() {
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
               {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("calendar", Copy.createReminder.endDate, endDate ? formatDate(endDate) : Copy.common.never, !!endDate, () => handleOpenDatePicker("end"))}
+              {renderEndDateRow()}
             </View>
           </>
         ) : null}
@@ -617,9 +667,9 @@ export default function CreateReminderScreen() {
                   <Pressable
                     key={key}
                     style={[
-                      styles.weekdayCircle,
-                      isSelected && { backgroundColor: "#F9E8E4" },
-                      !isSelected && { backgroundColor: theme.backgroundDefault, borderWidth: 1, borderColor: theme.border },
+                      styles.weekdayButton,
+                      isSelected && { backgroundColor: "#F9E8E4", borderColor: "#E8614F", borderWidth: 1 },
+                      !isSelected && { backgroundColor: "#EDE7DA" },
                     ]}
                     onPress={() => toggleWeekday(key)}
                     testID={`weekday-${key}`}
@@ -642,7 +692,7 @@ export default function CreateReminderScreen() {
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-            {renderDetailRow("calendar", Copy.createReminder.endDate, endDate ? formatDate(endDate) : Copy.common.never, !!endDate, () => handleOpenDatePicker("end"))}
+            {renderEndDateRow()}
           </View>
         ) : null}
 
@@ -677,41 +727,43 @@ export default function CreateReminderScreen() {
         animationType="fade"
         onRequestClose={() => setShowTimePicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.remindMeAt}</ThemedText>
-            {Platform.OS === "web" ? (
-              <View style={{ alignItems: "center" }}>
-                <RNTextInput
-                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
-                  value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
-                  onChangeText={(text) => {
-                    const [hours, minutes] = text.split(":").map(Number);
-                    if (!isNaN(hours) && !isNaN(minutes)) {
-                      const d = new Date();
-                      d.setHours(hours, minutes, 0, 0);
-                      setTempTime(d);
-                    }
-                  }}
-                  placeholder="HH:MM"
-                  placeholderTextColor="#6B5744"
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
-                />
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.remindMeAt}</ThemedText>
+              {Platform.OS === "web" ? (
+                <View style={{ alignItems: "center" }}>
+                  <RNTextInput
+                    style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                    value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
+                    onChangeText={(text) => {
+                      const [hours, minutes] = text.split(":").map(Number);
+                      if (!isNaN(hours) && !isNaN(minutes)) {
+                        const d = new Date();
+                        d.setHours(hours, minutes, 0, 0);
+                        setTempTime(d);
+                      }
+                    }}
+                    placeholder="HH:MM"
+                    placeholderTextColor="#6B5744"
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={5}
+                  />
+                </View>
+              ) : (
+                <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} />
+              )}
+              <View style={styles.modalButtons}>
+                <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
+                  <ThemedText type="body">{Copy.common.cancel}</ThemedText>
+                </Pressable>
+                <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveTime}>
+                  <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
+                </Pressable>
               </View>
-            ) : (
-              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} />
-            )}
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
-                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveTime}>
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-              </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {showDatePicker && Platform.OS === "android" ? (
@@ -724,36 +776,38 @@ export default function CreateReminderScreen() {
         animationType="fade"
         onRequestClose={() => setShowDatePicker(null)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>
-              {showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
-            </ThemedText>
-            {Platform.OS === "web" ? (
-              <RNTextInput
-                style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
-                value={tempDate.toISOString().split("T")[0]}
-                onChangeText={(text) => {
-                  const d = new Date(text);
-                  if (!isNaN(d.getTime())) setTempDate(d);
-                }}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#6B5744"
-                maxLength={10}
-              />
-            ) : (
-              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} />
-            )}
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
-                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveDate}>
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-              </Pressable>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>
+                {showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
+              </ThemedText>
+              {Platform.OS === "web" ? (
+                <RNTextInput
+                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                  value={tempDate.toISOString().split("T")[0]}
+                  onChangeText={(text) => {
+                    const d = new Date(text);
+                    if (!isNaN(d.getTime())) setTempDate(d);
+                  }}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#6B5744"
+                  maxLength={10}
+                />
+              ) : (
+                <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} />
+              )}
+              <View style={styles.modalButtons}>
+                <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
+                  <ThemedText type="body">{Copy.common.cancel}</ThemedText>
+                </Pressable>
+                <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveDate}>
+                  <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal
@@ -762,28 +816,30 @@ export default function CreateReminderScreen() {
         animationType="fade"
         onRequestClose={() => setShowNotesInput(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.doseNotes}</ThemedText>
-            <RNTextInput
-              style={[styles.notesModalInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder={Copy.createReminder.doseNotesPlaceholder}
-              placeholderTextColor="#6B5744"
-              multiline
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
-                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-              </Pressable>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.doseNotes}</ThemedText>
+              <RNTextInput
+                style={[styles.notesModalInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                value={notes}
+                onChangeText={setNotes}
+                placeholder={Copy.createReminder.doseNotesPlaceholder}
+                placeholderTextColor="#6B5744"
+                multiline
+                autoFocus
+              />
+              <View style={styles.modalButtons}>
+                <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
+                  <ThemedText type="body">{Copy.common.cancel}</ThemedText>
+                </Pressable>
+                <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                  <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -887,10 +943,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   pill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
     backgroundColor: "#FFFFFF",
@@ -915,19 +973,17 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   stepperValueBox: {
+    flex: 1,
     flexDirection: "row",
-    alignItems: "baseline",
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-    minWidth: 90,
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
   },
   stepperValueInput: {
     fontSize: 22,
     minWidth: 30,
-    textAlign: "center",
     padding: 0,
   },
   stepperUnit: {
@@ -935,9 +991,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   stepperButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -948,7 +1004,7 @@ const styles = StyleSheet.create({
   },
   dayRangeRow: {
     flexDirection: "row",
-    gap: Spacing.xl,
+    gap: Spacing.lg,
   },
   dayRangeItem: {
     flex: 1,
@@ -960,22 +1016,15 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.sansSemiBold,
   },
   dayRangeInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    alignItems: "center",
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    alignItems: "flex-start",
   },
   dayRangeInputText: {
-    fontSize: 22,
-    textAlign: "center",
+    fontSize: 28,
     padding: 0,
-    minWidth: 30,
-  },
-  dayRangeSteppers: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: Spacing.xl,
-    marginTop: Spacing.sm,
+    minWidth: 40,
   },
   dateRow: {
     flexDirection: "row",
@@ -985,14 +1034,6 @@ const styles = StyleSheet.create({
   },
   dateRowText: {
     flex: 1,
-  },
-  standaloneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.sm,
-    marginBottom: Spacing.md,
   },
   detailRow: {
     flexDirection: "row",
@@ -1014,12 +1055,13 @@ const styles = StyleSheet.create({
   weekdayRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
-  weekdayCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  weekdayButton: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
