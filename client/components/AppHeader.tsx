@@ -25,11 +25,13 @@ function getGreeting(name?: string): string {
 
 function getFormattedDate(): string {
   const now = new Date();
-  return now.toLocaleDateString("en-US", {
+  const datePart = now.toLocaleDateString("en-US", {
     weekday: "long",
-    month: "long",
+    month: "short",
     day: "numeric",
   });
+  const timePart = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+  return `${datePart} ${timePart}`;
 }
 
 export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
@@ -54,8 +56,8 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
           onPress={() => navigation.navigate("Profile")}
           testID="button-profile"
         >
-          <View style={[styles.profileIconContainer, { backgroundColor: "#EDE7DA" }]}>
-            <Feather name="user" size={20} color="#6B5744" />
+          <View style={[styles.profileIconContainer, { borderColor: theme.text }]}>
+            <Feather name="user" size={18} color={theme.text} />
           </View>
         </Pressable>
       </View>
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
   },
   greetingContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
@@ -115,8 +117,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greetingText: {
-    fontSize: 24,
+    fontSize: 28,
     fontFamily: FontFamily.serifBold,
+    lineHeight: 36,
     marginBottom: Spacing.xs,
   },
   dateText: {
@@ -125,11 +128,13 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     marginLeft: Spacing.md,
+    marginTop: Spacing.xs,
   },
   profileIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
