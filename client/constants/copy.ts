@@ -154,7 +154,8 @@ export const Copy = {
   },
 
   more: {
-    settingsSection: "Settings",
+    title: "Account",
+    settingsSection: "GENERAL SETTINGS",
     historyTitle: "History",
     historySubtitle: "View past notifications",
     snoozeTitle: "Snooze Settings",
@@ -163,7 +164,9 @@ export const Copy = {
     alarmSoundsSubtitle: "Choose notification sound",
     accountSection: "Account",
     freeTrialTitle: "Free Trial",
-    trialRemaining: (days: number) => `${days} days remaining in your trial period`,
+    freeTrialSubtitle: "30 days remaining in your trial period. Enjoy all premium features!",
+    trialRemaining: (days: number) => `${days} days remaining in your trial period. Enjoy all premium features!`,
+    activeBadge: "ACTIVE",
     profileTitle: "Profile",
     profileSubtitle: "Manage your account",
     emailTitle: "Email",
@@ -188,9 +191,9 @@ export const Copy = {
   },
 
   snoozeSettings: {
-    title: "Default Snooze Duration",
+    title: "Snooze settings",
     description: "Choose how long to snooze notifications when you tap the snooze button.",
-    infoMessage: (duration: string) => `When you snooze a notification, it will remind you again after ${duration}.`,
+    infoText: "When you snooze a notification, it will remind you again after ",
     saveButton: "Save Settings",
     hour: "hour",
     hours: "hours",
@@ -198,7 +201,7 @@ export const Copy = {
   },
 
   alarmSounds: {
-    title: "Alarm Sound",
+    title: "Alarm sound",
     description: "Choose the sound that will play when your reminders go off.",
     webNotice: "Sound preview is available in the Expo Go app on your device.",
     saveButton: "Save Selection",
@@ -208,6 +211,7 @@ export const Copy = {
       marimba: "Marimba",
       xylophone: "Xylophone",
       alarm_clock: "Alarm Clock",
+      soft_chimes: "Soft Chimes",
       piano: "Piano",
       harp: "Harp",
     },

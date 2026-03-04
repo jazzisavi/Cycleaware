@@ -27,7 +27,7 @@ export default function MoreStackNavigator() {
         name="More"
         component={MoreScreen}
         options={{
-          headerTitle: "More",
+          headerShown: false,
         }}
       />
       <Stack.Screen
@@ -41,14 +41,14 @@ export default function MoreStackNavigator() {
         name="SnoozeSettings"
         component={SnoozeSettingsScreen}
         options={{
-          headerTitle: "Snooze Settings",
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="AlarmSounds"
         component={AlarmSoundsScreen}
         options={{
-          headerTitle: "Alarm Sounds",
+          headerShown: false,
         }}
       />
       <Stack.Screen

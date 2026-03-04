@@ -726,47 +726,54 @@ export default function CreateReminderScreen() {
 
       <Modal
         visible={showTimePicker && Platform.OS !== "android"}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowTimePicker(false)}
       >
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.remindMeAt}</ThemedText>
-              {Platform.OS === "web" ? (
-                <View style={{ alignItems: "center" }}>
-                  <RNTextInput
-                    style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
-                    value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
-                    onChangeText={(text) => {
-                      const [hours, minutes] = text.split(":").map(Number);
-                      if (!isNaN(hours) && !isNaN(minutes)) {
-                        const d = new Date();
-                        d.setHours(hours, minutes, 0, 0);
-                        setTempTime(d);
-                      }
-                    }}
-                    placeholder="HH:MM"
-                    placeholderTextColor="#6B5744"
-                    keyboardType="numbers-and-punctuation"
-                    maxLength={5}
-                  />
-                </View>
-              ) : (
-                <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} />
-              )}
-              <View style={styles.modalButtons}>
-                <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
-                  <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-                </Pressable>
-                <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveTime}>
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-                </Pressable>
-              </View>
-            </View>
+        <View style={[styles.fullModal, { backgroundColor: "#F5F0E8" }]}>
+          <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+            <Pressable style={styles.backCircle} onPress={() => setShowTimePicker(false)}>
+              <Feather name="arrow-left" size={20} color="#2C2118" />
+            </Pressable>
+            <ThemedText type="h2" style={styles.fullModalTitle}>Select time</ThemedText>
           </View>
-        </KeyboardAvoidingView>
+          <View style={[styles.helpCard, { backgroundColor: "#EDE7DA" }]}>
+            <Feather name="info" size={18} color="#C47D0A" style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+            <ThemedText type="body" style={{ flex: 1, color: "#2C2118", fontFamily: FontFamily.sansRegular }}>
+              Choose a time that works with your daily routine.
+            </ThemedText>
+          </View>
+          <View style={styles.pickerCard}>
+            {Platform.OS === "web" ? (
+              <View style={{ alignItems: "center", padding: Spacing.xl }}>
+                <RNTextInput
+                  style={[styles.webTimeInput, { color: "#2C2118", borderColor: "#EDE7DA", fontFamily: FontFamily.sansRegular }]}
+                  value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
+                  onChangeText={(text) => {
+                    const [hours, minutes] = text.split(":").map(Number);
+                    if (!isNaN(hours) && !isNaN(minutes)) {
+                      const d = new Date();
+                      d.setHours(hours, minutes, 0, 0);
+                      setTempTime(d);
+                    }
+                  }}
+                  placeholder="HH:MM"
+                  placeholderTextColor="#6B5744"
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                />
+              </View>
+            ) : (
+              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} />
+            )}
+          </View>
+          <View style={{ flex: 1 }} />
+          <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <Pressable style={styles.fullModalSaveButton} onPress={handleSaveTime}>
+              <ThemedText type="button" style={styles.saveButtonText}>Save</ThemedText>
+            </Pressable>
+          </View>
+        </View>
       </Modal>
 
       {showDatePicker && Platform.OS === "android" ? (
@@ -775,19 +782,32 @@ export default function CreateReminderScreen() {
 
       <Modal
         visible={showDatePicker !== null && Platform.OS !== "android"}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowDatePicker(null)}
       >
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>
-                {showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
-              </ThemedText>
-              {Platform.OS === "web" ? (
+        <View style={[styles.fullModal, { backgroundColor: "#F5F0E8" }]}>
+          <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+            <Pressable style={styles.backCircle} onPress={() => setShowDatePicker(null)}>
+              <Feather name="chevron-left" size={20} color="#2C2118" />
+            </Pressable>
+            <ThemedText type="h2" style={styles.fullModalTitle}>
+              {showDatePicker === "cycleStart" ? "Cycle start date" : showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
+            </ThemedText>
+          </View>
+          <View style={[styles.helpCard, { backgroundColor: "#EDE7DA" }]}>
+            <Feather name="info" size={18} color="#C47D0A" style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+            <ThemedText type="body" style={{ flex: 1, color: "#2C2118", fontFamily: FontFamily.sansRegular }}>
+              {showDatePicker === "cycleStart"
+                ? "Select the start date of your therapeutic cycle or day 1 of your last bleed."
+                : "Select a date for your reminder."}
+            </ThemedText>
+          </View>
+          <View style={styles.pickerCard}>
+            {Platform.OS === "web" ? (
+              <View style={{ alignItems: "center", padding: Spacing.xl }}>
                 <RNTextInput
-                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                  style={[styles.webTimeInput, { color: "#2C2118", borderColor: "#EDE7DA", fontFamily: FontFamily.sansRegular }]}
                   value={tempDate.toISOString().split("T")[0]}
                   onChangeText={(text) => {
                     const d = new Date(text);
@@ -797,49 +817,56 @@ export default function CreateReminderScreen() {
                   placeholderTextColor="#6B5744"
                   maxLength={10}
                 />
-              ) : (
-                <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} />
-              )}
-              <View style={styles.modalButtons}>
-                <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
-                  <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-                </Pressable>
-                <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveDate}>
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-                </Pressable>
               </View>
-            </View>
+            ) : (
+              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} />
+            )}
           </View>
-        </KeyboardAvoidingView>
+          <View style={{ flex: 1 }} />
+          <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <Pressable style={styles.fullModalSaveButton} onPress={handleSaveDate}>
+              <ThemedText type="button" style={styles.saveButtonText}>
+                {showDatePicker === "cycleStart" ? "Save Reminder" : "Save"}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
       </Modal>
 
       <Modal
         visible={showNotesInput}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowNotesInput(false)}
       >
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.doseNotes}</ThemedText>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <View style={[styles.fullModal, { backgroundColor: "#F5F0E8" }]}>
+            <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+              <Pressable style={styles.backCircle} onPress={() => setShowNotesInput(false)}>
+                <Feather name="arrow-left" size={20} color="#2C2118" />
+              </Pressable>
+              <ThemedText type="h2" style={styles.fullModalTitle}>Add notes</ThemedText>
+            </View>
+            <ThemedText type="body" style={styles.notesSubtitle}>
+              Add any specific instructions for this reminder.
+            </ThemedText>
+            <View style={styles.notesCard}>
               <RNTextInput
-                style={[styles.notesModalInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular }]}
                 value={notes}
                 onChangeText={setNotes}
-                placeholder={Copy.createReminder.doseNotesPlaceholder}
-                placeholderTextColor="#6B5744"
+                placeholder="e.g., Take with water, before breakfast..."
+                placeholderTextColor="#9A8D7F"
                 multiline
                 autoFocus
+                textAlignVertical="top"
               />
-              <View style={styles.modalButtons}>
-                <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
-                  <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-                </Pressable>
-                <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                  <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-                </Pressable>
-              </View>
+            </View>
+            <View style={{ flex: 1 }} />
+            <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+              <Pressable style={styles.fullModalSaveButton} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                <ThemedText type="button" style={styles.saveButtonText}>Save</ThemedText>
+              </Pressable>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -1109,28 +1136,73 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     marginTop: Spacing.md,
   },
-  modalOverlay: {
+  fullModal: {
     flex: 1,
-    backgroundColor: "rgba(44, 33, 24, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  modalContent: {
-    width: "85%",
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-  },
-  modalButtons: {
+  fullModalHeader: {
     flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
     gap: Spacing.md,
-    marginTop: Spacing.xl,
   },
-  modalButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: BorderRadius.md,
+  backCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#EDE7DA",
     alignItems: "center",
     justifyContent: "center",
+  },
+  fullModalTitle: {
+    fontFamily: FontFamily.serifBold,
+    fontSize: 24,
+    color: "#2C2118",
+  },
+  helpCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginHorizontal: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+  },
+  pickerCard: {
+    marginHorizontal: Spacing.lg,
+    backgroundColor: "#FFFFFF",
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+  },
+  fullModalFooter: {
+    paddingHorizontal: Spacing.lg,
+  },
+  fullModalSaveButton: {
+    height: 56,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: "#E8614F",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notesSubtitle: {
+    fontFamily: FontFamily.sansRegular,
+    fontSize: 14,
+    color: "#6B5744",
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  notesCard: {
+    marginHorizontal: Spacing.lg,
+    backgroundColor: "#FFFFFF",
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    minHeight: 250,
+  },
+  notesCardInput: {
+    fontSize: 16,
+    color: "#2C2118",
+    flex: 1,
+    textAlignVertical: "top",
+    padding: 0,
   },
   webTimeInput: {
     fontSize: 24,
@@ -1139,13 +1211,5 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
     width: 150,
-  },
-  notesModalInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    minHeight: 100,
-    textAlignVertical: "top",
-    fontSize: 16,
   },
 });

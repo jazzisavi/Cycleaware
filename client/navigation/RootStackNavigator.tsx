@@ -122,15 +122,9 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="AlarmSounds"
         component={AlarmSoundsScreen}
-        options={({ navigation }) => ({
-          ...opaqueScreenOptions,
-          headerTitle: "Alarm Sound",
-          headerLeft: () => (
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Feather name="arrow-left" size={24} color={theme.text} />
-            </Pressable>
-          ),
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="Profile"
