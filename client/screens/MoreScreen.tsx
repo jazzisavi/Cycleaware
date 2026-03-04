@@ -3,6 +3,8 @@ import { StyleSheet, View, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { reloadAppAsync } from "expo";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -110,9 +112,21 @@ export default function MoreScreen() {
         <SettingsRow
           icon="info"
           title={Copy.more.versionTitle}
-          value="1.0.0"
+          value="1.0.13"
           showChevron={false}
           testID="row-version"
+        />
+        <SettingsRow
+          icon="refresh-cw"
+          iconColor={theme.warning}
+          title="Reset Onboarding"
+          subtitle="See the onboarding screens again"
+          onPress={async () => {
+            await AsyncStorage.removeItem("@goflo/onboarding_complete");
+            await AsyncStorage.removeItem("@goflo/user_name");
+            reloadAppAsync();
+          }}
+          testID="row-reset-onboarding"
         />
       </ScrollView>
     </ThemedView>
