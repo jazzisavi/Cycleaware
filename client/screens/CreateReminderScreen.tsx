@@ -420,7 +420,10 @@ export default function CreateReminderScreen() {
           }}
           selectTextOnFocus
         />
-        <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
+          {onUnitPress ? <Feather name="chevron-down" size={14} color="#6B5744" /> : null}
+        </View>
       </Pressable>
       <Pressable
         style={[styles.stepperButton, { borderColor: theme.border }]}
