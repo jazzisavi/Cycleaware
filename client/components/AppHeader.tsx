@@ -6,17 +6,61 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, FontFamily } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
+import { useUserName } from "@/hooks/useUserName";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface AppHeaderProps {
   title: string;
+  showGreeting?: boolean;
 }
 
-export function AppHeader({ title }: AppHeaderProps) {
+function getGreeting(name?: string): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return Copy.home.goodMorning(name || undefined);
+  if (hour < 17) return Copy.home.goodAfternoon(name || undefined);
+  return Copy.home.goodEvening(name || undefined);
+}
+
+function getFormattedDate(): string {
+  const now = new Date();
+  return now.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { name } = useUserName();
+
+  if (showGreeting) {
+    return (
+      <View style={[styles.greetingContainer, { paddingTop: insets.top + Spacing.sm }]}>
+        <View style={styles.greetingContent}>
+          <Text style={[styles.greetingText, { color: theme.text }]}>
+            {getGreeting(name)}
+          </Text>
+          <Text style={[styles.dateText, { color: theme.textSecondary }]}>
+            {getFormattedDate()}
+          </Text>
+        </View>
+        <Pressable
+          style={styles.profileButton}
+          onPress={() => navigation.navigate("Profile")}
+          testID="button-profile"
+        >
+          <View style={[styles.profileIconContainer, { backgroundColor: "#EDE7DA" }]}>
+            <Feather name="user" size={20} color="#6B5744" />
+          </View>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing.sm }]}>
@@ -49,15 +93,44 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "PlayfairDisplay_700Bold",
+    fontFamily: FontFamily.serifBold,
   },
   navTitle: {
     fontSize: 17,
     fontWeight: "600",
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontFamily: FontFamily.sansSemiBold,
   },
   moreButton: {
     flex: 1,
     alignItems: "flex-end",
+  },
+  greetingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  greetingContent: {
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: 24,
+    fontFamily: FontFamily.serifBold,
+    marginBottom: Spacing.xs,
+  },
+  dateText: {
+    fontSize: 14,
+    fontFamily: FontFamily.sansRegular,
+  },
+  profileButton: {
+    marginLeft: Spacing.md,
+  },
+  profileIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

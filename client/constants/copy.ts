@@ -3,6 +3,15 @@ export const Copy = {
     name: "GoFlo",
   },
 
+  onboarding: {
+    welcomeTitle: "Welcome to GoFlo",
+    welcomeText: "Your gentle reminder companion. We help you stay on track with your health routines, so you can focus on feeling your best.",
+    namePrompt: "What should we call you?",
+    namePlaceholder: "Enter your name",
+    continueButton: "Continue",
+    getStartedButton: "Get Started",
+  },
+
   common: {
     done: "Done",
     cancel: "Cancel",
@@ -32,13 +41,16 @@ export const Copy = {
   },
 
   home: {
-    welcomeTitle: "Welcome message",
-    welcomeText: "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien is convallis",
+    welcomeTitle: "Your reminders, simplified",
+    welcomeText: "Create your first reminder and let GoFlo keep you on track with what matters most.",
     createReminderButton: "Create A Reminder",
     todaysReminders: "Today's Reminders",
     upcoming: "Upcoming",
+    unresolved: "Unresolved",
     statusActive: "Status: Active",
     takeButton: "Take",
+    skipButton: "Skip",
+    snoozeButton: "Snooze",
     doneButton: "Done",
     checkHistory: "Check out your History",
     checkHistoryText: (count: number) => `You have ${count} unresolved reminders, check out your history to make sure you're on track`,
@@ -50,6 +62,10 @@ export const Copy = {
     notificationsDisabled: "Notifications disabled",
     timeToday: (time: string) => `${time} today`,
     dateAtTime: (date: string, time: string) => `${date} at ${time}`,
+    goodMorning: (name?: string) => name ? `Good morning, ${name}` : "Good morning",
+    goodAfternoon: (name?: string) => name ? `Good afternoon, ${name}` : "Good afternoon",
+    goodEvening: (name?: string) => name ? `Good evening, ${name}` : "Good evening",
+    unresolvedText: "These reminders need your attention",
   },
 
   createReminder: {

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import CreateReminderScreen from "@/screens/CreateReminderScreen";
@@ -12,8 +13,11 @@ import SnoozeSettingsScreen from "@/screens/SnoozeSettingsScreen";
 import AlarmSoundsScreen from "@/screens/AlarmSoundsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
+import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
+
+const ONBOARDING_KEY = "@goflo/onboarding_complete";
 
 export type RootStackParamList = {
   Main: { screen?: "Home" | "Reminders" } | undefined;
@@ -35,6 +39,19 @@ export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
   const opaqueScreenOptions = useScreenOptions({ transparent: false });
   const { theme } = useTheme();
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY)
+      .then((value) => setShowOnboarding(value !== "true"))
+      .catch(() => setShowOnboarding(false));
+  }, []);
+
+  if (showOnboarding === null) return null;
+
+  if (showOnboarding) {
+    return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
+  }
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
