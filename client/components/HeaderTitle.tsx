@@ -36,5 +36,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: "600",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
 });

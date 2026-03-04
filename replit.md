@@ -2,7 +2,7 @@
 
 ## Overview
 
-GoFlo is a cross-platform habit reminder app built with Expo/React Native and Express. The core feature is a dual-mode reminder system: **Cycle-based** (repeat every X days) and **Calendar-based** (specific weekdays or dates). The app uses a warm, earthy color palette, aiming to reduce stress around task management.
+GoFlo is a cross-platform habit reminder app built with Expo/React Native and Express. The core feature is a triple-mode reminder system: **Cycle-based** (repeat on specific days within a cycle), **Interval-based** (repeat every X days), and **Weekday-based** (repeat on specific days of the week). The app uses a warm, earthy color palette with Playfair Display (headers) and Plus Jakarta Sans (body) fonts, aiming to reduce stress around task management.
 
 ### Branding Colors
 - **Warm Linen** `#F5F0E8` — App background
@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Expo Go** loads pre-built static JS bundles from `static-build/` folder, NOT the live Metro dev server
 - **After ANY code change**, you MUST run `node scripts/build.js` to rebuild the static bundles, then restart the backend (`Start Backend` workflow) so mobile devices pick up the changes
 - The Metro dev server (`Start Frontend`) only serves the web version; mobile gets served from the backend's static files
-- Build version: v1.0.9
+- Build version: v1.0.10
 
 ### Local-First Data Flow
 - **Reminders**: Created, read, updated, deleted via `LocalDatabase` (SQLite) — no server API calls
@@ -80,7 +80,10 @@ shared/           # Code shared between client and server
 - **Local-First Architecture**: All reminder data stored on-device via expo-sqlite for instant access and offline support
 - **5-Day Local Buffer**: Cycle reminders also schedule 5 days of local notifications as an offline safety net, with a warning notification 1 day before the buffer runs out
 - **Push Sync**: `client/services/pushSync.ts` handles push token registration and cycle config syncing to server on app launch and on create/edit/delete
-- **Reminder Types**: Two distinct reminder modes (cycle and calendar) stored in single SQLite table with conditional fields
+- **Unified Form**: Single `CreateReminderScreen` with 3 frequency modes (Cycle/Interval/Weekdays) replacing old TypeSelector + separate forms
+- **Reminder Types**: Three frequency modes (cycle, interval, weekdays) stored in single SQLite table with conditional fields; interval/weekdays map to `reminderType: "calendar"` with different `repeatUnit` values
+- **Typography**: Playfair Display Bold for all headers/section titles; Plus Jakarta Sans (Regular/Medium/SemiBold/Bold) for all body text; defined in `FontFamily` constants in `theme.ts`
+- **Form Design Colors**: `#E8614F` coral (active pill border, filled icons, save button), `#F9E8E4` pill active bg, `#E8C4B8` save disabled, `#6B5744` empty icon/tertiary text color
 - **Component Pattern**: Themed components (`ThemedText`, `ThemedView`) that automatically adapt to color scheme
 - **Centralized Copy**: All user-facing text is managed through `client/constants/copy.ts` for easy maintenance and future i18n support
 - **Sound System**: Excluded from current sprint; `soundEnabled` defaults to `false`
@@ -90,7 +93,7 @@ shared/           # Code shared between client and server
 - **Structure**: Organized by screen/feature with nested objects (e.g., `Copy.home.welcomeTitle`, `Copy.profile.saveChanges`)
 - **Dynamic Text**: Use functions for parameterized strings (e.g., `Copy.home.checkHistoryText(count)`)
 - **IMPORTANT**: All new user-facing text MUST be added to the copy file first, then referenced in components
-- **Categories**: `common` (shared), `navigation`, `home`, `typeSelector`, `createCycleReminder`, `createCalendarReminder`, `soundSettings`, `repeatingDays`, `repeatFrequency`, `remindersScreen`, `reminderDetail`, `history`, `more`, `profile`, `snoozeSettings`, `alarmSounds`, `emptyState`, `paywall`, `errors`
+- **Categories**: `common` (shared), `navigation`, `home`, `createReminder`, `soundSettings`, `remindersScreen`, `reminderDetail`, `history`, `more`, `profile`, `snoozeSettings`, `alarmSounds`, `emptyState`, `paywall`, `errors`
 
 ## External Dependencies
 

@@ -1,15 +1,8 @@
-/**
- * Centralized copy/strings file for the GoFlo app.
- * All user-facing text should be defined here for easy management and future i18n support.
- */
-
 export const Copy = {
-  // App-wide
   app: {
     name: "GoFlo",
   },
 
-  // Common/Shared
   common: {
     done: "Done",
     cancel: "Cancel",
@@ -29,7 +22,6 @@ export const Copy = {
     to: "to",
   },
 
-  // Navigation/Headers
   navigation: {
     today: "Today",
     reminders: "Reminders",
@@ -39,7 +31,6 @@ export const Copy = {
     newReminder: "New Reminder",
   },
 
-  // Home Screen
   home: {
     welcomeTitle: "Welcome message",
     welcomeText: "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien is convallis",
@@ -61,76 +52,46 @@ export const Copy = {
     dateAtTime: (date: string, time: string) => `${date} at ${time}`,
   },
 
-  // Type Selector Screen
-  typeSelector: {
-    title: "What kind of reminder?",
-    subtitle: "Choose how you want this reminder to repeat",
-    cycleBased: "Cycle-Based",
-    cycleBasedDescription: "On specific days of a repeating cycle. Examples: days 15–28 of a 28-day cycle.",
-    calendarBased: "Calendar-Based",
-    calendarBasedDescription: "Examples: every 2 days, Mondays and Thursdays.",
-  },
-
-  // Create Reminder Screen (Cycle-Based)
-  createCycleReminder: {
-    headerTitle: "Create Cycle Reminder",
-    editHeaderTitle: "Edit Reminder",
-    addTitlePlaceholder: "Add reminder title",
-    addNotesPlaceholder: "Add medication notes",
-    addDaysOfCycle: "Add days of cycle",
-    cycleStartsToday: "Cycle starts today",
-    cycleStartsTomorrow: "Cycle starts tomorrow",
-    cycleStartsOn: (date: string) => `Cycle starts on ${date}`,
-    addCycleStartDate: "Add cycle start date",
-    noEndDate: "No end date",
-    endsOn: (date: string) => `Ends on ${date}`,
-    addEndDate: "Add end date",
-    addReminderTime: "Add reminder time",
-    remindMeAt: (time: string) => `Remind me at ${time}`,
-    setReminderTimeTitle: "Set reminder time",
-    timeFormatHint: "Enter time in 24-hour format (e.g., 09:00)",
+  createReminder: {
+    headerTitle: "Create reminder",
+    editHeaderTitle: "Edit reminder",
+    namePlaceholder: "Name your reminder...",
+    frequencyTitle: "Frequency",
+    chooseOne: "CHOOSE ONE",
+    cyclePill: "Cycle",
+    intervalPill: "Interval",
+    weekdaysPill: "Weekdays",
+    cycleLength: "Cycle length",
+    cycleLengthDescription: "Set to your prescribed therapeutic cycle or your average menstrual cycle length",
+    dayRange: "Day Range",
+    dayRangeDescription: "Reminder will trigger daily during this specific phase of your cycle.",
+    fromDay: "FROM DAY",
+    toDay: "TO DAY",
+    cycleStart: "Cycle Start",
+    start: "Start",
+    startDateDescription: "Select the start date of your therapeutic cycle or day 1 of your last bleed.",
+    selectDate: "Select a date",
+    selectTime: "Select a time",
+    repeatsEvery: "Repeats every:",
+    daysUnit: "DAY(S)",
+    daysLabel: "DAYS",
+    repeatOn: "Repeat on:",
+    remindMeAt: "Remind me at",
+    addAnotherTime: "Add another time",
+    doseNotes: "Dose notes",
+    doseNotesPlaceholder: "Add some notes",
+    notificationSound: "Notification sound",
+    snoozeDuration: "Snooze Duration",
+    endDate: "End date",
+    saveButton: "Save Reminder",
     deleteReminder: "Delete Reminder",
   },
 
-  // Create Calendar Reminder Screen
-  createCalendarReminder: {
-    headerTitle: "Create Calendar Reminder",
-    editHeaderTitle: "Edit Reminder",
-    addTitlePlaceholder: "Add reminder title",
-    addNotesPlaceholder: "Add medication notes",
-    repeatFrequency: "Repeat frequency",
-    startsOn: "Starts on",
-    addReminderTime: "Add reminder time",
-    remindMeAt: (time: string) => `Remind me at ${time}`,
-    setReminderTimeTitle: "Set reminder time",
-    timeFormatHint: "Enter time in 24-hour format (e.g., 14:30)",
-    deleteReminder: "Delete Reminder",
-  },
-
-  // Sound Settings (shared between both create screens)
   soundSettings: {
     makeSomeNoise: "Make some noise",
     playsDefaultSound: "An alarm will sound until you dismiss the notification",
   },
 
-  // Repeating Days Screen
-  repeatingDays: {
-    headerTitle: "Repeating days",
-    cycleStarts: "Cycle starts",
-    ends: "Ends",
-    descriptionPlaceholder: "Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sap",
-  },
-
-  // Repeat Frequency Screen
-  repeatFrequency: {
-    headerTitle: "Repeat frequency",
-    repeatEvery: "Repeat every",
-    repeatOn: "Repeat on",
-    ends: "Ends",
-    selectEndDate: "Select end date",
-  },
-
-  // Reminders Screen
   remindersScreen: {
     title: "Reminders",
     noRemindersTitle: "No Reminders Yet",
@@ -143,7 +104,6 @@ export const Copy = {
     deleteConfirmMessage: (count: number) => `Are you sure you want to delete ${count} reminder${count > 1 ? "s" : ""}?`,
   },
 
-  // Reminder Detail Screen
   reminderDetail: {
     reminderNotFound: "Reminder not found",
     notScheduled: "Not scheduled",
@@ -160,14 +120,12 @@ export const Copy = {
     everyDays: (daysStr: string) => `Every ${daysStr}`,
   },
 
-  // History Screen
   history: {
     title: "History",
     noHistoryTitle: "No History Yet",
     noHistoryDescription: "Your notification history will appear here once you start receiving reminders.",
   },
 
-  // More Screen
   more: {
     settingsSection: "Settings",
     historyTitle: "History",
@@ -188,7 +146,6 @@ export const Copy = {
     versionTitle: "Version",
   },
 
-  // Profile Screen
   profile: {
     changePhoto: "Change Photo",
     personalInfoSection: "Personal Information",
@@ -203,7 +160,6 @@ export const Copy = {
     saveChanges: "Save Changes",
   },
 
-  // Snooze Settings Screen
   snoozeSettings: {
     title: "Default Snooze Duration",
     description: "Choose how long to snooze notifications when you tap the snooze button.",
@@ -214,7 +170,6 @@ export const Copy = {
     min: "min",
   },
 
-  // Alarm Sounds Screen
   alarmSounds: {
     title: "Alarm Sound",
     description: "Choose the sound that will play when your reminders go off.",
@@ -231,7 +186,6 @@ export const Copy = {
     },
   },
 
-  // Empty States
   emptyState: {
     noReminders: {
       title: "No Reminders Yet",
@@ -243,7 +197,6 @@ export const Copy = {
     },
   },
 
-  // Notification Action Confirmations
   actionConfirmation: {
     taken: "Taken, Good job!",
     skipped: "Reminder Skipped",
@@ -251,18 +204,15 @@ export const Copy = {
     snoozeTip: "Tip: Durations can be amended in the app",
   },
 
-  // Re-prompt
   reprompt: {
     titlePrefix: "Reminder:",
   },
 
-  // Offline / Buffer Warning
   offlineBuffer: {
     warningTitle: "Reminders pausing soon",
     warningBody: "While offline, we can only schedule a limited number of reminders ahead. Reconnect and open the app to continue.",
   },
 
-  // Paywall Screen
   paywall: {
     title: "Upgrade to GoFlo Pro",
     subtitle: "Get the most out of your reminders",
@@ -292,7 +242,6 @@ export const Copy = {
     manageSubscription: "Manage Subscription",
   },
 
-  // Error Messages
   errors: {
     reminderNotFound: "Reminder not found",
     failedToCreate: "Failed to create reminder",

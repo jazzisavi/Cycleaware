@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: Spacing.sm,
     fontWeight: "500",
+    fontFamily: "PlusJakartaSans_500Medium",
   },
   input: {
     height: Spacing.inputHeight,

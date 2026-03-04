@@ -164,5 +164,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontWeight: "600",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
 });

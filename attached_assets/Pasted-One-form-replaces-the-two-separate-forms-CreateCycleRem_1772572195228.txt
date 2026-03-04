@@ -1,0 +1,25 @@
+One form replaces the two separate forms (CreateCycleReminder + CreateCalendarReminder)
+
+
+Cycle: https://www.figma.com/design/uvwmygJHhc3zyY3allL6WP/GoFlo-v3?node-id=65-977&t=7e8wAKQl9otYbIoQ-1
+Weekdays: https://www.figma.com/design/uvwmygJHhc3zyY3allL6WP/GoFlo-v3?node-id=65-3067&t=7e8wAKQl9otYbIoQ-1
+Interval: https://www.figma.com/design/uvwmygJHhc3zyY3allL6WP/GoFlo-v3?node-id=65-2160&t=7e8wAKQl9otYbIoQ-1
+Currently there are 2 forms, one for cycle frequency and 1 for calendar which has every x days and set days for frequency. The new design merges these forms to 1 form with 3 frequencies, cycle, “interval” previously known as every x days and “weekdays” reviously known as week repeating on set days.
+
+
+Header: "Create reminder" with X close button
+Name input: "Name your reminder..."
+Frequency section: 3 pill buttons — Cycle, Interval, Weekdays (only one selected at a time, with a checkmark icon on the active one). If data is input on 1 pill and then the user navigates to a new pill, do not persist their entry, only one frequency can be true at one time per form. So either cycle, interval or weekday is the setting for frquency
+On load: No frequency selected, just the name input + frequency pills + save button at bottom
+When Cycle is selected: Shows Cycle Length input, Day Range (From Day / To Day), Cycle Start date, and Details section (Remind me at,, Dose notes, Notification sound, Snooze Duration, End date)
+When Weekdays is selected: Shows day selector (M T W T F S S), start date,, Remind me at, Dose notes, Notification sound, Snooze Duration, End date
+When Interval is selected: Shows "Repeats every: [number] [days]"start date,,  Remind me at, Dose notes, Notification sound, Snooze Duration, End date) 
+When more then 0 times have been added show cta to Add another time.
+When a fields data is missing show icons in 6B5744
+When a field has data change its icon to E8614F as per the designs
+On tap of the following:
+Notification sound > open alarm sounds page
+Snooze duration > sounds settings page
+Remind me at> time picker
+End date and start date> date picker
+Does notes> allow data input

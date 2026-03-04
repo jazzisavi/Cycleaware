@@ -21,7 +21,7 @@ function CreateButton() {
     <View style={styles.createButtonContainer}>
       <Pressable
         style={[styles.createButton, { backgroundColor: theme.primary }]}
-        onPress={() => navigation.navigate("TypeSelector")}
+        onPress={() => navigation.navigate("CreateReminder")}
         testID="fab-create"
       >
         <Feather name="plus" size={28} color="#FFFFFF" />
@@ -49,6 +49,7 @@ export default function MainTabNavigator() {
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "500",
+          fontFamily: "PlusJakartaSans_500Medium",
         },
       }}
     >
