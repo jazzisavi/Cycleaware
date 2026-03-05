@@ -225,7 +225,10 @@ const styles = StyleSheet.create({
     lineHeight: 44,
   },
   exampleCardOuter: {
-    borderRadius: BorderRadius.lg,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
   },

@@ -83,15 +83,9 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="More"
         component={MoreScreen}
-        options={({ navigation }) => ({
-          ...opaqueScreenOptions,
-          headerTitle: "More",
-          headerLeft: () => (
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Feather name="arrow-left" size={24} color={theme.text} />
-            </Pressable>
-          ),
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="History"

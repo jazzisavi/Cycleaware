@@ -16,11 +16,11 @@ interface AppHeaderProps {
   showGreeting?: boolean;
 }
 
-function getGreeting(name?: string): string {
+function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return Copy.home.goodMorning(name || undefined);
-  if (hour < 17) return Copy.home.goodAfternoon(name || undefined);
-  return Copy.home.goodEvening(name || undefined);
+  if (hour < 12) return Copy.home.goodMorning;
+  if (hour < 17) return Copy.home.goodAfternoon;
+  return Copy.home.goodEvening;
 }
 
 function getFormattedDate(): string {
@@ -45,15 +45,20 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
       <View style={[styles.greetingContainer, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.greetingContent}>
           <Text style={[styles.greetingText, { color: theme.text }]}>
-            {getGreeting(name)}
+            {getGreeting()}
           </Text>
+          {name ? (
+            <Text style={[styles.greetingName, { color: theme.text }]}>
+              {name}
+            </Text>
+          ) : null}
           <Text style={[styles.dateText, { color: theme.textSecondary }]}>
             {getFormattedDate()}
           </Text>
         </View>
         <Pressable
           style={styles.profileButton}
-          onPress={() => navigation.navigate("Profile")}
+          onPress={() => navigation.navigate("More")}
           testID="button-profile"
         >
           <View style={[styles.profileIconContainer, { borderColor: theme.text }]}>
@@ -66,16 +71,17 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing.sm }]}>
-      <View style={styles.logoContainer}>
-        <Text style={[styles.logoText, { color: theme.primary }]}>GoFlo</Text>
+      <View style={styles.titleContainer}>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>{title}</Text>
       </View>
-      <Text style={[styles.navTitle, { color: theme.text }]}>{title}</Text>
       <Pressable
-        style={styles.moreButton}
+        style={styles.profileButton}
         onPress={() => navigation.navigate("More")}
         testID="button-more"
       >
-        <Feather name="more-horizontal" size={24} color={theme.text} />
+        <View style={[styles.profileIconContainer, { borderColor: theme.text }]}>
+          <Feather name="user" size={18} color={theme.text} />
+        </View>
       </Pressable>
     </View>
   );
@@ -89,22 +95,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
-  logoContainer: {
+  titleContainer: {
     flex: 1,
   },
-  logoText: {
-    fontSize: 18,
-    fontWeight: "700",
+  pageTitle: {
+    fontSize: 28,
     fontFamily: FontFamily.serifBold,
-  },
-  navTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    fontFamily: FontFamily.sansSemiBold,
-  },
-  moreButton: {
-    flex: 1,
-    alignItems: "flex-end",
+    lineHeight: 36,
   },
   greetingContainer: {
     flexDirection: "row",
@@ -117,6 +114,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greetingText: {
+    fontSize: 28,
+    fontFamily: FontFamily.serifBold,
+    lineHeight: 36,
+  },
+  greetingName: {
     fontSize: 28,
     fontFamily: FontFamily.serifBold,
     lineHeight: 36,

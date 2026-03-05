@@ -30,9 +30,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
-  const [snoozedIds, setSnoozedIds] = useState<Set<string>>(new Set());
+  const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
   const [unresolvedDismissed, setUnresolvedDismissed] = useState(false);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -54,14 +52,21 @@ export default function HomeScreen() {
     }, [])
   );
 
-  const handleComplete = async (expandedKey: string, reminderId: string, title: string) => {
+  const buildScheduledAt = (displayTime: string): string => {
+    const [hours, minutes] = displayTime.split(":").map(Number);
+    const d = new Date();
+    d.setHours(hours, minutes, 0, 0);
+    return d.toISOString();
+  };
+
+  const handleComplete = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
     await stopAlarm();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setCompletedIds(prev => new Set(prev).add(expandedKey));
+    setActionedIds(prev => new Set(prev).add(expandedKey));
     LocalDatabase.addHistoryEntry({
       reminderId,
       title,
-      scheduledAt: new Date().toISOString(),
+      scheduledAt: buildScheduledAt(displayTime),
       status: 'completed',
       completedAt: new Date().toISOString(),
     });
@@ -70,14 +75,14 @@ export default function HomeScreen() {
     refreshHistory();
   };
 
-  const handleSkip = async (expandedKey: string, reminderId: string, title: string) => {
+  const handleSkip = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
     await stopAlarm();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSkippedIds(prev => new Set(prev).add(expandedKey));
+    setActionedIds(prev => new Set(prev).add(expandedKey));
     LocalDatabase.addHistoryEntry({
       reminderId,
       title,
-      scheduledAt: new Date().toISOString(),
+      scheduledAt: buildScheduledAt(displayTime),
       status: 'skipped',
     });
     LocalDatabase.updateReminder(reminderId, {});
@@ -85,14 +90,14 @@ export default function HomeScreen() {
     refreshHistory();
   };
 
-  const handleSnooze = async (expandedKey: string, reminderId: string, title: string) => {
+  const handleSnooze = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
     await stopAlarm();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSnoozedIds(prev => new Set(prev).add(expandedKey));
+    setActionedIds(prev => new Set(prev).add(expandedKey));
     LocalDatabase.addHistoryEntry({
       reminderId,
       title,
-      scheduledAt: new Date().toISOString(),
+      scheduledAt: buildScheduledAt(displayTime),
       status: 'snoozed',
     });
     refresh();
@@ -166,15 +171,7 @@ export default function HomeScreen() {
     return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
   };
 
-  const isActioned = (key: string) =>
-    completedIds.has(key) || skippedIds.has(key) || snoozedIds.has(key);
-
-  const getActionLabel = (key: string) => {
-    if (completedIds.has(key)) return Copy.home.doneButton;
-    if (skippedIds.has(key)) return "Skipped";
-    if (snoozedIds.has(key)) return "Snoozed";
-    return "";
-  };
+  const isActioned = (key: string) => actionedIds.has(key);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -217,64 +214,41 @@ export default function HomeScreen() {
         {todaysReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{Copy.home.todaysReminders}</Text>
-            {todaysReminders.map((reminder) => {
-              const actioned = isActioned(reminder.expandedKey);
-              return (
-                <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
-                  <View style={styles.activeCardTop}>
-                    <View style={styles.bellIconCircle}>
-                      <Feather name="bell" size={18} color="#2A6E7A" />
-                    </View>
-                    <View style={styles.activeCardInfo}>
-                      <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
-                      {reminder.notes ? (
-                        <Text style={[styles.activeNotes, { color: theme.textSecondary }]} numberOfLines={2}>
-                          {reminder.notes}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <Text style={[styles.activeTime, { color: theme.textSecondary }]}>
-                      {formatTime(reminder.displayTime)}
-                    </Text>
+            {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => (
+              <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.activeCardTop}>
+                  <View style={styles.bellIconCircle}>
+                    <Feather name="bell" size={18} color="#2A6E7A" />
                   </View>
-
-                  {actioned ? (
-                    <View style={styles.actionedRow}>
-                      <View style={[styles.actionedBadge, {
-                        backgroundColor: completedIds.has(reminder.expandedKey) ? "#E8F5EE" : "#F5F0E8"
-                      }]}>
-                        <Feather
-                          name={completedIds.has(reminder.expandedKey) ? "check" : skippedIds.has(reminder.expandedKey) ? "skip-forward" : "clock"}
-                          size={14}
-                          color={completedIds.has(reminder.expandedKey) ? "#2E7D52" : "#6B5744"}
-                        />
-                        <Text style={[styles.actionedText, {
-                          color: completedIds.has(reminder.expandedKey) ? "#2E7D52" : "#6B5744"
-                        }]}>
-                          {getActionLabel(reminder.expandedKey)}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <View style={styles.actionRow}>
-                      <Pressable onPress={() => handleSnooze(reminder.expandedKey, reminder.id, reminder.title)}>
-                        <Text style={styles.textActionButton}>{Copy.home.snoozeButton}</Text>
-                      </Pressable>
-                      <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title)}>
-                        <Text style={styles.textActionButton}>{Copy.home.skipButton}</Text>
-                      </Pressable>
-                      <Pressable
-                        style={styles.takeButton}
-                        onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title)}
-                        testID={`button-complete-${reminder.expandedKey}`}
-                      >
-                        <Text style={styles.takeButtonText}>{Copy.home.takeButton}</Text>
-                      </Pressable>
-                    </View>
-                  )}
+                  <View style={styles.activeCardInfo}>
+                    <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
+                    {reminder.notes ? (
+                      <Text style={[styles.activeNotes, { color: theme.textSecondary }]} numberOfLines={2}>
+                        {reminder.notes}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.activeTime, { color: theme.textSecondary }]}>
+                    {formatTime(reminder.displayTime)}
+                  </Text>
                 </View>
-              );
-            })}
+                <View style={styles.actionRow}>
+                  <Pressable onPress={() => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
+                    <Text style={styles.textActionButton}>{Copy.home.snoozeButton}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
+                    <Text style={styles.textActionButton}>{Copy.home.skipButton}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.takeButton}
+                    onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
+                    testID={`button-complete-${reminder.expandedKey}`}
+                  >
+                    <Text style={styles.takeButtonText}>{Copy.home.takeButton}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
           </View>
         ) : null}
 
@@ -357,7 +331,10 @@ const styles = StyleSheet.create({
   },
   welcomeCard: {
     padding: Spacing.xl,
-    borderRadius: BorderRadius.lg,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
     marginBottom: Spacing.lg,
     backgroundColor: "#D5E8E4",
   },
@@ -459,24 +436,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.sansSemiBold,
     letterSpacing: 0.5,
   },
-  actionedRow: {
-    marginTop: Spacing.lg,
-    alignItems: "flex-start",
-  },
-  actionedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-  },
-  actionedText: {
-    fontSize: 13,
-    fontFamily: FontFamily.sansMedium,
-  },
   unresolvedCard: {
-    borderRadius: BorderRadius.lg,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
     padding: Spacing.lg,
   },
   unresolvedHeader: {
