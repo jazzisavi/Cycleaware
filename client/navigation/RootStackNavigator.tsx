@@ -90,15 +90,9 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="History"
         component={HistoryScreen}
-        options={({ navigation }) => ({
-          ...opaqueScreenOptions,
-          headerTitle: "History",
-          headerLeft: () => (
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Feather name="arrow-left" size={24} color={theme.text} />
-            </Pressable>
-          ),
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="SnoozeSettings"
@@ -117,15 +111,9 @@ export default function RootStackNavigator() {
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
-        options={({ navigation }) => ({
-          ...opaqueScreenOptions,
-          headerTitle: "Profile",
-          headerLeft: () => (
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Feather name="arrow-left" size={24} color={theme.text} />
-            </Pressable>
-          ),
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         name="Paywall"

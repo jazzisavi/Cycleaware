@@ -179,6 +179,7 @@ export const Copy = {
   },
 
   profile: {
+    title: "Profile",
     changePhoto: "Change Photo",
     personalInfoSection: "Personal Information",
     displayNameLabel: "Display Name",

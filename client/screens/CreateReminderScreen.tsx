@@ -650,7 +650,6 @@ export default function CreateReminderScreen() {
 
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.details}</ThemedText>
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
@@ -693,7 +692,6 @@ export default function CreateReminderScreen() {
 
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.details}</ThemedText>
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
@@ -846,7 +844,7 @@ export default function CreateReminderScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowNotesInput(false)}
       >
-        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F5F0E8" }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F5F0E8" }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
           <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
             <Pressable style={styles.backCircle} onPress={() => setShowNotesInput(false)}>
               <Feather name="arrow-left" size={20} color="#2C2118" />
@@ -856,7 +854,7 @@ export default function CreateReminderScreen() {
           <ThemedText type="body" style={styles.notesSubtitle}>
             Add any specific instructions for this reminder.
           </ThemedText>
-          <View style={[styles.notesCard, { flex: 1 }]}>
+          <View style={[styles.notesCard, { flexGrow: 1, flexShrink: 1 }]}>
             <RNTextInput
               style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular }]}
               value={notes}

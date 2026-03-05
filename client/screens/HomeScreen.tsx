@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing["2xl"],
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: "#E8614F",
+    backgroundColor: "#2A6E7A",
   },
   takeButtonText: {
     color: "#FFFFFF",

@@ -234,8 +234,8 @@ export default function RemindersScreen() {
             style={[
               styles.checkbox,
               {
-                borderColor: selectedIds.has(item.id) ? theme.primary : theme.border,
-                backgroundColor: selectedIds.has(item.id) ? theme.primary : "transparent",
+                borderColor: selectedIds.has(item.id) ? "#E8614F" : theme.border,
+                backgroundColor: selectedIds.has(item.id) ? "#E8614F" : "transparent",
               },
             ]}
           >
@@ -264,8 +264,8 @@ export default function RemindersScreen() {
         <Switch
           value={item.isActive}
           onValueChange={() => handleToggle(item)}
-          trackColor={{ false: theme.borderLight, true: theme.primary + "60" }}
-          thumbColor={item.isActive ? theme.primary : theme.textTertiary}
+          trackColor={{ false: theme.borderLight, true: "#E8614F60" }}
+          thumbColor={item.isActive ? "#E8614F" : theme.textTertiary}
           style={styles.switch}
         />
       </View>
@@ -302,7 +302,7 @@ export default function RemindersScreen() {
           }}
           style={styles.toolbarButton}
         >
-          <ThemedText type="body" style={{ color: theme.primary }}>
+          <ThemedText type="body" style={{ color: "#E8614F" }}>
             {isSelecting ? (allSelected ? Copy.remindersScreen.deselectAll : Copy.remindersScreen.selectAll) : Copy.remindersScreen.selectAll}
           </ThemedText>
         </Pressable>
