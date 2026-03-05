@@ -608,8 +608,13 @@ export default function CreateReminderScreen() {
                 </View>
               </View>
 
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            </View>
 
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <ThemedText type="h4" style={styles.cardTitle}>{Copy.createReminder.startDate}</ThemedText>
+              <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+                {Copy.createReminder.startDateDescription}
+              </ThemedText>
               {renderDetailRow("calendar", Copy.createReminder.cycleStart, cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate, !!cycleStartDate, () => handleOpenDatePicker("cycleStart"))}
 
               <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -721,7 +726,7 @@ export default function CreateReminderScreen() {
       </View>
 
       {showTimePicker && Platform.OS === "android" ? (
-        <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} />
+        <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} accentColor="#E8614F" />
       ) : null}
 
       <Modal
@@ -764,7 +769,7 @@ export default function CreateReminderScreen() {
                 />
               </View>
             ) : (
-              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} />
+              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} accentColor="#E8614F" textColor="#2C2118" />
             )}
           </View>
           <View style={{ flex: 1 }} />
@@ -777,7 +782,7 @@ export default function CreateReminderScreen() {
       </Modal>
 
       {showDatePicker && Platform.OS === "android" ? (
-        <DateTimePicker value={tempDate} mode="date" display="default" onChange={handleDateChange} />
+        <DateTimePicker value={tempDate} mode="date" display="default" onChange={handleDateChange} accentColor="#E8614F" />
       ) : null}
 
       <Modal
@@ -819,7 +824,7 @@ export default function CreateReminderScreen() {
                 />
               </View>
             ) : (
-              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} />
+              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} accentColor="#E8614F" textColor="#2C2118" />
             )}
           </View>
           <View style={{ flex: 1 }} />
@@ -839,35 +844,32 @@ export default function CreateReminderScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowNotesInput(false)}
       >
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <View style={[styles.fullModal, { backgroundColor: "#F5F0E8" }]}>
-            <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
-              <Pressable style={styles.backCircle} onPress={() => setShowNotesInput(false)}>
-                <Feather name="arrow-left" size={20} color="#2C2118" />
-              </Pressable>
-              <ThemedText type="h2" style={styles.fullModalTitle}>Add notes</ThemedText>
-            </View>
-            <ThemedText type="body" style={styles.notesSubtitle}>
-              Add any specific instructions for this reminder.
-            </ThemedText>
-            <View style={styles.notesCard}>
-              <RNTextInput
-                style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular }]}
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="e.g., Take with water, before breakfast..."
-                placeholderTextColor="#9A8D7F"
-                multiline
-                autoFocus
-                textAlignVertical="top"
-              />
-            </View>
-            <View style={{ flex: 1 }} />
-            <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
-              <Pressable style={styles.fullModalSaveButton} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                <ThemedText type="button" style={styles.saveButtonText}>Save</ThemedText>
-              </Pressable>
-            </View>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F5F0E8" }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+          <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+            <Pressable style={styles.backCircle} onPress={() => setShowNotesInput(false)}>
+              <Feather name="arrow-left" size={20} color="#2C2118" />
+            </Pressable>
+            <ThemedText type="h2" style={styles.fullModalTitle}>Add notes</ThemedText>
+          </View>
+          <ThemedText type="body" style={styles.notesSubtitle}>
+            Add any specific instructions for this reminder.
+          </ThemedText>
+          <View style={[styles.notesCard, { flex: 1 }]}>
+            <RNTextInput
+              style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular }]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="e.g., Take with water, before breakfast..."
+              placeholderTextColor="#9A8D7F"
+              multiline
+              autoFocus
+              textAlignVertical="top"
+            />
+          </View>
+          <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <Pressable style={styles.fullModalSaveButton} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+              <ThemedText type="button" style={styles.saveButtonText}>Save</ThemedText>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </Modal>

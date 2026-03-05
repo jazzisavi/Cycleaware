@@ -263,7 +263,6 @@ export default function HomeScreen() {
                       <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title)}>
                         <Text style={styles.textActionButton}>{Copy.home.skipButton}</Text>
                       </Pressable>
-                      <View style={{ flex: 1 }} />
                       <Pressable
                         style={styles.takeButton}
                         onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title)}
@@ -439,8 +438,8 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginTop: Spacing.lg,
-    gap: Spacing.xl,
   },
   textActionButton: {
     fontSize: 13,
@@ -533,7 +532,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#EDE7DA",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
