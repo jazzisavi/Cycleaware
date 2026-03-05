@@ -553,120 +553,119 @@ export default function CreateReminderScreen() {
         </View>
 
         {frequency === "cycle" ? (
-          <>
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="h4" style={styles.cardTitle}>{Copy.createReminder.cycleLength}</ThemedText>
-              <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
-                {Copy.createReminder.cycleLengthDescription}
-              </ThemedText>
-              {renderStepper(
-                cycleLength,
-                () => setCycleLength(Math.max(1, cycleLength - 1)),
-                () => setCycleLength(cycleLength + 1),
-                Copy.createReminder.daysLabel,
-                setCycleLength,
-              )}
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.cycleLength}</ThemedText>
+            <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+              {Copy.createReminder.cycleLengthDescription}
+            </ThemedText>
+            {renderStepper(
+              cycleLength,
+              () => setCycleLength(Math.max(1, cycleLength - 1)),
+              () => setCycleLength(cycleLength + 1),
+              Copy.createReminder.daysLabel,
+              setCycleLength,
+            )}
 
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-              <ThemedText type="h4" style={styles.cardTitle}>{Copy.createReminder.dayRange}</ThemedText>
-              <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
-                {Copy.createReminder.dayRangeDescription}
-              </ThemedText>
-              <View style={styles.dayRangeRow}>
-                <View style={styles.dayRangeItem}>
-                  <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
-                  <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
-                    <RNTextInput
-                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
-                      keyboardType="number-pad"
-                      value={String(cycleDayStart)}
-                      onChangeText={(text) => {
-                        const num = parseInt(text, 10);
-                        if (!isNaN(num)) setCycleDayStart(Math.max(1, Math.min(cycleLength, num)));
-                        else if (text === "") setCycleDayStart(1);
-                      }}
-                      selectTextOnFocus
-                    />
-                  </View>
-                </View>
-                <View style={styles.dayRangeItem}>
-                  <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
-                  <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
-                    <RNTextInput
-                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
-                      keyboardType="number-pad"
-                      value={String(cycleDayEnd)}
-                      onChangeText={(text) => {
-                        const num = parseInt(text, 10);
-                        if (!isNaN(num)) setCycleDayEnd(Math.max(cycleDayStart, Math.min(cycleLength, num)));
-                        else if (text === "") setCycleDayEnd(cycleDayStart);
-                      }}
-                      selectTextOnFocus
-                    />
-                  </View>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.dayRange}</ThemedText>
+            <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+              {Copy.createReminder.dayRangeDescription}
+            </ThemedText>
+            <View style={styles.dayRangeRow}>
+              <View style={styles.dayRangeItem}>
+                <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
+                <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
+                  <RNTextInput
+                    style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+                    keyboardType="number-pad"
+                    value={String(cycleDayStart)}
+                    onChangeText={(text) => {
+                      const num = parseInt(text, 10);
+                      if (!isNaN(num)) setCycleDayStart(Math.max(1, Math.min(cycleLength, num)));
+                      else if (text === "") setCycleDayStart(1);
+                    }}
+                    selectTextOnFocus
+                  />
                 </View>
               </View>
-
+              <View style={styles.dayRangeItem}>
+                <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
+                <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
+                  <RNTextInput
+                    style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+                    keyboardType="number-pad"
+                    value={String(cycleDayEnd)}
+                    onChangeText={(text) => {
+                      const num = parseInt(text, 10);
+                      if (!isNaN(num)) setCycleDayEnd(Math.max(cycleDayStart, Math.min(cycleLength, num)));
+                      else if (text === "") setCycleDayEnd(cycleDayStart);
+                    }}
+                    selectTextOnFocus
+                  />
+                </View>
+              </View>
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="h4" style={styles.cardTitle}>{Copy.createReminder.startDate}</ThemedText>
-              <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
-                {Copy.createReminder.startDateDescription}
-              </ThemedText>
-              {renderDetailRow("calendar", Copy.createReminder.cycleStart, cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate, !!cycleStartDate, () => handleOpenDatePicker("cycleStart"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.startDate}</ThemedText>
+            <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+              {Copy.createReminder.startDateDescription}
+            </ThemedText>
+            {renderDetailRow("calendar", Copy.createReminder.cycleStart, cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate, !!cycleStartDate, () => handleOpenDatePicker("cycleStart"))}
 
-              {renderTimeRows()}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderEndDateRow()}
-            </View>
-          </>
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.details}</ThemedText>
+            {renderTimeRows()}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderEndDateRow()}
+          </View>
         ) : null}
 
         {frequency === "interval" ? (
-          <>
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>{Copy.createReminder.repeatsEvery}</ThemedText>
-              {renderStepper(
-                intervalDays,
-                () => setIntervalDays(Math.max(1, intervalDays - 1)),
-                () => setIntervalDays(intervalDays + 1),
-                intervalUnitLabel,
-                setIntervalDays,
-                1,
-                999,
-                toggleIntervalUnit,
-              )}
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.repeatsEvery}</ThemedText>
+            {renderStepper(
+              intervalDays,
+              () => setIntervalDays(Math.max(1, intervalDays - 1)),
+              () => setIntervalDays(intervalDays + 1),
+              intervalUnitLabel,
+              setIntervalDays,
+              1,
+              999,
+              toggleIntervalUnit,
+            )}
 
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-              {renderDetailRow("calendar", Copy.createReminder.start, startDate ? formatDate(startDate) : Copy.createReminder.selectDate, !!startDate, () => handleOpenDatePicker("start"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderTimeRows()}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderEndDateRow()}
-            </View>
-          </>
+            {renderDetailRow("calendar", Copy.createReminder.start, startDate ? formatDate(startDate) : Copy.createReminder.selectDate, !!startDate, () => handleOpenDatePicker("start"))}
+
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.details}</ThemedText>
+            {renderTimeRows()}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderEndDateRow()}
+          </View>
         ) : null}
 
         {frequency === "weekdays" ? (
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>{Copy.createReminder.repeatOn}</ThemedText>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.repeatOn}</ThemedText>
             <View style={styles.weekdayRow}>
               {WEEKDAY_LABELS.map((label, index) => {
                 const key = WEEKDAY_KEYS[index];
@@ -691,7 +690,10 @@ export default function CreateReminderScreen() {
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
             {renderDetailRow("calendar", Copy.createReminder.start, startDate ? formatDate(startDate) : Copy.createReminder.selectDate, !!startDate, () => handleOpenDatePicker("start"))}
+
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.details}</ThemedText>
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
@@ -994,6 +996,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   cardTitle: {
+    marginBottom: Spacing.xs,
+  },
+  inCardHeading: {
+    fontFamily: FontFamily.sansBold,
+    fontSize: 16,
     marginBottom: Spacing.xs,
   },
   cardDescription: {
