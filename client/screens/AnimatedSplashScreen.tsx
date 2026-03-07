@@ -12,7 +12,7 @@ import { FontFamily } from "@/constants/theme";
 
 import splashLogo from "../../assets/images/splash-logo.png";
 
-const WORDS = ["HRT.", "Reminders,"];
+const WORDS = ["HRT.", "Reminders,", "Life."];
 const TAGLINE = "Synced to your cycle";
 const CYCLE_DURATION = 2800;
 
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontFamily: FontFamily.serifBold,
     fontSize: 28,
-    color: "#FFD4C8",
+    color: "#2C2118",
     marginTop: 2,
   },
 });
