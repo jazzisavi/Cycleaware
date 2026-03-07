@@ -1090,8 +1090,6 @@ const styles = StyleSheet.create({
   },
   stepperUnitLabel: {
     fontSize: 16,
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
   stepperButton: {
     width: 42,

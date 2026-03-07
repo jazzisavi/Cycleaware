@@ -158,6 +158,8 @@ async function handleSnoozeAction(reminderId: string, reminderTitle: string, sou
             body: reminder?.notes || "",
             data: { reminderId, soundEnabled, isReprompt: true },
             categoryIdentifier: "reminder",
+            ...(Platform.OS === "android" ? { channelId: "reminders", priority: Notifications.AndroidNotificationPriority.HIGH } : {}),
+            ...(Platform.OS === "ios" ? { interruptionLevel: "timeSensitive" } : {}),
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -182,6 +184,17 @@ export async function setupNotificationCategories(): Promise<void> {
 
   try {
     const Notifications = await import("expo-notifications");
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("reminders", {
+        name: "Reminders",
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: "default",
+        vibrationPattern: [0, 250, 250, 250],
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      });
+      console.log("Android notification channel 'reminders' created with HIGH importance");
+    }
 
     await Notifications.setNotificationCategoryAsync("reminder", [
       {
@@ -259,6 +272,8 @@ export async function scheduleReminderNotification(
         body: notes || "",
         data: { reminderId, soundEnabled },
         categoryIdentifier: "reminder",
+        ...(Platform.OS === "android" ? { channelId: "reminders", priority: Notifications.AndroidNotificationPriority.HIGH } : {}),
+        ...(Platform.OS === "ios" ? { interruptionLevel: "timeSensitive" } : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -451,6 +466,8 @@ export async function scheduleAllTimesForReminder(reminder: {
                 isReprompt: true,
               },
               categoryIdentifier: "reminder",
+              ...(Platform.OS === "android" ? { channelId: "reminders", priority: Notifications.AndroidNotificationPriority.HIGH } : {}),
+              ...(Platform.OS === "ios" ? { interruptionLevel: "timeSensitive" } : {}),
             },
             trigger: {
               type: Notifications.SchedulableTriggerInputTypes.DATE,

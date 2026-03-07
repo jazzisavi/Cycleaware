@@ -82,6 +82,7 @@ shared/           # Code shared between client and server
 - **Hook**: `client/hooks/useUserName.ts` provides `{ name, setName, isLoading }`
 
 ### Key Design Decisions
+- **High-Priority Notifications**: All reminder notifications use iOS Time-Sensitive interruption level and Android IMPORTANCE_HIGH channel ("reminders") for immediate visibility; buffer warnings remain default priority
 - **Hybrid Notification Architecture**: Cycle reminders use server-side Expo Push API (via pushScheduler) for indefinite delivery without app interaction; calendar reminders remain 100% local
 - **Local-First Architecture**: All reminder data stored on-device via expo-sqlite for instant access and offline support
 - **5-Day Local Buffer**: Cycle reminders also schedule 5 days of local notifications as an offline safety net, with a warning notification 1 day before the buffer runs out
