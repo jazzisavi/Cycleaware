@@ -32,6 +32,24 @@ if (Platform.OS !== "web") {
 
         const Notifications = require("expo-notifications");
 
+        const notificationId = notification?.request?.identifier;
+        if (notificationId) {
+          try {
+            await Notifications.dismissNotificationAsync(notificationId);
+          } catch (e) {
+            console.log("[BackgroundTask] Could not dismiss notification:", e);
+          }
+        }
+
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        for (const p of presented) {
+          if (p.request?.content?.data?.reminderId === reminderId) {
+            try {
+              await Notifications.dismissNotificationAsync(p.request.identifier);
+            } catch (e) {}
+          }
+        }
+
         const cancelAllForReminder = async (rid: string) => {
           const scheduled = await Notifications.getAllScheduledNotificationsAsync();
           for (const n of scheduled) {
