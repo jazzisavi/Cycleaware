@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -18,6 +18,7 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
+import AnimatedSplashScreen from "@/screens/AnimatedSplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { ActionConfirmationProvider, useActionConfirmation } from "@/contexts/ActionConfirmationContext";
@@ -101,6 +102,7 @@ export default function App() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
   });
+  const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -109,6 +111,14 @@ export default function App() {
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
+
+  if (showAnimatedSplash) {
+    return (
+      <ErrorBoundary>
+        <AnimatedSplashScreen onFinish={() => setShowAnimatedSplash(false)} />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>
