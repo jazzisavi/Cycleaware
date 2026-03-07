@@ -401,47 +401,52 @@ export default function CreateReminderScreen() {
   }, []);
 
   const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 99, onUnitPress?: () => void) => (
-    <View style={styles.stepperContainer}>
-      <Pressable
-        style={[styles.stepperButton, { backgroundColor: "#EDE7DA", borderWidth: 0 }]}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
-      >
-        <Feather name="minus" size={20} color={theme.text} />
-      </Pressable>
-      <Pressable
-        style={styles.stepperValueBox}
-        onPress={onUnitPress}
-      >
-        <RNTextInput
-          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
-          keyboardType="number-pad"
-          maxLength={2}
-          value={String(value)}
-          onChangeText={(text) => {
-            const cleaned = text.replace(/[^0-9]/g, "").slice(0, 2);
-            const num = parseInt(cleaned, 10);
-            if (!isNaN(num)) {
-              onChangeValue(Math.max(min, Math.min(max, num)));
-            } else if (cleaned === "") {
-              onChangeValue(min);
-            }
-          }}
-          selectTextOnFocus
-        />
-        <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
-      </Pressable>
-      <Pressable
-        style={[styles.stepperButton, { backgroundColor: "#EDE7DA", borderWidth: 0 }]}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
-      >
-        <Feather name="plus" size={20} color={theme.text} />
+    <View style={styles.stepperOuterRow}>
+      <View style={styles.stepperContainer}>
+        <Pressable
+          style={[styles.stepperButton, { backgroundColor: "#EDE7DA" }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
+        >
+          <Feather name="minus" size={20} color={theme.text} />
+        </Pressable>
+        <Pressable
+          style={styles.stepperValueBox}
+          onPress={onUnitPress}
+        >
+          <RNTextInput
+            style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+            keyboardType="number-pad"
+            maxLength={2}
+            value={String(value)}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9]/g, "").slice(0, 2);
+              const num = parseInt(cleaned, 10);
+              if (!isNaN(num)) {
+                onChangeValue(Math.max(min, Math.min(max, num)));
+              } else if (cleaned === "") {
+                onChangeValue(min);
+              }
+            }}
+            selectTextOnFocus
+          />
+        </Pressable>
+        <Pressable
+          style={[styles.stepperButton, { backgroundColor: "#EDE7DA" }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
+        >
+          <Feather name="plus" size={20} color={theme.text} />
+        </Pressable>
+      </View>
+      <Pressable onPress={onUnitPress} style={{ flexDirection: "row", alignItems: "center", gap: 4 }} disabled={!onUnitPress}>
+        <ThemedText type="body" style={[styles.stepperUnitLabel, { color: theme.text, fontFamily: FontFamily.sansBold }]}>{unitLabel}</ThemedText>
+        {onUnitPress ? <Feather name="chevron-down" size={14} color={theme.text} /> : null}
       </Pressable>
     </View>
   );
 
   const renderMiniStepper = (label: string, value: number, onDecrement: () => void, onIncrement: () => void, onChangeValue: (v: number) => void, min: number = 1, max: number = 99) => (
     <View style={styles.dayRangeItem}>
-      <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{label}</ThemedText>
+      <ThemedText type="caption" style={[styles.dayRangeLabel, { color: theme.text }]}>{label}</ThemedText>
       <View style={styles.miniStepperContainer}>
         <Pressable
           style={[styles.miniStepperButton, { backgroundColor: "#EDE7DA" }]}
@@ -1056,11 +1061,19 @@ const styles = StyleSheet.create({
   cardDescription: {
     marginBottom: Spacing.lg,
   },
+  stepperOuterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
   stepperContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
+    alignSelf: "flex-start",
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: "#E0DAD0",
+    overflow: "hidden",
   },
   stepperValueBox: {
     alignItems: "center",
@@ -1069,21 +1082,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
   },
   stepperValueInput: {
-    fontSize: 36,
-    minWidth: 50,
+    fontSize: 28,
+    minWidth: 40,
     padding: 0,
     textAlign: "center",
   },
-  stepperUnit: {
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginTop: 2,
+  stepperUnitLabel: {
+    fontSize: 16,
   },
   stepperButton: {
     width: 48,
     height: 48,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1099,10 +1109,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dayRangeLabel: {
-    textTransform: "uppercase",
-    letterSpacing: 1,
     marginBottom: Spacing.xs,
-    fontFamily: FontFamily.sansSemiBold,
+    fontFamily: FontFamily.sansBold,
+    fontSize: 15,
   },
   miniStepperContainer: {
     flexDirection: "row",
