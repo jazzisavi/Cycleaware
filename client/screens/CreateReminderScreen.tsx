@@ -400,43 +400,80 @@ export default function CreateReminderScreen() {
     return hasData ? "#E8614F" : "#6B5744";
   }, []);
 
-  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 999, onUnitPress?: () => void) => (
+  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 99, onUnitPress?: () => void) => (
     <View style={styles.stepperContainer}>
       <Pressable
-        style={[styles.stepperValueBox, { backgroundColor: "#EDE7DA" }]}
-        onPress={onUnitPress}
-      >
-        <RNTextInput
-          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
-          keyboardType="number-pad"
-          value={String(value)}
-          onChangeText={(text) => {
-            const num = parseInt(text, 10);
-            if (!isNaN(num)) {
-              onChangeValue(Math.max(min, Math.min(max, num)));
-            } else if (text === "") {
-              onChangeValue(min);
-            }
-          }}
-          selectTextOnFocus
-        />
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
-          {onUnitPress ? <Feather name="chevron-down" size={14} color="#6B5744" /> : null}
-        </View>
-      </Pressable>
-      <Pressable
-        style={[styles.stepperButton, { borderColor: theme.border }]}
+        style={[styles.stepperButton, { backgroundColor: "#EDE7DA", borderWidth: 0 }]}
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
       >
         <Feather name="minus" size={20} color={theme.text} />
       </Pressable>
       <Pressable
-        style={[styles.stepperButton, { borderColor: theme.border }]}
+        style={styles.stepperValueBox}
+        onPress={onUnitPress}
+      >
+        <RNTextInput
+          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+          keyboardType="number-pad"
+          maxLength={2}
+          value={String(value)}
+          onChangeText={(text) => {
+            const cleaned = text.replace(/[^0-9]/g, "").slice(0, 2);
+            const num = parseInt(cleaned, 10);
+            if (!isNaN(num)) {
+              onChangeValue(Math.max(min, Math.min(max, num)));
+            } else if (cleaned === "") {
+              onChangeValue(min);
+            }
+          }}
+          selectTextOnFocus
+        />
+        <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
+      </Pressable>
+      <Pressable
+        style={[styles.stepperButton, { backgroundColor: "#EDE7DA", borderWidth: 0 }]}
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
       >
         <Feather name="plus" size={20} color={theme.text} />
       </Pressable>
+    </View>
+  );
+
+  const renderMiniStepper = (label: string, value: number, onDecrement: () => void, onIncrement: () => void, onChangeValue: (v: number) => void, min: number = 1, max: number = 99) => (
+    <View style={styles.dayRangeItem}>
+      <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{label}</ThemedText>
+      <View style={styles.miniStepperContainer}>
+        <Pressable
+          style={[styles.miniStepperButton, { backgroundColor: "#EDE7DA" }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
+        >
+          <Feather name="minus" size={16} color={theme.text} />
+        </Pressable>
+        <View style={styles.miniStepperValueBox}>
+          <RNTextInput
+            style={[styles.miniStepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+            keyboardType="number-pad"
+            maxLength={2}
+            value={String(value)}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9]/g, "").slice(0, 2);
+              const num = parseInt(cleaned, 10);
+              if (!isNaN(num)) {
+                onChangeValue(Math.max(min, Math.min(max, num)));
+              } else if (cleaned === "") {
+                onChangeValue(min);
+              }
+            }}
+            selectTextOnFocus
+          />
+        </View>
+        <Pressable
+          style={[styles.miniStepperButton, { backgroundColor: "#EDE7DA" }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
+        >
+          <Feather name="plus" size={16} color={theme.text} />
+        </Pressable>
+      </View>
     </View>
   );
 
@@ -560,10 +597,22 @@ export default function CreateReminderScreen() {
             </ThemedText>
             {renderStepper(
               cycleLength,
-              () => setCycleLength(Math.max(1, cycleLength - 1)),
-              () => setCycleLength(cycleLength + 1),
+              () => {
+                const newLength = Math.max(2, cycleLength - 1);
+                setCycleLength(newLength);
+                if (cycleDayEnd > newLength) setCycleDayEnd(newLength);
+                if (cycleDayStart >= newLength) setCycleDayStart(Math.max(1, newLength - 1));
+              },
+              () => setCycleLength(Math.min(99, cycleLength + 1)),
               Copy.createReminder.daysLabel,
-              setCycleLength,
+              (v: number) => {
+                const newLength = Math.max(2, Math.min(99, v));
+                setCycleLength(newLength);
+                if (cycleDayEnd > newLength) setCycleDayEnd(newLength);
+                if (cycleDayStart >= newLength) setCycleDayStart(Math.max(1, newLength - 1));
+              },
+              2,
+              99,
             )}
 
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -573,38 +622,41 @@ export default function CreateReminderScreen() {
               {Copy.createReminder.dayRangeDescription}
             </ThemedText>
             <View style={styles.dayRangeRow}>
-              <View style={styles.dayRangeItem}>
-                <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
-                <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
-                  <RNTextInput
-                    style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
-                    keyboardType="number-pad"
-                    value={String(cycleDayStart)}
-                    onChangeText={(text) => {
-                      const num = parseInt(text, 10);
-                      if (!isNaN(num)) setCycleDayStart(Math.max(1, Math.min(cycleLength, num)));
-                      else if (text === "") setCycleDayStart(1);
-                    }}
-                    selectTextOnFocus
-                  />
-                </View>
-              </View>
-              <View style={styles.dayRangeItem}>
-                <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
-                <View style={[styles.dayRangeInput, { backgroundColor: "#EDE7DA" }]}>
-                  <RNTextInput
-                    style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.sansBold }]}
-                    keyboardType="number-pad"
-                    value={String(cycleDayEnd)}
-                    onChangeText={(text) => {
-                      const num = parseInt(text, 10);
-                      if (!isNaN(num)) setCycleDayEnd(Math.max(cycleDayStart, Math.min(cycleLength, num)));
-                      else if (text === "") setCycleDayEnd(cycleDayStart);
-                    }}
-                    selectTextOnFocus
-                  />
-                </View>
-              </View>
+              {renderMiniStepper(
+                Copy.createReminder.fromDay,
+                cycleDayStart,
+                () => setCycleDayStart(Math.max(1, cycleDayStart - 1)),
+                () => {
+                  const newStart = cycleDayStart + 1;
+                  if (newStart < cycleDayEnd) setCycleDayStart(newStart);
+                },
+                (v: number) => {
+                  const clamped = Math.max(1, Math.min(cycleDayEnd - 1, Math.min(99, v)));
+                  setCycleDayStart(clamped);
+                },
+                1,
+                99,
+              )}
+              {renderMiniStepper(
+                Copy.createReminder.toDay,
+                cycleDayEnd,
+                () => {
+                  const newEnd = cycleDayEnd - 1;
+                  if (newEnd > cycleDayStart) setCycleDayEnd(newEnd);
+                },
+                () => {
+                  const newEnd = cycleDayEnd + 1;
+                  if (newEnd > cycleLength) setCycleLength(Math.min(99, newEnd));
+                  if (newEnd <= 99) setCycleDayEnd(newEnd);
+                },
+                (v: number) => {
+                  const clamped = Math.max(cycleDayStart + 1, Math.min(99, v));
+                  setCycleDayEnd(clamped);
+                  if (clamped > cycleLength) setCycleLength(clamped);
+                },
+                1,
+                99,
+              )}
             </View>
 
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -636,11 +688,11 @@ export default function CreateReminderScreen() {
             {renderStepper(
               intervalDays,
               () => setIntervalDays(Math.max(1, intervalDays - 1)),
-              () => setIntervalDays(intervalDays + 1),
+              () => setIntervalDays(Math.min(99, intervalDays + 1)),
               intervalUnitLabel,
-              setIntervalDays,
+              (v: number) => setIntervalDays(Math.max(1, Math.min(99, v))),
               1,
-              999,
+              99,
               toggleIntervalUnit,
             )}
 
@@ -1007,25 +1059,25 @@ const styles = StyleSheet.create({
   stepperContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.sm,
   },
   stepperValueBox: {
-    flex: 1,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs,
   },
   stepperValueInput: {
-    fontSize: 22,
-    minWidth: 30,
+    fontSize: 36,
+    minWidth: 50,
     padding: 0,
+    textAlign: "center",
   },
   stepperUnit: {
     textTransform: "uppercase",
     letterSpacing: 1,
+    marginTop: 2,
   },
   stepperButton: {
     width: 48,
@@ -1052,16 +1104,31 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
     fontFamily: FontFamily.sansSemiBold,
   },
-  dayRangeInput: {
+  miniStepperContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
-    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: "#E0DAD0",
+    overflow: "hidden",
   },
-  dayRangeInputText: {
-    fontSize: 28,
+  miniStepperButton: {
+    width: 40,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniStepperValueBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.sm,
+  },
+  miniStepperValueInput: {
+    fontSize: 22,
     padding: 0,
-    minWidth: 40,
+    textAlign: "center",
+    minWidth: 30,
   },
   dateRow: {
     flexDirection: "row",
