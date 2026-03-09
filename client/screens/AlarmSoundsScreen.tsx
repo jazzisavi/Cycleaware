@@ -161,7 +161,7 @@ export default function AlarmSoundsScreen() {
         <Button
           onPress={handleSave}
           loading={isLoading}
-          style={[styles.saveButton, { backgroundColor: "#E8614F" }]}
+          style={[styles.saveButton, { backgroundColor: theme.saveButtonActive }]}
           testID="button-save-sound"
         >
           {Copy.alarmSounds.saveButton}

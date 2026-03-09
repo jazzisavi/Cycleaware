@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 
 import { FontFamily, Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
+import { useTheme } from "@/hooks/useTheme";
 
 const ONBOARDING_KEY = "@goflo/onboarding_complete";
 const USER_NAME_KEY = "@goflo/user_name";
@@ -24,6 +25,7 @@ interface OnboardingScreenProps {
 }
 
 function DotIndicators({ active, total }: { active: number; total: number }) {
+  const { theme } = useTheme();
   return (
     <View style={styles.dotsRow}>
       {Array.from({ length: total }).map((_, i) => (
@@ -31,7 +33,9 @@ function DotIndicators({ active, total }: { active: number; total: number }) {
           key={i}
           style={[
             styles.dot,
-            i === active ? styles.dotActive : styles.dotInactive,
+            i === active
+              ? { backgroundColor: theme.saveButtonActive }
+              : { backgroundColor: theme.saveButtonDisabled },
           ]}
         />
       ))}
@@ -56,20 +60,21 @@ function ExampleCard({
   title: string;
   detail: string;
 }) {
+  const { theme } = useTheme();
   return (
     <View style={[styles.exampleCardOuter, { backgroundColor: bgColor }]}>
       <Text style={[styles.exampleCategoryLabel, { color: categoryColor }]}>
         {categoryLabel}
       </Text>
-      <View style={styles.exampleCardInner}>
+      <View style={[styles.exampleCardInner, { backgroundColor: theme.backgroundDefault }]}>
         <View style={[styles.exampleIconCircle, { backgroundColor: iconColor + "20" }]}>
           <Feather name={iconName} size={18} color={iconColor} />
         </View>
         <View style={styles.exampleCardText}>
-          <Text style={styles.exampleTitle}>{title}</Text>
-          <Text style={styles.exampleDetail}>{detail}</Text>
+          <Text style={[styles.exampleTitle, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.exampleDetail, { color: theme.textSecondary }]}>{detail}</Text>
         </View>
-        <Text style={styles.exampleNow}>{Copy.onboarding.now}</Text>
+        <Text style={[styles.exampleNow, { color: theme.textTertiary }]}>{Copy.onboarding.now}</Text>
       </View>
     </View>
   );
@@ -77,6 +82,7 @@ function ExampleCard({
 
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useTheme();
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
   const nameInputRef = useRef<RNTextInput>(null);
@@ -97,9 +103,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     onComplete();
   };
 
+  const cycleCardBg = isDark ? "#1E3D2E" : "#D5EDE0";
+  const dailyCardBg = isDark ? "#3D2A1E" : "#FAE4D5";
+  const setDaysCardBg = isDark ? "#1E3040" : "#D5E8EC";
+
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: "#F5F0E8" }]}
+      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={[styles.content, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing["2xl"] }]}>
@@ -108,34 +118,34 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         {page === 0 ? (
           <View style={styles.page}>
             <View style={styles.pageOneContent}>
-              <Text style={styles.bigTitle}>{Copy.onboarding.pageOneTitle}</Text>
+              <Text style={[styles.bigTitle, { color: theme.text }]}>{Copy.onboarding.pageOneTitle}</Text>
 
               <ExampleCard
                 categoryLabel={Copy.onboarding.cycleAligned}
-                categoryColor="#2E7D52"
-                bgColor="#D5EDE0"
+                categoryColor={theme.accentMint}
+                bgColor={cycleCardBg}
                 iconName="circle"
-                iconColor="#2E7D52"
+                iconColor={theme.accentMint}
                 title={Copy.onboarding.cycleExample}
                 detail={Copy.onboarding.cycleDetail}
               />
 
               <ExampleCard
                 categoryLabel={Copy.onboarding.dailyRhythm}
-                categoryColor="#C03A2B"
-                bgColor="#FAE4D5"
+                categoryColor={theme.accentCoral}
+                bgColor={dailyCardBg}
                 iconName="sunrise"
-                iconColor="#E8614F"
+                iconColor={theme.saveButtonActive}
                 title={Copy.onboarding.dailyExample}
                 detail={Copy.onboarding.dailyDetail}
               />
 
               <ExampleCard
                 categoryLabel={Copy.onboarding.setDays}
-                categoryColor="#2A6E7A"
-                bgColor="#D5E8EC"
+                categoryColor={theme.info}
+                bgColor={setDaysCardBg}
                 iconName="star"
-                iconColor="#2A6E7A"
+                iconColor={theme.info}
                 title={Copy.onboarding.setDaysExample}
                 detail={Copy.onboarding.setDaysDetail}
               />
@@ -143,39 +153,39 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
             <View style={styles.bottomRow}>
               <View style={{ flex: 1 }} />
-              <Pressable style={styles.arrowButton} onPress={handleNext}>
-                <Feather name="arrow-right" size={24} color="#FFFFFF" />
+              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleNext}>
+                <Feather name="arrow-right" size={24} color={theme.buttonText} />
               </Pressable>
             </View>
           </View>
         ) : (
           <View style={styles.page}>
             <View style={styles.pageTwoContent}>
-              <Text style={styles.helloTitle}>{Copy.onboarding.pageTwoTitle}</Text>
+              <Text style={[styles.helloTitle, { color: theme.text }]}>{Copy.onboarding.pageTwoTitle}</Text>
 
               <View style={styles.nameInputWrapper}>
                 <RNTextInput
                   ref={nameInputRef}
-                  style={styles.nameInput}
+                  style={[styles.nameInput, { color: theme.text }]}
                   placeholder={Copy.onboarding.namePrompt}
-                  placeholderTextColor="#D4A090"
+                  placeholderTextColor={theme.saveButtonDisabled}
                   value={name}
                   onChangeText={setName}
                   returnKeyType="done"
                   onSubmitEditing={handleComplete}
                 />
-                <View style={styles.nameInputUnderline} />
+                <View style={[styles.nameInputUnderline, { backgroundColor: theme.saveButtonActive }]} />
               </View>
 
-              <Text style={styles.nameExplanation}>
+              <Text style={[styles.nameExplanation, { color: theme.textSecondary }]}>
                 {Copy.onboarding.nameExplanation}
               </Text>
             </View>
 
             <View style={styles.bottomRow}>
               <View style={{ flex: 1 }} />
-              <Pressable style={styles.arrowButton} onPress={handleComplete}>
-                <Feather name="arrow-right" size={24} color="#FFFFFF" />
+              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleComplete}>
+                <Feather name="arrow-right" size={24} color={theme.buttonText} />
               </Pressable>
             </View>
           </View>
@@ -204,12 +214,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  dotActive: {
-    backgroundColor: "#E8916F",
-  },
-  dotInactive: {
-    backgroundColor: "#F0D5C8",
-  },
   page: {
     flex: 1,
     justifyContent: "space-between",
@@ -220,7 +224,6 @@ const styles = StyleSheet.create({
   bigTitle: {
     fontFamily: FontFamily.serifBold,
     fontSize: 36,
-    color: "#2C2118",
     marginBottom: Spacing["2xl"],
     lineHeight: 44,
   },
@@ -240,7 +243,6 @@ const styles = StyleSheet.create({
   exampleCardInner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
   },
@@ -258,18 +260,15 @@ const styles = StyleSheet.create({
   exampleTitle: {
     fontFamily: FontFamily.sansSemiBold,
     fontSize: 14,
-    color: "#2C2118",
   },
   exampleDetail: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 12,
-    color: "#6B5744",
     marginTop: 2,
   },
   exampleNow: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 12,
-    color: "#9A8D7F",
     marginLeft: Spacing.sm,
   },
   pageTwoContent: {
@@ -279,7 +278,6 @@ const styles = StyleSheet.create({
   helloTitle: {
     fontFamily: FontFamily.serifBold,
     fontSize: 48,
-    color: "#2C2118",
     marginBottom: Spacing["3xl"],
   },
   nameInputWrapper: {
@@ -288,18 +286,15 @@ const styles = StyleSheet.create({
   nameInput: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 20,
-    color: "#2C2118",
     paddingVertical: Spacing.md,
     paddingHorizontal: 0,
   },
   nameInputUnderline: {
     height: 2,
-    backgroundColor: "#E8614F",
   },
   nameExplanation: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 14,
-    color: "#6B5744",
     lineHeight: 20,
     marginTop: Spacing.sm,
   },
@@ -312,7 +307,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#E8614F",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

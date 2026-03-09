@@ -1,11 +1,11 @@
 {
-  "id": "b390748f-d6c3-4502-9efd-ba91baec8e6c",
-  "createdAt": "2026-03-07T18:48:06.941Z",
+  "id": "36354dc0-1ff5-4845-84b7-2f9528ae12d3",
+  "createdAt": "2026-03-09T14:33:10.333Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772909286941-1947",
+    "key": "bundle-1773066790333-3799",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1772909286941-1947/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1773066790333-3799/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -28,9 +28,9 @@
       },
       "android": {
         "adaptiveIcon": {
-          "backgroundColor": "#6B9BD1",
-          "foregroundImage": "./assets/images/icon.png",
-          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png"
+          "backgroundColor": "#E8614F",
+          "foregroundImage": "./assets/images/android-icon-foreground.png",
+          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -47,9 +47,9 @@
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 200,
             "resizeMode": "contain",
-            "backgroundColor": "#FAFBFC",
+            "backgroundColor": "#E8614F",
             "dark": {
-              "backgroundColor": "#1F2123"
+              "backgroundColor": "#E8614F"
             }
           }
         ],
@@ -105,7 +105,7 @@
         "web"
       ],
       "androidStatusBar": {
-        "backgroundColor": "#FAFBFC"
+        "backgroundColor": "#E8614F"
       },
       "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
       "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android"
@@ -121,6 +121,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-72385e39-1711-48b3-8a45-43e79366807d"
+    "scopeKey": "@anonymous/goflo-cf182b5f-1646-4509-be7d-ecb40db9466e"
   }
 }

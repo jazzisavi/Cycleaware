@@ -93,7 +93,9 @@ shared/           # Code shared between client and server
 - **Form Design Colors**: `#E8614F` coral (active pill border, filled icons, save button), `#F9E8E4` pill active bg, `#E8C4B8` save disabled, `#6B5744` empty icon/tertiary text color
 - **Component Pattern**: Themed components (`ThemedText`, `ThemedView`) that automatically adapt to color scheme
 - **Centralized Copy**: All user-facing text is managed through `client/constants/copy.ts` for easy maintenance and future i18n support
-- **Sound System**: Excluded from current sprint; `soundEnabled` defaults to `false`
+- **Sound System**: Excluded from current sprint; `soundEnabled` defaults to `false`; notification sound row hidden from reminder creation form
+- **Dark Mode**: Full dark mode support across all screens — all colors use `theme.*` references from `useTheme()` hook; no hardcoded light-mode colors remain (except AnimatedSplashScreen which uses intentional coral branding colors)
+- **Interval Unit**: Interval frequency only supports "Day" unit (no "Week" option); unit label is non-interactive
 
 ### Copy File Guidelines
 - **Location**: `client/constants/copy.ts`

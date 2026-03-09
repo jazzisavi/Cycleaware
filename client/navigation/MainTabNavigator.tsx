@@ -8,32 +8,36 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import HomeScreen from "@/screens/HomeScreen";
 import RemindersScreen from "@/screens/RemindersScreen";
 import type { RootStackParamList } from "./RootStackNavigator";
+import { useTheme } from "@/hooks/useTheme";
 
 const Tab = createBottomTabNavigator();
 
 function CreateButton() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { theme } = useTheme();
 
   return (
     <View style={styles.createButtonContainer}>
       <Pressable
-        style={[styles.createButton, { backgroundColor: "#E8614F" }]}
+        style={[styles.createButton, { backgroundColor: theme.saveButtonActive }]}
         onPress={() => navigation.navigate("CreateReminder")}
         testID="fab-create"
       >
-        <Feather name="plus" size={28} color="#FFFFFF" />
+        <Feather name="plus" size={28} color={theme.buttonText} />
       </Pressable>
     </View>
   );
 }
 
 export default function MainTabNavigator() {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#F5F0E8",
+          backgroundColor: theme.backgroundRoot,
           borderTopColor: "transparent",
           borderTopWidth: 0,
           elevation: 0,
@@ -42,8 +46,8 @@ export default function MainTabNavigator() {
           paddingBottom: 25,
           paddingTop: 10,
         },
-        tabBarActiveTintColor: "#E8614F",
-        tabBarInactiveTintColor: "#6B5744",
+        tabBarActiveTintColor: theme.saveButtonActive,
+        tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "500",

@@ -78,7 +78,7 @@ export default function MoreScreen() {
 
         <SettingsRow
           icon="user"
-          iconColor="#C47D0A"
+          iconColor={theme.warning}
           title={Copy.more.profileTitle}
           subtitle={Copy.more.profileSubtitle}
           onPress={() => navigation.navigate("Profile")}

@@ -15,7 +15,7 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { Colors, Spacing, BorderRadius, FontFamily } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { AppHeader } from "@/components/AppHeader";
 import { stopAlarm } from "@/services/notifications";
@@ -178,16 +178,16 @@ export default function HomeScreen() {
       <AppHeader title={Copy.navigation.today} showGreeting />
 
       {showNotificationWarning ? (
-        <View style={styles.notificationBanner} testID="banner-notification-warning">
+        <View style={[styles.notificationBanner, { backgroundColor: theme.error + "15", borderColor: theme.error + "30" }]} testID="banner-notification-warning">
           <View style={styles.notificationBannerHeader}>
-            <Text style={styles.notificationBannerTitle}>{Copy.home.notificationBannerTitle}</Text>
+            <Text style={[styles.notificationBannerTitle, { color: theme.error }]}>{Copy.home.notificationBannerTitle}</Text>
             <Pressable onPress={() => setBannerDismissed(true)} style={styles.notificationBannerClose} hitSlop={8}>
               <Feather name="x" size={18} color={theme.textSecondary} />
             </Pressable>
           </View>
-          <Text style={styles.notificationBannerText}>{Copy.home.notificationBannerText}</Text>
-          <Pressable onPress={openSettings} style={styles.notificationBannerButton}>
-            <Text style={styles.notificationBannerButtonText}>{Copy.home.notificationBannerButton}</Text>
+          <Text style={[styles.notificationBannerText, { color: theme.textSecondary }]}>{Copy.home.notificationBannerText}</Text>
+          <Pressable onPress={openSettings} style={[styles.notificationBannerButton, { backgroundColor: theme.error }]}>
+            <Text style={[styles.notificationBannerButtonText, { color: theme.buttonText }]}>{Copy.home.notificationBannerButton}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -197,28 +197,28 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {reminders.length === 0 ? (
-          <View style={styles.welcomeCard}>
-            <Text style={styles.welcomeTitle}>{Copy.home.welcomeTitle}</Text>
-            <Text style={styles.welcomeText}>{Copy.home.welcomeText}</Text>
+          <View style={[styles.welcomeCard, { backgroundColor: theme.ctaCard }]}>
+            <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive }]}>{Copy.home.welcomeTitle}</Text>
+            <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.home.welcomeText}</Text>
             <Pressable
-              style={styles.ctaButton}
+              style={[styles.ctaButton, { backgroundColor: theme.saveButtonActive }]}
               onPress={() => navigation.navigate("CreateReminder")}
               testID="button-create-reminder"
             >
-              <Feather name="plus" size={20} color="#FFFFFF" style={{ marginRight: Spacing.sm }} />
-              <Text style={styles.ctaButtonText}>{Copy.home.createReminderButton}</Text>
+              <Feather name="plus" size={20} color={theme.buttonText} style={{ marginRight: Spacing.sm }} />
+              <Text style={[styles.ctaButtonText, { color: theme.buttonText }]}>{Copy.home.createReminderButton}</Text>
             </Pressable>
           </View>
         ) : null}
 
         {todaysReminders.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{Copy.home.todaysReminders}</Text>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.todaysReminders}</Text>
             {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => (
               <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
                 <View style={styles.activeCardTop}>
-                  <View style={styles.bellIconCircle}>
-                    <Feather name="bell" size={18} color="#2A6E7A" />
+                  <View style={[styles.bellIconCircle, { backgroundColor: theme.info + "25" }]}>
+                    <Feather name="bell" size={18} color={theme.info} />
                   </View>
                   <View style={styles.activeCardInfo}>
                     <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
@@ -234,17 +234,17 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.actionRow}>
                   <Pressable onPress={() => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
-                    <Text style={styles.textActionButton}>{Copy.home.snoozeButton}</Text>
+                    <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.snoozeButton}</Text>
                   </Pressable>
                   <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
-                    <Text style={styles.textActionButton}>{Copy.home.skipButton}</Text>
+                    <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.skipButton}</Text>
                   </Pressable>
                   <Pressable
-                    style={styles.takeButton}
+                    style={[styles.takeButton, { backgroundColor: theme.info }]}
                     onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
                     testID={`button-complete-${reminder.expandedKey}`}
                   >
-                    <Text style={styles.takeButtonText}>{Copy.home.takeButton}</Text>
+                    <Text style={[styles.takeButtonText, { color: theme.buttonText }]}>{Copy.home.takeButton}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -254,14 +254,14 @@ export default function HomeScreen() {
 
         {showUnresolved ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{Copy.home.unresolved}</Text>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.unresolved}</Text>
             <View style={[styles.unresolvedCard, { backgroundColor: theme.backgroundDefault }]}>
               <View style={styles.unresolvedHeader}>
                 <View style={styles.unresolvedIconRow}>
-                  <View style={styles.unresolvedIconCircle}>
-                    <Feather name="clock" size={16} color="#C03A2B" />
+                  <View style={[styles.unresolvedIconCircle, { backgroundColor: theme.pillActiveBg }]}>
+                    <Feather name="clock" size={16} color={theme.accentCoral} />
                   </View>
-                  <Text style={styles.unresolvedTitle}>{Copy.home.unresolvedTitle}</Text>
+                  <Text style={[styles.unresolvedTitle, { color: theme.accentCoral }]}>{Copy.home.unresolvedTitle}</Text>
                 </View>
                 <Pressable
                   onPress={() => {
@@ -270,13 +270,13 @@ export default function HomeScreen() {
                   }}
                   hitSlop={8}
                 >
-                  <Feather name="x" size={18} color="#9A8D7F" />
+                  <Feather name="x" size={18} color={theme.textTertiary} />
                 </Pressable>
               </View>
               <Text style={[styles.unresolvedBody, { color: theme.text }]}>{Copy.home.unresolvedBody}</Text>
               <Text style={[styles.unresolvedSubtext, { color: theme.textSecondary }]}>{Copy.home.unresolvedSubtext}</Text>
               <Pressable onPress={() => navigation.navigate("History")} testID="button-view-history">
-                <Text style={styles.viewHistoryLink}>{Copy.home.viewHistory}</Text>
+                <Text style={[styles.viewHistoryLink, { color: theme.text }]}>{Copy.home.viewHistory}</Text>
               </Pressable>
             </View>
           </View>
@@ -284,12 +284,12 @@ export default function HomeScreen() {
 
         {upcomingReminders.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{Copy.home.upcoming}</Text>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.upcoming}</Text>
             {upcomingReminders.map((reminder) => (
               <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault }]}>
                 <View style={styles.upcomingCardContent}>
-                  <View style={styles.upcomingBellCircle}>
-                    <Feather name="bell" size={18} color="#9A8D7F" />
+                  <View style={[styles.upcomingBellCircle, { backgroundColor: theme.backgroundSecondary }]}>
+                    <Feather name="bell" size={18} color={theme.textTertiary} />
                   </View>
                   <View style={styles.upcomingInfo}>
                     <Text style={[styles.upcomingTitle, { color: theme.text }]}>{reminder.title}</Text>
@@ -336,19 +336,16 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 32,
     marginBottom: Spacing.lg,
-    backgroundColor: "#D5E8E4",
   },
   welcomeTitle: {
     fontSize: 26,
     fontFamily: FontFamily.serifBold,
-    color: "#E8614F",
     marginBottom: Spacing.sm,
   },
   welcomeText: {
     fontSize: 15,
     lineHeight: 22,
     fontFamily: FontFamily.sansRegular,
-    color: "#2C2118",
     marginBottom: Spacing.xl,
   },
   ctaButton: {
@@ -357,10 +354,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 16,
     borderRadius: BorderRadius["2xl"],
-    backgroundColor: "#E8614F",
   },
   ctaButtonText: {
-    color: "#FFFFFF",
     fontSize: 16,
     fontFamily: FontFamily.sansSemiBold,
   },
@@ -370,7 +365,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontFamily: FontFamily.sansSemiBold,
-    color: "#6B5744",
     letterSpacing: 1.5,
     marginBottom: Spacing.md,
   },
@@ -387,7 +381,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#D5E8EC",
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -421,17 +414,14 @@ const styles = StyleSheet.create({
   textActionButton: {
     fontSize: 13,
     fontFamily: FontFamily.sansSemiBold,
-    color: "#2A6E7A",
     letterSpacing: 0.5,
   },
   takeButton: {
     paddingHorizontal: Spacing["2xl"],
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: "#2A6E7A",
   },
   takeButtonText: {
-    color: "#FFFFFF",
     fontSize: 13,
     fontFamily: FontFamily.sansSemiBold,
     letterSpacing: 0.5,
@@ -458,14 +448,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#FDEEE9",
     alignItems: "center",
     justifyContent: "center",
   },
   unresolvedTitle: {
     fontSize: 15,
     fontFamily: FontFamily.sansSemiBold,
-    color: "#C03A2B",
   },
   unresolvedBody: {
     fontSize: 14,
@@ -481,7 +469,6 @@ const styles = StyleSheet.create({
   viewHistoryLink: {
     fontSize: 14,
     fontFamily: FontFamily.sansSemiBold,
-    color: "#2C2118",
   },
   upcomingCard: {
     borderRadius: BorderRadius.lg,
@@ -496,7 +483,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -530,12 +516,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   notificationBanner: {
-    backgroundColor: Colors.light.error + "15",
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: "#FECACA",
     padding: Spacing.md,
   },
   notificationBannerHeader: {
@@ -547,25 +531,21 @@ const styles = StyleSheet.create({
   notificationBannerTitle: {
     fontSize: 16,
     fontFamily: FontFamily.sansSemiBold,
-    color: Colors.light.error,
   },
   notificationBannerClose: {
     padding: 4,
   },
   notificationBannerText: {
-    color: Colors.light.textSecondary,
     fontSize: 14,
     fontFamily: FontFamily.sansRegular,
     marginBottom: Spacing.md,
   },
   notificationBannerButton: {
-    backgroundColor: Colors.light.error,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     alignItems: "center",
   },
   notificationBannerButtonText: {
-    color: "#FFFFFF",
     fontSize: 14,
     fontFamily: FontFamily.sansSemiBold,
   },

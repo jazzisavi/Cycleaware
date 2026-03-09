@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert, KeyboardAvoidingView } from "react-native";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert, KeyboardAvoidingView, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,7 +21,6 @@ import { syncCycleConfigsToServer } from "@/services/pushSync";
 import { AlarmService } from "@/services/AlarmService";
 
 type FrequencyType = "cycle" | "interval" | "weekdays" | null;
-type IntervalUnit = "day" | "week";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteProps = RouteProp<RootStackParamList, "CreateReminder">;
@@ -62,7 +61,6 @@ export default function CreateReminderScreen() {
   const [cycleStartDate, setCycleStartDate] = useState<Date | null>(null);
 
   const [intervalDays, setIntervalDays] = useState(1);
-  const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>("day");
 
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
 
@@ -139,19 +137,12 @@ export default function CreateReminderScreen() {
           setEndDate(new Date(reminderData.cycleEndDate));
         }
       } else if (reminderData.reminderType === "calendar") {
-        if (reminderData.repeatUnit === "day") {
+        if (reminderData.weeklyRepeatDays && reminderData.weeklyRepeatDays.length > 0) {
+          setFrequency("weekdays");
+          setSelectedWeekdays(reminderData.weeklyRepeatDays || []);
+        } else {
           setFrequency("interval");
           setIntervalDays(reminderData.repeatInterval || 1);
-          setIntervalUnit("day");
-        } else {
-          if (reminderData.weeklyRepeatDays && reminderData.weeklyRepeatDays.length > 0) {
-            setFrequency("weekdays");
-            setSelectedWeekdays(reminderData.weeklyRepeatDays || []);
-          } else {
-            setFrequency("interval");
-            setIntervalDays(reminderData.repeatInterval || 1);
-            setIntervalUnit("week");
-          }
         }
         if (reminderData.calendarStartDate) {
           setStartDate(new Date(reminderData.calendarStartDate));
@@ -166,6 +157,7 @@ export default function CreateReminderScreen() {
   }, [reminderData, isEditMode, isLoaded]);
 
   const handleFrequencyChange = (f: FrequencyType) => {
+    Keyboard.dismiss();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (f === frequency) return;
     setFrequency(f);
@@ -174,7 +166,6 @@ export default function CreateReminderScreen() {
     setCycleDayEnd(28);
     setCycleStartDate(null);
     setIntervalDays(1);
-    setIntervalUnit("day");
     setSelectedWeekdays([]);
     setEndDate(null);
     if (f === "interval" || f === "weekdays") {
@@ -330,7 +321,7 @@ export default function CreateReminderScreen() {
         payload = {
           ...payload,
           reminderType: "calendar" as const,
-          repeatUnit: intervalUnit,
+          repeatUnit: "day" as const,
           repeatInterval: intervalDays,
           calendarStartDate: start.toISOString(),
           calendarEndDate: endDate ? endDate.toISOString() : null,
@@ -397,22 +388,19 @@ export default function CreateReminderScreen() {
   };
 
   const iconColor = useCallback((hasData: boolean) => {
-    return hasData ? "#E8614F" : "#6B5744";
-  }, []);
+    return hasData ? theme.iconFilled : theme.iconEmpty;
+  }, [theme]);
 
-  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 99, onUnitPress?: () => void) => (
+  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 99) => (
     <View style={styles.stepperOuterRow}>
-      <View style={styles.stepperContainer}>
+      <View style={[styles.stepperContainer, { borderColor: theme.border }]}>
         <Pressable
-          style={[styles.stepperButton, { backgroundColor: "#EDE7DA" }]}
+          style={[styles.stepperButton, { backgroundColor: theme.backgroundSecondary }]}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
         >
           <Feather name="minus" size={20} color={theme.text} />
         </Pressable>
-        <Pressable
-          style={styles.stepperValueBox}
-          onPress={onUnitPress}
-        >
+        <View style={styles.stepperValueBox}>
           <RNTextInput
             style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
             keyboardType="number-pad"
@@ -429,27 +417,24 @@ export default function CreateReminderScreen() {
             }}
             selectTextOnFocus
           />
-        </Pressable>
+        </View>
         <Pressable
-          style={[styles.stepperButton, { backgroundColor: "#EDE7DA" }]}
+          style={[styles.stepperButton, { backgroundColor: theme.backgroundSecondary }]}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
         >
           <Feather name="plus" size={20} color={theme.text} />
         </Pressable>
       </View>
-      <Pressable onPress={onUnitPress} style={{ flexDirection: "row", alignItems: "center", gap: 4 }} disabled={!onUnitPress}>
-        <ThemedText type="body" style={[styles.stepperUnitLabel, { color: theme.text, fontFamily: FontFamily.sansBold }]}>{unitLabel}</ThemedText>
-        {onUnitPress ? <Feather name="chevron-down" size={14} color={theme.text} /> : null}
-      </Pressable>
+      <ThemedText type="body" style={[styles.stepperUnitLabel, { color: theme.text, fontFamily: FontFamily.sansBold }]}>{unitLabel}</ThemedText>
     </View>
   );
 
   const renderMiniStepper = (label: string, value: number, onDecrement: () => void, onIncrement: () => void, onChangeValue: (v: number) => void, min: number = 1, max: number = 99) => (
     <View style={styles.dayRangeItem}>
       <ThemedText type="caption" style={[styles.dayRangeLabel, { color: theme.text }]}>{label}</ThemedText>
-      <View style={styles.miniStepperContainer}>
+      <View style={[styles.miniStepperContainer, { borderColor: theme.border }]}>
         <Pressable
-          style={[styles.miniStepperButton, { backgroundColor: "#EDE7DA" }]}
+          style={[styles.miniStepperButton, { backgroundColor: theme.backgroundSecondary }]}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
         >
           <Feather name="minus" size={16} color={theme.text} />
@@ -473,7 +458,7 @@ export default function CreateReminderScreen() {
           />
         </View>
         <Pressable
-          style={[styles.miniStepperButton, { backgroundColor: "#EDE7DA" }]}
+          style={[styles.miniStepperButton, { backgroundColor: theme.backgroundSecondary }]}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
         >
           <Feather name="plus" size={16} color={theme.text} />
@@ -492,15 +477,15 @@ export default function CreateReminderScreen() {
     extra?: React.ReactNode,
   ) => (
     <Pressable style={styles.detailRow} onPress={onPress} testID={`row-${label.toLowerCase().replace(/\s/g, "-")}`}>
-      <View style={[styles.detailIconContainer, { backgroundColor: hasData ? "#FDEEE9" : "#F0EBE3" }]}>
+      <View style={[styles.detailIconContainer, { backgroundColor: hasData ? theme.pillActiveBg : theme.backgroundSecondary }]}>
         <Feather name={iconName} size={18} color={iconColor(hasData)} />
       </View>
       <View style={styles.detailContent}>
         <ThemedText type="body" style={[styles.detailLabel, { fontFamily: FontFamily.sansSemiBold }]}>{label}</ThemedText>
-        <ThemedText type="small" style={{ color: "#6B5744" }}>{subtitle}</ThemedText>
+        <ThemedText type="small" style={{ color: theme.textSecondary }}>{subtitle}</ThemedText>
       </View>
       {extra}
-      {showChevron ? <Feather name="chevron-right" size={20} color="#6B5744" /> : null}
+      {showChevron ? <Feather name="chevron-right" size={20} color={theme.textSecondary} /> : null}
     </Pressable>
   );
 
@@ -511,7 +496,7 @@ export default function CreateReminderScreen() {
         hitSlop={8}
         style={{ marginRight: Spacing.xs }}
       >
-        <Feather name="x-circle" size={20} color="#6B5744" />
+        <Feather name="x-circle" size={20} color={theme.textSecondary} />
       </Pressable>
     ) : undefined;
 
@@ -532,26 +517,18 @@ export default function CreateReminderScreen() {
       <Pressable
         style={[
           styles.pill,
-          { borderColor: isActive ? "#E8614F" : theme.border },
-          isActive && { backgroundColor: "#F9E8E4" },
+          { borderColor: isActive ? theme.pillActiveBorder : theme.border, backgroundColor: isActive ? theme.pillActiveBg : theme.backgroundDefault },
         ]}
         onPress={() => handleFrequencyChange(type)}
         testID={`pill-${type}`}
       >
-        {isActive ? <Feather name="check" size={14} color="#E8614F" style={{ marginRight: 4 }} /> : null}
-        <ThemedText type="small" style={[styles.pillText, isActive && { color: "#E8614F" }]}>{label}</ThemedText>
+        {isActive ? <Feather name="check" size={14} color={theme.pillActiveBorder} style={{ marginRight: 4 }} /> : null}
+        <ThemedText type="small" style={[styles.pillText, isActive && { color: theme.pillActiveBorder }]}>{label}</ThemedText>
       </Pressable>
     );
   };
 
-  const toggleIntervalUnit = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIntervalUnit((prev) => (prev === "day" ? "week" : "day"));
-  };
-
-  const intervalUnitLabel = intervalUnit === "day"
-    ? (intervalDays === 1 ? "DAY" : "DAYS")
-    : (intervalDays === 1 ? "WEEK" : "WEEKS");
+  const intervalUnitLabel = intervalDays === 1 ? "DAY" : "DAYS";
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -575,7 +552,7 @@ export default function CreateReminderScreen() {
             ref={titleInputRef}
             style={[styles.nameInput, { color: theme.text, fontFamily: FontFamily.sansRegular }]}
             placeholder={Copy.createReminder.namePlaceholder}
-            placeholderTextColor="#6B5744"
+            placeholderTextColor={theme.textSecondary}
             value={title}
             onChangeText={setTitle}
             testID="input-title"
@@ -585,7 +562,7 @@ export default function CreateReminderScreen() {
         <View style={styles.frequencySection}>
           <View style={styles.frequencyHeader}>
             <ThemedText type="h2" style={styles.sectionTitle}>{Copy.createReminder.frequencyTitle}</ThemedText>
-            <ThemedText type="caption" style={[styles.chooseOneLabel, { color: "#6B5744" }]}>{Copy.createReminder.chooseOne}</ThemedText>
+            <ThemedText type="caption" style={[styles.chooseOneLabel, { color: theme.textSecondary }]}>{Copy.createReminder.chooseOne}</ThemedText>
           </View>
           <View style={styles.pillRow}>
             {renderFrequencyPill("cycle", Copy.createReminder.cyclePill)}
@@ -597,7 +574,7 @@ export default function CreateReminderScreen() {
         {frequency === "cycle" ? (
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.cycleLength}</ThemedText>
-            <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+            <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
               {Copy.createReminder.cycleLengthDescription}
             </ThemedText>
             {renderStepper(
@@ -623,7 +600,7 @@ export default function CreateReminderScreen() {
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
             <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.dayRange}</ThemedText>
-            <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+            <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
               {Copy.createReminder.dayRangeDescription}
             </ThemedText>
             <View style={styles.dayRangeRow}>
@@ -667,7 +644,7 @@ export default function CreateReminderScreen() {
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
             <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.startDate}</ThemedText>
-            <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
+            <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
               {Copy.createReminder.startDateDescription}
             </ThemedText>
             {renderDetailRow("calendar", Copy.createReminder.cycleStart, cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate, !!cycleStartDate, () => handleOpenDatePicker("cycleStart"))}
@@ -678,8 +655,6 @@ export default function CreateReminderScreen() {
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-            {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -698,7 +673,6 @@ export default function CreateReminderScreen() {
               (v: number) => setIntervalDays(Math.max(1, Math.min(99, v))),
               1,
               99,
-              toggleIntervalUnit,
             )}
 
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -710,8 +684,6 @@ export default function CreateReminderScreen() {
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-            {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -731,13 +703,13 @@ export default function CreateReminderScreen() {
                     key={key}
                     style={[
                       styles.weekdayButton,
-                      isSelected && { backgroundColor: "#F9E8E4", borderColor: "#E8614F", borderWidth: 1 },
-                      !isSelected && { backgroundColor: "#EDE7DA" },
+                      isSelected && { backgroundColor: theme.pillActiveBg, borderColor: theme.pillActiveBorder, borderWidth: 1 },
+                      !isSelected && { backgroundColor: theme.backgroundSecondary },
                     ]}
                     onPress={() => toggleWeekday(key)}
                     testID={`weekday-${key}`}
                   >
-                    <ThemedText type="small" style={[styles.weekdayText, isSelected && { color: "#E8614F" }]}>{label}</ThemedText>
+                    <ThemedText type="small" style={[styles.weekdayText, isSelected && { color: theme.pillActiveBorder }]}>{label}</ThemedText>
                   </Pressable>
                 );
               })}
@@ -752,8 +724,6 @@ export default function CreateReminderScreen() {
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-            {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
@@ -772,18 +742,18 @@ export default function CreateReminderScreen() {
         <Pressable
           style={[
             styles.saveButton,
-            { backgroundColor: canSave ? "#E8614F" : "#E8C4B8" },
+            { backgroundColor: canSave ? theme.saveButtonActive : theme.saveButtonDisabled },
           ]}
           onPress={handleSave}
           disabled={!canSave || isSaving}
           testID="button-save"
         >
-          <ThemedText type="button" style={styles.saveButtonText}>{Copy.createReminder.saveButton}</ThemedText>
+          <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>{Copy.createReminder.saveButton}</ThemedText>
         </Pressable>
       </View>
 
       {showTimePicker && Platform.OS === "android" ? (
-        <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} accentColor="#E8614F" />
+        <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} accentColor={theme.saveButtonActive} />
       ) : null}
 
       <Modal
@@ -792,24 +762,24 @@ export default function CreateReminderScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowTimePicker(false)}
       >
-        <View style={[styles.fullModal, { backgroundColor: "#F5F0E8" }]}>
+        <View style={[styles.fullModal, { backgroundColor: theme.backgroundRoot }]}>
           <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
-            <Pressable style={styles.backCircle} onPress={() => setShowTimePicker(false)}>
-              <Feather name="arrow-left" size={20} color="#2C2118" />
+            <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
+              <Feather name="arrow-left" size={20} color={theme.text} />
             </Pressable>
-            <ThemedText type="h2" style={styles.fullModalTitle}>Select time</ThemedText>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>Select time</ThemedText>
           </View>
-          <View style={[styles.helpCard, { backgroundColor: "#EDE7DA" }]}>
-            <Feather name="info" size={18} color="#C47D0A" style={{ marginRight: Spacing.sm, marginTop: 2 }} />
-            <ThemedText type="body" style={{ flex: 1, color: "#2C2118", fontFamily: FontFamily.sansRegular }}>
+          <View style={[styles.helpCard, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="info" size={18} color={theme.warning} style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+            <ThemedText type="body" style={{ flex: 1, color: theme.text, fontFamily: FontFamily.sansRegular }}>
               Choose a time that works with your daily routine.
             </ThemedText>
           </View>
-          <View style={styles.pickerCard}>
+          <View style={[styles.pickerCard, { backgroundColor: theme.backgroundDefault }]}>
             {Platform.OS === "web" ? (
               <View style={{ alignItems: "center", padding: Spacing.xl }}>
                 <RNTextInput
-                  style={[styles.webTimeInput, { color: "#2C2118", borderColor: "#EDE7DA", fontFamily: FontFamily.sansRegular }]}
+                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
                   value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
                   onChangeText={(text) => {
                     const [hours, minutes] = text.split(":").map(Number);
@@ -820,26 +790,26 @@ export default function CreateReminderScreen() {
                     }
                   }}
                   placeholder="HH:MM"
-                  placeholderTextColor="#6B5744"
+                  placeholderTextColor={theme.textSecondary}
                   keyboardType="numbers-and-punctuation"
                   maxLength={5}
                 />
               </View>
             ) : (
-              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} accentColor="#E8614F" textColor="#2C2118" />
+              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} accentColor={theme.saveButtonActive} textColor={theme.text} />
             )}
           </View>
           <View style={{ flex: 1 }} />
           <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
-            <Pressable style={styles.fullModalSaveButton} onPress={handleSaveTime}>
-              <ThemedText type="button" style={styles.saveButtonText}>Save</ThemedText>
+            <Pressable style={[styles.fullModalSaveButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleSaveTime}>
+              <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>Save</ThemedText>
             </Pressable>
           </View>
         </View>
       </Modal>
 
       {showDatePicker && Platform.OS === "android" ? (
-        <DateTimePicker value={tempDate} mode="date" display="default" onChange={handleDateChange} accentColor="#E8614F" />
+        <DateTimePicker value={tempDate} mode="date" display="default" onChange={handleDateChange} accentColor={theme.saveButtonActive} />
       ) : null}
 
       <Modal
@@ -848,46 +818,46 @@ export default function CreateReminderScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowDatePicker(null)}
       >
-        <View style={[styles.fullModal, { backgroundColor: "#F5F0E8" }]}>
+        <View style={[styles.fullModal, { backgroundColor: theme.backgroundRoot }]}>
           <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
-            <Pressable style={styles.backCircle} onPress={() => setShowDatePicker(null)}>
-              <Feather name="chevron-left" size={20} color="#2C2118" />
+            <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
+              <Feather name="chevron-left" size={20} color={theme.text} />
             </Pressable>
-            <ThemedText type="h2" style={styles.fullModalTitle}>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>
               {showDatePicker === "cycleStart" ? "Cycle start date" : showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
             </ThemedText>
           </View>
-          <View style={[styles.helpCard, { backgroundColor: "#EDE7DA" }]}>
-            <Feather name="info" size={18} color="#C47D0A" style={{ marginRight: Spacing.sm, marginTop: 2 }} />
-            <ThemedText type="body" style={{ flex: 1, color: "#2C2118", fontFamily: FontFamily.sansRegular }}>
+          <View style={[styles.helpCard, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="info" size={18} color={theme.warning} style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+            <ThemedText type="body" style={{ flex: 1, color: theme.text, fontFamily: FontFamily.sansRegular }}>
               {showDatePicker === "cycleStart"
                 ? "Select the start date of your therapeutic cycle or day 1 of your last bleed."
                 : "Select a date for your reminder."}
             </ThemedText>
           </View>
-          <View style={styles.pickerCard}>
+          <View style={[styles.pickerCard, { backgroundColor: theme.backgroundDefault }]}>
             {Platform.OS === "web" ? (
               <View style={{ alignItems: "center", padding: Spacing.xl }}>
                 <RNTextInput
-                  style={[styles.webTimeInput, { color: "#2C2118", borderColor: "#EDE7DA", fontFamily: FontFamily.sansRegular }]}
+                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
                   value={tempDate.toISOString().split("T")[0]}
                   onChangeText={(text) => {
                     const d = new Date(text);
                     if (!isNaN(d.getTime())) setTempDate(d);
                   }}
                   placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#6B5744"
+                  placeholderTextColor={theme.textSecondary}
                   maxLength={10}
                 />
               </View>
             ) : (
-              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} accentColor="#E8614F" textColor="#2C2118" />
+              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} accentColor={theme.saveButtonActive} textColor={theme.text} />
             )}
           </View>
           <View style={{ flex: 1 }} />
           <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
-            <Pressable style={styles.fullModalSaveButton} onPress={handleSaveDate}>
-              <ThemedText type="button" style={styles.saveButtonText}>
+            <Pressable style={[styles.fullModalSaveButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleSaveDate}>
+              <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>
                 {showDatePicker === "cycleStart" ? "Save Reminder" : "Save"}
               </ThemedText>
             </Pressable>
@@ -901,31 +871,31 @@ export default function CreateReminderScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowNotesInput(false)}
       >
-        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F5F0E8" }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.backgroundRoot }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
           <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
-            <Pressable style={styles.backCircle} onPress={() => setShowNotesInput(false)}>
-              <Feather name="arrow-left" size={20} color="#2C2118" />
+            <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
+              <Feather name="arrow-left" size={20} color={theme.text} />
             </Pressable>
-            <ThemedText type="h2" style={styles.fullModalTitle}>Add notes</ThemedText>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>Add notes</ThemedText>
           </View>
-          <ThemedText type="body" style={styles.notesSubtitle}>
+          <ThemedText type="body" style={[styles.notesSubtitle, { color: theme.textSecondary }]}>
             Add any specific instructions for this reminder.
           </ThemedText>
-          <View style={[styles.notesCard, { flexGrow: 1, flexShrink: 1 }]}>
+          <View style={[styles.notesCard, { flexGrow: 1, flexShrink: 1, backgroundColor: theme.backgroundDefault }]}>
             <RNTextInput
-              style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular }]}
+              style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular, color: theme.text }]}
               value={notes}
               onChangeText={setNotes}
               placeholder="e.g., Take with water, before breakfast..."
-              placeholderTextColor="#9A8D7F"
+              placeholderTextColor={theme.textTertiary}
               multiline
               autoFocus
               textAlignVertical="top"
             />
           </View>
           <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
-            <Pressable style={styles.fullModalSaveButton} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-              <ThemedText type="button" style={styles.saveButtonText}>Save</ThemedText>
+            <Pressable style={[styles.fullModalSaveButton, { backgroundColor: theme.saveButtonActive }]} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+              <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>Save</ThemedText>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
@@ -939,19 +909,19 @@ export default function CreateReminderScreen() {
         {reminderTimes.map((time, index) => (
           <View key={index}>
             <View style={styles.detailRow}>
-              <View style={[styles.detailIconContainer, { backgroundColor: "#FDEEE9" }]}>
-                <Feather name="bell" size={18} color="#E8614F" />
+              <View style={[styles.detailIconContainer, { backgroundColor: theme.pillActiveBg }]}>
+                <Feather name="bell" size={18} color={theme.iconFilled} />
               </View>
               <Pressable style={styles.detailContent} onPress={() => handleOpenTimePicker(index)}>
                 <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.remindMeAt}</ThemedText>
-                <ThemedText type="small" style={{ color: "#6B5744" }}>{formatTime(time)}</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>{formatTime(time)}</ThemedText>
               </Pressable>
               {reminderTimes.length > 1 ? (
                 <Pressable onPress={() => handleRemoveTime(index)} hitSlop={8} testID={`remove-time-${index}`}>
-                  <Feather name="x" size={18} color="#6B5744" />
+                  <Feather name="x" size={18} color={theme.textSecondary} />
                 </Pressable>
               ) : (
-                <Feather name="chevron-right" size={20} color="#6B5744" />
+                <Feather name="chevron-right" size={20} color={theme.textSecondary} />
               )}
             </View>
             {index < reminderTimes.length - 1 ? <View style={[styles.divider, { backgroundColor: theme.borderLight }]} /> : null}
@@ -966,10 +936,10 @@ export default function CreateReminderScreen() {
           <>
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             <Pressable style={styles.addTimeRow} onPress={() => handleOpenTimePicker(null)} testID="button-add-time">
-              <View style={[styles.addTimeIcon, { borderColor: "#E8614F" }]}>
-                <Feather name="plus" size={14} color="#E8614F" />
+              <View style={[styles.addTimeIcon, { borderColor: theme.pillActiveBorder }]}>
+                <Feather name="plus" size={14} color={theme.pillActiveBorder} />
               </View>
-              <ThemedText type="small" style={{ color: "#E8614F", fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.addAnotherTime}</ThemedText>
+              <ThemedText type="small" style={{ color: theme.pillActiveBorder, fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.addAnotherTime}</ThemedText>
             </Pressable>
           </>
         ) : null}
@@ -1040,7 +1010,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    backgroundColor: "#FFFFFF",
   },
   pillText: {
     fontFamily: FontFamily.sansSemiBold,
@@ -1072,7 +1041,6 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E0DAD0",
     padding: 6,
     gap: 6,
   },
@@ -1120,7 +1088,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E0DAD0",
     padding: 6,
     gap: 6,
   },
@@ -1214,7 +1181,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonText: {
-    color: "#FFFFFF",
     fontSize: 18,
     fontFamily: FontFamily.sansSemiBold,
   },
@@ -1237,14 +1203,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#EDE7DA",
     alignItems: "center",
     justifyContent: "center",
   },
   fullModalTitle: {
     fontFamily: FontFamily.serifBold,
     fontSize: 24,
-    color: "#2C2118",
   },
   helpCard: {
     flexDirection: "row",
@@ -1256,7 +1220,6 @@ const styles = StyleSheet.create({
   },
   pickerCard: {
     marginHorizontal: Spacing.lg,
-    backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.lg,
     overflow: "hidden",
   },
@@ -1266,27 +1229,23 @@ const styles = StyleSheet.create({
   fullModalSaveButton: {
     height: 56,
     borderRadius: BorderRadius.xl,
-    backgroundColor: "#E8614F",
     alignItems: "center",
     justifyContent: "center",
   },
   notesSubtitle: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 14,
-    color: "#6B5744",
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
   },
   notesCard: {
     marginHorizontal: Spacing.lg,
-    backgroundColor: "#FFFFFF",
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     minHeight: 250,
   },
   notesCardInput: {
     fontSize: 16,
-    color: "#2C2118",
     flex: 1,
     textAlignVertical: "top",
     padding: 0,

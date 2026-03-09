@@ -161,7 +161,7 @@ export default function SnoozeSettingsScreen() {
                 </ThemedText>
                 {isSelected ? (
                   <View style={[styles.checkmark, { backgroundColor: theme.pillActiveBorder }]}>
-                    <Feather name="check" size={10} color="#FFFFFF" />
+                    <Feather name="check" size={10} color={theme.buttonText} />
                   </View>
                 ) : null}
               </Pressable>
