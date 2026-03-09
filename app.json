@@ -48,7 +48,8 @@
           "defaultChannel": "reminders"
         }
       ],
-      "./plugins/withAndroidPickerTheme"
+      "./plugins/withAndroidPickerTheme",
+      "@react-native-firebase/app"
     ],
     "experiments": {
       "reactCompiler": true

@@ -34,6 +34,7 @@ import {
 } from "@/services/notifications";
 import { registerBackgroundNotificationTask } from "@/services/backgroundNotificationTask";
 import { onAppLaunchSync } from "@/services/pushSync";
+import { initFirebase } from "@/services/firebase";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,6 +70,7 @@ function AppContent() {
       await checkLastNotificationResponse(actionHandler);
       await syncAllNotifications();
       onAppLaunchSync();
+      initFirebase();
     };
     
     setupListeners();

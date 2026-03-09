@@ -114,6 +114,13 @@ shared/           # Code shared between client and server
 - **Expo Notifications**: Push notification scheduling for reminders
 - **Expo Haptics**: Tactile feedback on interactions
 - **RevenueCat (react-native-purchases)**: In-app subscription management for iOS App Store and Google Play
+- **Firebase Analytics** (`@react-native-firebase/analytics`): Event tracking and screen view logging
+- **Firebase Crashlytics** (`@react-native-firebase/crashlytics`): Automatic crash reporting and custom error logging
+  - Firebase config: `google-services.json` (Android) at project root
+  - Firebase project: `cycleaware-14ab8`
+  - Service file: `client/services/firebase.ts` — provides `initFirebase()`, `logAnalyticsEvent()`, `logScreenView()`, `recordError()`, `logCrashlyticsMessage()`
+  - Initialized in `client/App.tsx` on app launch
+  - Only active in EAS builds (native), skipped on web platform
 
 ### Subscriptions & Payments
 - **Provider**: RevenueCat via `react-native-purchases` SDK
