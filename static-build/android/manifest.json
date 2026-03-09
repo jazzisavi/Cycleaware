@@ -1,11 +1,11 @@
 {
-  "id": "36354dc0-1ff5-4845-84b7-2f9528ae12d3",
-  "createdAt": "2026-03-09T14:33:10.333Z",
+  "id": "8ee0de3b-8519-4e0c-abdd-20356f5a667e",
+  "createdAt": "2026-03-09T19:34:03.925Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1773066790333-3799",
+    "key": "bundle-1773084843925-3788",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1773066790333-3799/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1773084843925-3788/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -62,7 +62,8 @@
             "color": "#6B9BD1",
             "defaultChannel": "reminders"
           }
-        ]
+        ],
+        "./plugins/withAndroidPickerTheme"
       ],
       "experiments": {
         "reactCompiler": true
@@ -121,6 +122,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-cf182b5f-1646-4509-be7d-ecb40db9466e"
+    "scopeKey": "@anonymous/goflo-9f0ec092-0de2-444e-b490-40a1c41fa504"
   }
 }

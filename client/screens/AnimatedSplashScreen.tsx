@@ -13,7 +13,7 @@ import { FontFamily } from "@/constants/theme";
 import splashLogo from "../../assets/images/splash-logo.png";
 
 const WORDS = ["HRT.", "Reminders,", "Life."];
-const TAGLINE = "Synced to your cycle";
+const TAGLINE = "Sinct to your cycle";
 const CYCLE_DURATION = 2800;
 
 interface AnimatedSplashScreenProps {

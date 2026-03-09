@@ -47,7 +47,8 @@
           "color": "#6B9BD1",
           "defaultChannel": "reminders"
         }
-      ]
+      ],
+      "./plugins/withAndroidPickerTheme"
     ],
     "experiments": {
       "reactCompiler": true
