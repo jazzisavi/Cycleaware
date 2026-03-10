@@ -24,21 +24,39 @@ interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
+function DecorativeCircles() {
+  const { theme, isDark } = useTheme();
+  const coralCircle = isDark ? "#C03A2B40" : "#E8614F50";
+  const goldCircle = isDark ? "#C47D0A40" : "#F0A02050";
+  const greenCircle = isDark ? "#2E7D5240" : "#52B07A50";
+
+  return (
+    <View style={styles.circlesContainer}>
+      <View style={[styles.decorativeCircle, { backgroundColor: coralCircle }]} />
+      <View style={[styles.decorativeCircle, { backgroundColor: goldCircle }]} />
+      <View style={[styles.decorativeCircle, { backgroundColor: greenCircle }]} />
+    </View>
+  );
+}
+
 function DotIndicators({ active, total }: { active: number; total: number }) {
   const { theme } = useTheme();
   return (
-    <View style={styles.dotsRow}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          style={[
-            styles.dot,
-            i === active
-              ? { backgroundColor: theme.saveButtonActive }
-              : { backgroundColor: theme.saveButtonDisabled },
-          ]}
-        />
-      ))}
+    <View style={styles.dotsWrapper}>
+      <DecorativeCircles />
+      <View style={styles.dotsRow}>
+        {Array.from({ length: total }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              i === active
+                ? { backgroundColor: theme.saveButtonActive }
+                : { backgroundColor: theme.saveButtonDisabled },
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -68,7 +86,7 @@ function ExampleCard({
       </Text>
       <View style={[styles.exampleCardInner, { backgroundColor: theme.backgroundDefault }]}>
         <View style={[styles.exampleIconCircle, { backgroundColor: iconColor + "20" }]}>
-          <Feather name={iconName} size={18} color={iconColor} />
+          <Feather name={iconName} size={20} color={iconColor} />
         </View>
         <View style={styles.exampleCardText}>
           <Text style={[styles.exampleTitle, { color: theme.text }]}>{title}</Text>
@@ -112,7 +130,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={[styles.content, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing["2xl"] }]}>
+      <View style={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing["2xl"] }]}>
         <DotIndicators active={page} total={2} />
 
         {page === 0 ? (
@@ -120,35 +138,37 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             <View style={styles.pageOneContent}>
               <Text style={[styles.bigTitle, { color: theme.text }]}>{Copy.onboarding.pageOneTitle}</Text>
 
-              <ExampleCard
-                categoryLabel={Copy.onboarding.cycleAligned}
-                categoryColor={theme.accentMint}
-                bgColor={cycleCardBg}
-                iconName="circle"
-                iconColor={theme.accentMint}
-                title={Copy.onboarding.cycleExample}
-                detail={Copy.onboarding.cycleDetail}
-              />
+              <View style={styles.cardsContainer}>
+                <ExampleCard
+                  categoryLabel={Copy.onboarding.cycleAligned}
+                  categoryColor={theme.accentMint}
+                  bgColor={cycleCardBg}
+                  iconName="circle"
+                  iconColor={theme.accentMint}
+                  title={Copy.onboarding.cycleExample}
+                  detail={Copy.onboarding.cycleDetail}
+                />
 
-              <ExampleCard
-                categoryLabel={Copy.onboarding.dailyRhythm}
-                categoryColor={theme.accentCoral}
-                bgColor={dailyCardBg}
-                iconName="sunrise"
-                iconColor={theme.saveButtonActive}
-                title={Copy.onboarding.dailyExample}
-                detail={Copy.onboarding.dailyDetail}
-              />
+                <ExampleCard
+                  categoryLabel={Copy.onboarding.dailyRhythm}
+                  categoryColor={theme.accentCoral}
+                  bgColor={dailyCardBg}
+                  iconName="sunrise"
+                  iconColor={theme.saveButtonActive}
+                  title={Copy.onboarding.dailyExample}
+                  detail={Copy.onboarding.dailyDetail}
+                />
 
-              <ExampleCard
-                categoryLabel={Copy.onboarding.setDays}
-                categoryColor={theme.info}
-                bgColor={setDaysCardBg}
-                iconName="star"
-                iconColor={theme.info}
-                title={Copy.onboarding.setDaysExample}
-                detail={Copy.onboarding.setDaysDetail}
-              />
+                <ExampleCard
+                  categoryLabel={Copy.onboarding.setDays}
+                  categoryColor={theme.info}
+                  bgColor={setDaysCardBg}
+                  iconName="star"
+                  iconColor={theme.info}
+                  title={Copy.onboarding.setDaysExample}
+                  detail={Copy.onboarding.setDaysDetail}
+                />
+              </View>
             </View>
 
             <View style={styles.bottomRow}>
@@ -201,13 +221,27 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing["2xl"],
+  },
+  dotsWrapper: {
+    alignItems: "center",
+    marginBottom: Spacing["2xl"],
+  },
+  circlesContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  decorativeCircle: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    marginBottom: Spacing.xl,
   },
   dot: {
     width: 8,
@@ -223,33 +257,40 @@ const styles = StyleSheet.create({
   },
   bigTitle: {
     fontFamily: FontFamily.serifBold,
-    fontSize: 36,
-    marginBottom: Spacing["2xl"],
-    lineHeight: 44,
+    fontSize: 44,
+    marginBottom: Spacing["3xl"],
+    lineHeight: 52,
+  },
+  cardsContainer: {
+    flex: 1,
+    justifyContent: "flex-start",
+    gap: Spacing.lg,
   },
   exampleCardOuter: {
     borderTopLeftRadius: 32,
     borderTopRightRadius: 16,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 32,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xl,
   },
   exampleCategoryLabel: {
     fontFamily: FontFamily.serifBold,
-    fontSize: 18,
+    fontSize: 22,
     marginBottom: Spacing.sm,
   },
   exampleCardInner: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
   },
   exampleIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -259,11 +300,11 @@ const styles = StyleSheet.create({
   },
   exampleTitle: {
     fontFamily: FontFamily.sansSemiBold,
-    fontSize: 14,
+    fontSize: 15,
   },
   exampleDetail: {
     fontFamily: FontFamily.sansRegular,
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   exampleNow: {
