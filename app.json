@@ -50,7 +50,8 @@
         }
       ],
       "./plugins/withAndroidPickerTheme",
-      "@react-native-firebase/app"
+      "@react-native-firebase/app",
+      "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js"
     ],
     "experiments": {
       "reactCompiler": true
