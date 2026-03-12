@@ -10,7 +10,7 @@ export const Copy = {
     cycleDetail: "Take 200mg at 9pm",
     dailyRhythm: "Daily Rhythm",
     dailyExample: "Oestrogen Gel",
-    dailyDetail: "2 pump at 8am",
+    dailyDetail: "2 pumps at 8am",
     setDays: "Set Days",
     setDaysExample: "Change Patch",
     setDaysDetail: "Every Monday & Thursday",

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import CreateReminderScreen from "@/screens/CreateReminderScreen";
@@ -16,6 +17,11 @@ import PaywallScreen from "@/screens/PaywallScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
+
+function OnboardingReviewScreen() {
+  const navigation = useNavigation();
+  return <OnboardingScreen onComplete={() => navigation.goBack()} reviewMode />;
+}
 
 const ONBOARDING_KEY = "@goflo/onboarding_complete";
 
@@ -31,6 +37,7 @@ export type RootStackParamList = {
   AlarmSounds: undefined;
   Profile: undefined;
   Paywall: undefined;
+  Onboarding: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -127,6 +134,14 @@ export default function RootStackNavigator() {
             </Pressable>
           ),
         })}
+      />
+      <Stack.Screen
+        name="Onboarding"
+        component={OnboardingReviewScreen}
+        options={{
+          headerShown: false,
+          presentation: "modal",
+        }}
       />
     </Stack.Navigator>
   );

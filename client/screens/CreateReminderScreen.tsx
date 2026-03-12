@@ -282,7 +282,7 @@ export default function CreateReminderScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const canSave = title.trim() && frequency !== null;
+  const canSave = title.trim() && frequency !== null && reminderTimes.length > 0;
 
   const handleSave = async () => {
     if (!canSave || isSaving) return;

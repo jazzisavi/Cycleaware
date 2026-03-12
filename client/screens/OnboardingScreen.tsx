@@ -21,29 +21,14 @@ const ONBOARDING_KEY = "@goflo/onboarding_complete";
 const USER_NAME_KEY = "@goflo/user_name";
 
 interface OnboardingScreenProps {
-  onComplete: () => void;
-}
-
-function DecorativeCircles() {
-  const { theme, isDark } = useTheme();
-  const coralCircle = isDark ? "#C03A2B40" : "#E8614F50";
-  const goldCircle = isDark ? "#C47D0A40" : "#F0A02050";
-  const greenCircle = isDark ? "#2E7D5240" : "#52B07A50";
-
-  return (
-    <View style={styles.circlesContainer}>
-      <View style={[styles.decorativeCircle, { backgroundColor: coralCircle }]} />
-      <View style={[styles.decorativeCircle, { backgroundColor: goldCircle }]} />
-      <View style={[styles.decorativeCircle, { backgroundColor: greenCircle }]} />
-    </View>
-  );
+  onComplete?: () => void;
+  reviewMode?: boolean;
 }
 
 function DotIndicators({ active, total }: { active: number; total: number }) {
   const { theme } = useTheme();
   return (
     <View style={styles.dotsWrapper}>
-      <DecorativeCircles />
       <View style={styles.dotsRow}>
         {Array.from({ length: total }).map((_, i) => (
           <View
@@ -65,6 +50,7 @@ function ExampleCard({
   categoryLabel,
   categoryColor,
   bgColor,
+  circleColor,
   iconName,
   iconColor,
   title,
@@ -73,6 +59,7 @@ function ExampleCard({
   categoryLabel: string;
   categoryColor: string;
   bgColor: string;
+  circleColor: string;
   iconName: keyof typeof Feather.glyphMap;
   iconColor: string;
   title: string;
@@ -81,12 +68,13 @@ function ExampleCard({
   const { theme } = useTheme();
   return (
     <View style={[styles.exampleCardOuter, { backgroundColor: bgColor }]}>
+      <View style={[styles.cardDecorativeCircle, { backgroundColor: circleColor }]} />
       <Text style={[styles.exampleCategoryLabel, { color: categoryColor }]}>
         {categoryLabel}
       </Text>
       <View style={[styles.exampleCardInner, { backgroundColor: theme.backgroundDefault }]}>
         <View style={[styles.exampleIconCircle, { backgroundColor: iconColor + "20" }]}>
-          <Feather name={iconName} size={20} color={iconColor} />
+          <Feather name={iconName} size={16} color={iconColor} />
         </View>
         <View style={styles.exampleCardText}>
           <Text style={[styles.exampleTitle, { color: theme.text }]}>{title}</Text>
@@ -98,7 +86,7 @@ function ExampleCard({
   );
 }
 
-export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const [page, setPage] = useState(0);
@@ -113,17 +101,23 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const handleComplete = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const trimmed = name.trim();
-    if (trimmed) {
-      await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
+    if (!onComplete) return;
+    if (!reviewMode) {
+      const trimmed = name.trim();
+      if (trimmed) {
+        await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
+      }
+      await AsyncStorage.setItem(ONBOARDING_KEY, "true");
     }
-    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
     onComplete();
   };
 
-  const cycleCardBg = isDark ? "#1E3D2E" : "#D5EDE0";
-  const dailyCardBg = isDark ? "#3D2A1E" : "#FAE4D5";
-  const setDaysCardBg = isDark ? "#1E3040" : "#D5E8EC";
+  const cycleCardBg = isDark ? "#1E3D2E" : "#E3F4EC";
+  const cycleCircleBg = isDark ? "#2E7D5240" : "#CAE3D7";
+  const dailyCardBg = isDark ? "#3D2A1E" : "#F5E7D1";
+  const dailyCircleBg = isDark ? "#C47D0A40" : "#F5E7D1";
+  const setDaysCardBg = isDark ? "#1E3040" : "#D6EFF5";
+  const setDaysCircleBg = isDark ? "#2A6E7A40" : "#E2F4F8";
 
   return (
     <KeyboardAvoidingView
@@ -143,6 +137,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   categoryLabel={Copy.onboarding.cycleAligned}
                   categoryColor={theme.accentMint}
                   bgColor={cycleCardBg}
+                  circleColor={cycleCircleBg}
                   iconName="circle"
                   iconColor={theme.accentMint}
                   title={Copy.onboarding.cycleExample}
@@ -153,6 +148,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   categoryLabel={Copy.onboarding.dailyRhythm}
                   categoryColor={theme.accentCoral}
                   bgColor={dailyCardBg}
+                  circleColor={dailyCircleBg}
                   iconName="sunrise"
                   iconColor={theme.saveButtonActive}
                   title={Copy.onboarding.dailyExample}
@@ -163,6 +159,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   categoryLabel={Copy.onboarding.setDays}
                   categoryColor={theme.info}
                   bgColor={setDaysCardBg}
+                  circleColor={setDaysCircleBg}
                   iconName="star"
                   iconColor={theme.info}
                   title={Copy.onboarding.setDaysExample}
@@ -227,17 +224,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing["2xl"],
   },
-  circlesContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 10,
-  },
-  decorativeCircle: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -274,6 +260,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xl,
+    overflow: "hidden",
+  },
+  cardDecorativeCircle: {
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    bottom: -20,
+    right: -20,
+    opacity: 0.7,
   },
   exampleCategoryLabel: {
     fontFamily: FontFamily.serifBold,
@@ -288,9 +284,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   exampleIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,

@@ -213,7 +213,8 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {reminders.length === 0 ? (
-          <View style={[styles.welcomeCard, { backgroundColor: theme.ctaCard }]}>
+          <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
+            <View style={styles.welcomeDecorativeCircle} />
             <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive }]}>{Copy.home.welcomeTitle}</Text>
             <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.home.welcomeText}</Text>
             <Pressable
@@ -348,6 +349,17 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 32,
     marginBottom: Spacing.lg,
+    overflow: "hidden",
+  },
+  welcomeDecorativeCircle: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    bottom: -30,
+    right: -30,
+    backgroundColor: "#C5E8EE",
+    opacity: 0.7,
   },
   welcomeTitle: {
     fontSize: 26,

@@ -112,6 +112,19 @@ export default function ProfileScreen() {
           </Button>
         </View>
 
+        <SectionHeader title="General" />
+        <Pressable
+          style={[styles.reviewOnboardingRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}
+          onPress={() => navigation.navigate("Onboarding")}
+          testID="button-review-onboarding"
+        >
+          <View style={[styles.reviewOnboardingIcon, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="book-open" size={18} color={theme.text} />
+          </View>
+          <ThemedText type="body" style={{ flex: 1 }}>Review onboarding</ThemedText>
+          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        </Pressable>
+
         <View style={styles.saveSection}>
           <Button onPress={handleSave} loading={isLoading} testID="button-save">
             {Copy.profile.saveChanges}
@@ -175,6 +188,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.xs,
+  },
+  reviewOnboardingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  reviewOnboardingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
   },
   saveSection: {
     marginTop: Spacing["3xl"],
