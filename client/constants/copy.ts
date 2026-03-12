@@ -176,6 +176,18 @@ export const Copy = {
     signOutTitle: "Sign Out",
     aboutSection: "About",
     versionTitle: "Version",
+    supportSection: "SUPPORT",
+    reportIssueTitle: "Report an Issue",
+    reportIssueSubtitle: "Let us know if something isn't working",
+    requestFeatureTitle: "Request a Feature",
+    requestFeatureSubtitle: "Tell us what you'd like to see",
+    supportEmail: "support@goflo.app",
+    issueEmailSubject: "GoFlo – Issue Report",
+    featureEmailSubject: "GoFlo – Feature Request",
+    issueEmailBody: (version: string, platform: string) =>
+      `\n\nApp Version: ${version}\nDevice: ${platform}\n\n--- Describe the issue below ---\n\n`,
+    featureEmailBody: (version: string, platform: string) =>
+      `\n\nApp Version: ${version}\nDevice: ${platform}\n\n--- Describe the feature below ---\n\n`,
   },
 
   profile: {

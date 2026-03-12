@@ -314,9 +314,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <Text style={[styles.versionText, { color: theme.textTertiary }]}>
-          v1.0.13
-        </Text>
       </ScrollView>
     </View>
   );
@@ -549,12 +546,5 @@ const styles = StyleSheet.create({
   notificationBannerButtonText: {
     fontSize: 14,
     fontFamily: FontFamily.sansSemiBold,
-  },
-  versionText: {
-    textAlign: "center",
-    fontSize: 12,
-    fontFamily: FontFamily.sansRegular,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.md,
   },
 });

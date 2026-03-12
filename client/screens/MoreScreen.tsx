@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, ScrollView, Pressable } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -7,6 +7,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { reloadAppAsync } from "expo";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
+import Constants from "expo-constants";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -26,11 +28,26 @@ export default function MoreScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { isSubscribed, currentPlan } = useSubscription();
 
+  const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+  const platformInfo = `${Platform.OS} ${Platform.Version}`;
+
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (navigation.canGoBack()) {
       navigation.goBack();
     }
+  };
+
+  const handleSupportEmail = (type: "issue" | "feature") => {
+    const subject =
+      type === "issue" ? Copy.more.issueEmailSubject : Copy.more.featureEmailSubject;
+    const body =
+      type === "issue"
+        ? Copy.more.issueEmailBody(appVersion, platformInfo)
+        : Copy.more.featureEmailBody(appVersion, platformInfo);
+
+    const mailto = `mailto:${Copy.more.supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    Linking.openURL(mailto);
   };
 
   return (
@@ -96,6 +113,26 @@ export default function MoreScreen() {
           testID="row-history"
         />
 
+        <SectionHeader title={Copy.more.supportSection} />
+
+        <SettingsRow
+          icon="alert-circle"
+          iconColor={theme.error}
+          title={Copy.more.reportIssueTitle}
+          subtitle={Copy.more.reportIssueSubtitle}
+          onPress={() => handleSupportEmail("issue")}
+          testID="row-report-issue"
+        />
+
+        <SettingsRow
+          icon="message-circle"
+          iconColor={theme.info}
+          title={Copy.more.requestFeatureTitle}
+          subtitle={Copy.more.requestFeatureSubtitle}
+          onPress={() => handleSupportEmail("feature")}
+          testID="row-request-feature"
+        />
+
         <View style={styles.devSection}>
           <SettingsRow
             icon="refresh-cw"
@@ -110,6 +147,14 @@ export default function MoreScreen() {
             testID="row-reset-onboarding"
           />
         </View>
+
+        <ThemedText
+          type="small"
+          style={[styles.versionText, { color: theme.textTertiary }]}
+          testID="text-app-version"
+        >
+          v{appVersion}
+        </ThemedText>
       </ScrollView>
     </ThemedView>
   );
@@ -165,5 +210,9 @@ const styles = StyleSheet.create({
   },
   devSection: {
     marginTop: Spacing["3xl"],
+  },
+  versionText: {
+    textAlign: "center" as const,
+    marginTop: Spacing.xl,
   },
 });
