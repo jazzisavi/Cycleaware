@@ -12,6 +12,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
@@ -24,14 +25,16 @@ import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
+const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
+
 export default function HomeScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { permissionStatus, openSettings, notificationsAvailable, checkPermissionStatus } = useNotificationPermission();
   const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
-  const [unresolvedDismissed, setUnresolvedDismissed] = useState(false);
+  const [missedDismissedAt, setMissedDismissedAt] = useState<Date | null>(null);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -50,8 +53,18 @@ export default function HomeScreen() {
       refresh();
       refreshHistory();
       checkPermissionStatus();
+      AsyncStorage.getItem(MISSED_DISMISSED_AT_KEY).then((val) => {
+        setMissedDismissedAt(val ? new Date(val) : null);
+      });
     }, [])
   );
+
+  const handleDismissMissed = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const now = new Date();
+    await AsyncStorage.setItem(MISSED_DISMISSED_AT_KEY, now.toISOString());
+    setMissedDismissedAt(now);
+  };
 
   const buildScheduledAt = (displayTime: string): string => {
     const [hours, minutes] = displayTime.split(":").map(Number);
@@ -147,10 +160,12 @@ export default function HomeScreen() {
     if (entry.status === "completed" || entry.status === "skipped" || entry.status === "snoozed") return false;
     const scheduled = new Date(entry.scheduledAt);
     scheduled.setHours(0, 0, 0, 0);
-    return scheduled < today;
+    if (scheduled >= today) return false;
+    if (missedDismissedAt && new Date(entry.scheduledAt) <= missedDismissedAt) return false;
+    return true;
   }).length;
 
-  const showUnresolved = unresolvedCount > 0 && !unresolvedDismissed;
+  const showUnresolved = unresolvedCount > 0;
 
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(":");
@@ -256,19 +271,20 @@ export default function HomeScreen() {
         {showUnresolved ? (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.unresolved}</Text>
-            <View style={[styles.unresolvedCard, { backgroundColor: theme.backgroundDefault }]}>
+            <Pressable
+              style={[styles.unresolvedCard, { backgroundColor: isDark ? "#3D2A1E" : "#F0E6D8" }]}
+              onPress={() => navigation.navigate("History")}
+              testID="button-unresolved-card"
+            >
               <View style={styles.unresolvedHeader}>
                 <View style={styles.unresolvedIconRow}>
-                  <View style={[styles.unresolvedIconCircle, { backgroundColor: theme.pillActiveBg }]}>
+                  <View style={[styles.unresolvedIconCircle, { backgroundColor: theme.accentCoral + "20" }]}>
                     <Feather name="clock" size={16} color={theme.accentCoral} />
                   </View>
                   <Text style={[styles.unresolvedTitle, { color: theme.accentCoral }]}>{Copy.home.unresolvedTitle}</Text>
                 </View>
                 <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setUnresolvedDismissed(true);
-                  }}
+                  onPress={handleDismissMissed}
                   hitSlop={8}
                 >
                   <Feather name="x" size={18} color={theme.textTertiary} />
@@ -276,10 +292,8 @@ export default function HomeScreen() {
               </View>
               <Text style={[styles.unresolvedBody, { color: theme.text }]}>{Copy.home.unresolvedBody}</Text>
               <Text style={[styles.unresolvedSubtext, { color: theme.textSecondary }]}>{Copy.home.unresolvedSubtext}</Text>
-              <Pressable onPress={() => navigation.navigate("History")} testID="button-view-history">
-                <Text style={[styles.viewHistoryLink, { color: theme.text }]}>{Copy.home.viewHistory}</Text>
-              </Pressable>
-            </View>
+              <Text style={[styles.viewHistoryLink, { color: theme.text }]}>{Copy.home.viewHistory}</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -289,7 +303,7 @@ export default function HomeScreen() {
             {upcomingReminders.map((reminder) => (
               <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault }]}>
                 <View style={styles.upcomingCardContent}>
-                  <View style={[styles.upcomingBellCircle, { backgroundColor: theme.backgroundSecondary }]}>
+                  <View style={[styles.upcomingBellCircle, { backgroundColor: "#FFFFFF" }]}>
                     <Feather name="bell" size={18} color={theme.textTertiary} />
                   </View>
                   <View style={styles.upcomingInfo}>

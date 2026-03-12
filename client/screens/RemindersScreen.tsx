@@ -302,7 +302,7 @@ export default function RemindersScreen() {
           }}
           style={styles.toolbarButton}
         >
-          <ThemedText type="body" style={{ color: theme.saveButtonActive }}>
+          <ThemedText type="body" style={{ color: "#2C2118" }}>
             {isSelecting ? (allSelected ? Copy.remindersScreen.deselectAll : Copy.remindersScreen.selectAll) : Copy.remindersScreen.selectAll}
           </ThemedText>
         </Pressable>
