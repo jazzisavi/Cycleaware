@@ -1,10 +1,17 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 let analyticsModule: typeof import("@react-native-firebase/analytics") | null = null;
 let crashlyticsModule: typeof import("@react-native-firebase/crashlytics") | null = null;
 
+function isFirebaseSupported(): boolean {
+  if (Platform.OS === "web") return false;
+  if (Constants.appOwnership === "expo") return false;
+  return true;
+}
+
 async function loadFirebaseModules() {
-  if (Platform.OS === "web") return;
+  if (!isFirebaseSupported()) return;
   try {
     analyticsModule = await import("@react-native-firebase/analytics");
     crashlyticsModule = await import("@react-native-firebase/crashlytics");
