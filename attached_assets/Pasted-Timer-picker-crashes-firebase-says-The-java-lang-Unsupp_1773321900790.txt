@@ -1,0 +1,34 @@
+Timer picker crashes -firebase says: 
+The java.lang.UnsupportedOperationException: Failed to resolve attribute at index 36 crash indicates that an attribute expected by a UI component or library cannot be resolved within the currently applied theme.
+In this specific case, the crash originates from com.reactcommunity.rndatetimepicker.MinuteIntervalSnappableTimePickerDialog.<init> , suggesting an issue with the theme applied to the MinuteIntervalSnappableTimePickerDialog from the React Native community's datetime picker. The theme stack in the error message, particularly com.goflo.app:style/GoFloTimePickerTheme , suggests that a custom theme is being used for the time picker.
+The likely cause is that GoFloTimePickerTheme (or one of its parent themes in the inheritance chain) is missing a required attribute that the MinuteIntervalSnappableTimePickerDialog or its underlying Android components (likely Material Components' TimePicker ) expect to find when they initialize. When the system tries to look up this attribute, it fails, leading to the UnsupportedOperationException . This often happens when:
+The 
+The 
+There might be a typo in the 
+Recommendations to avoid this issue:
+Review the official documentation for the 
+Inspect GoFloTimePickerTheme :
+Examine res/values/styles.xml (or themes.xml ) in your project for GoFloTimePickerTheme .
+Ensure it correctly inherits from a Material Components theme, such as Theme.MaterialComponents.Light.Dialog or a similar appropriate theme for a dialog. For example:
+<style name="GoFloTimePickerTheme" parent="Theme.MaterialComponents.Light.Dialog">
+
+
+    <!-- Your custom attributes -->
+
+
+</style>
+
+
+Expand
+
+
+If it inherits from a more generic theme, check if all necessary attributes (e.g., colorPrimary , colorSecondary , timePickerStyle , etc.) are explicitly defined or inherited.
+
+
+Create a temporary test application or a separate branch and try to use the 
+When theme attributes are missing, the exception often points to a specific index (like 
+Ensure that the version of 
+If you're only trying to modify a few attributes, use a theme overlay instead of creating a full custom theme from scratch, ensuring that the base theme provides all necessary attributes.
+Actionable next step:
+Specifically, check 
+
