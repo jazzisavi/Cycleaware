@@ -29,7 +29,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
+  const { permissionStatus, openSettings, notificationsAvailable, checkPermissionStatus } = useNotificationPermission();
   const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
   const [unresolvedDismissed, setUnresolvedDismissed] = useState(false);
 
@@ -49,6 +49,7 @@ export default function HomeScreen() {
     useCallback(() => {
       refresh();
       refreshHistory();
+      checkPermissionStatus();
     }, [])
   );
 
