@@ -32,7 +32,6 @@ import {
   checkLastNotificationResponse,
   syncAllNotifications,
 } from "@/services/notifications";
-import { registerBackgroundNotificationTask } from "@/services/backgroundNotificationTask";
 import { onAppLaunchSync } from "@/services/pushSync";
 import { initFirebase } from "@/services/firebase";
 
@@ -44,8 +43,7 @@ function AppContent() {
   useEffect(() => {
     LocalDatabase.initDatabase();
     setupNotificationCategories();
-    registerBackgroundNotificationTask();
-    
+
     let responseCleanup: (() => void) | null = null;
     let receivedCleanup: (() => void) | null = null;
 

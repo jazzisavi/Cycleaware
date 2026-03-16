@@ -7,6 +7,7 @@ import { Copy } from "@/constants/copy";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
+const LAST_PROCESSED_NOTIF_KEY = "@goflo/last_processed_notif_id";
 
 function isExpoGo(): boolean {
   return Constants.appOwnership === "expo";
@@ -158,7 +159,11 @@ async function handleSnoozeAction(reminderId: string, reminderTitle: string, sou
             body: reminder?.notes || "",
             data: { reminderId, soundEnabled, isReprompt: true },
             categoryIdentifier: "reminder",
-            ...(Platform.OS === "android" ? { channelId: "reminders", priority: Notifications.AndroidNotificationPriority.HIGH } : {}),
+            ...(Platform.OS === "android" ? {
+              channelId: "reminders",
+              priority: Notifications.AndroidNotificationPriority.HIGH,
+              style: { type: "bigText", text: reminder?.notes || "" },
+            } : {}),
             ...(Platform.OS === "ios" ? { interruptionLevel: "timeSensitive" } : {}),
           },
           trigger: {
@@ -272,7 +277,11 @@ export async function scheduleReminderNotification(
         body: notes || "",
         data: { reminderId, soundEnabled },
         categoryIdentifier: "reminder",
-        ...(Platform.OS === "android" ? { channelId: "reminders", priority: Notifications.AndroidNotificationPriority.HIGH } : {}),
+        ...(Platform.OS === "android" ? {
+          channelId: "reminders",
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          style: { type: "bigText", text: notes || "" },
+        } : {}),
         ...(Platform.OS === "ios" ? { interruptionLevel: "timeSensitive" } : {}),
       },
       trigger: {
@@ -325,17 +334,37 @@ export async function checkLastNotificationResponse(
     const Notifications = await import("expo-notifications");
     const lastResponse = await Notifications.getLastNotificationResponseAsync();
 
-    if (lastResponse) {
-      const actionIdentifier = lastResponse.actionIdentifier;
-      const data = lastResponse.notification.request.content.data;
-      const reminderId = data?.reminderId as string;
-      const reminderTitle = lastResponse.notification.request.content.title || "";
-      const soundEnabled = data?.soundEnabled as boolean || false;
-      const notificationId = lastResponse.notification.request.identifier;
+    if (!lastResponse) return;
 
-      if (reminderId && actionIdentifier !== "expo.modules.notifications.actions.DEFAULT") {
-        await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+    const notificationId = lastResponse.notification.request.identifier;
+    const actionIdentifier = lastResponse.actionIdentifier;
+    const data = lastResponse.notification.request.content.data;
+    const reminderId = data?.reminderId as string;
+    const reminderTitle = lastResponse.notification.request.content.title || "";
+    const soundEnabled = (data?.soundEnabled as boolean) || false;
+
+    if (reminderId && actionIdentifier !== "expo.modules.notifications.actions.DEFAULT") {
+      const lastProcessed = await AsyncStorage.getItem(LAST_PROCESSED_NOTIF_KEY);
+      if (lastProcessed === notificationId) {
+        return;
       }
+      await AsyncStorage.setItem(LAST_PROCESSED_NOTIF_KEY, notificationId);
+      await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+    }
+
+    try {
+      await Notifications.dismissNotificationAsync(notificationId);
+    } catch (_e) {}
+
+    if (reminderId) {
+      try {
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        for (const p of presented) {
+          if (p.request.content.data?.reminderId === reminderId) {
+            await Notifications.dismissNotificationAsync(p.request.identifier);
+          }
+        }
+      } catch (_e) {}
     }
   } catch (error) {
     console.error("Error checking last notification response:", error);
@@ -466,7 +495,11 @@ export async function scheduleAllTimesForReminder(reminder: {
                 isReprompt: true,
               },
               categoryIdentifier: "reminder",
-              ...(Platform.OS === "android" ? { channelId: "reminders", priority: Notifications.AndroidNotificationPriority.HIGH } : {}),
+              ...(Platform.OS === "android" ? {
+                channelId: "reminders",
+                priority: Notifications.AndroidNotificationPriority.HIGH,
+                style: { type: "bigText", text: reminder.notes || "" },
+              } : {}),
               ...(Platform.OS === "ios" ? { interruptionLevel: "timeSensitive" } : {}),
             },
             trigger: {
