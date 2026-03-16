@@ -49,7 +49,10 @@ function AppContent() {
 
     const actionHandler = async (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string) => {
       const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId);
-      if (result.success && result.message) {
+      if (!result.success) {
+        throw new Error(result.message || "Action failed");
+      }
+      if (result.message) {
         if (result.message === "taken") {
           showConfirmation("taken");
         } else if (result.message === "skipped") {

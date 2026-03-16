@@ -7,7 +7,8 @@ import { Copy } from "@/constants/copy";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
-const LAST_PROCESSED_NOTIF_KEY = "@goflo/last_processed_notif_id";
+const LAST_PROCESSED_NOTIFICATION_KEY = "@goflo/last_processed_notification";
+const processingNotificationIds = new Set<string>();
 
 function isExpoGo(): boolean {
   return Constants.appOwnership === "expo";
@@ -71,13 +72,18 @@ async function handleTakeAction(reminderId: string, reminderTitle: string): Prom
       return { success: false, message: "Reminder not found" };
     }
 
-    LocalDatabase.addHistoryEntry({
-      reminderId,
-      title: reminderTitle,
-      scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
-      status: "completed",
-      completedAt: new Date().toISOString(),
-    });
+    try {
+      LocalDatabase.addHistoryEntry({
+        reminderId,
+        title: reminderTitle,
+        scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      });
+    } catch (historyError) {
+      console.error("action_take_history_error", historyError);
+      return { success: false, message: "Failed to write history entry" };
+    }
 
     const updated = LocalDatabase.updateReminder(reminderId, {
       completedOccurrences: (reminder.completedOccurrences || 0) + 1,
@@ -103,12 +109,17 @@ async function handleSkipAction(reminderId: string): Promise<{ success: boolean;
 
     await cancelRepromptsForReminder(reminderId);
 
-    LocalDatabase.addHistoryEntry({
-      reminderId,
-      title: reminder.title,
-      scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
-      status: "skipped",
-    });
+    try {
+      LocalDatabase.addHistoryEntry({
+        reminderId,
+        title: reminder.title,
+        scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+        status: "skipped",
+      });
+    } catch (historyError) {
+      console.error("action_skip_history_error", historyError);
+      return { success: false, message: "Failed to write history entry" };
+    }
 
     const updated = LocalDatabase.updateReminder(reminderId, {});
 
@@ -336,36 +347,50 @@ export async function checkLastNotificationResponse(
 
     if (!lastResponse) return;
 
-    const notificationId = lastResponse.notification.request.identifier;
     const actionIdentifier = lastResponse.actionIdentifier;
     const data = lastResponse.notification.request.content.data;
     const reminderId = data?.reminderId as string;
     const reminderTitle = lastResponse.notification.request.content.title || "";
     const soundEnabled = (data?.soundEnabled as boolean) || false;
+    const notificationId = lastResponse.notification.request.identifier;
 
-    if (reminderId && actionIdentifier !== "expo.modules.notifications.actions.DEFAULT") {
-      const lastProcessed = await AsyncStorage.getItem(LAST_PROCESSED_NOTIF_KEY);
-      if (lastProcessed === notificationId) {
-        return;
-      }
-      await AsyncStorage.setItem(LAST_PROCESSED_NOTIF_KEY, notificationId);
+    if (actionIdentifier === "expo.modules.notifications.actions.DEFAULT") {
+      return;
+    }
+
+    if (!reminderId) {
+      return;
+    }
+
+    const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
+    if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
+      return;
+    }
+
+    processingNotificationIds.add(notificationId);
+    try {
       await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+      await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
+    } finally {
+      processingNotificationIds.delete(notificationId);
+    }
+
+    if (notificationId) {
+      try {
+        await Notifications.dismissNotificationAsync(notificationId);
+      } catch (_e) {}
     }
 
     try {
-      await Notifications.dismissNotificationAsync(notificationId);
-    } catch (_e) {}
-
-    if (reminderId) {
-      try {
-        const presented = await Notifications.getPresentedNotificationsAsync();
-        for (const p of presented) {
-          if (p.request.content.data?.reminderId === reminderId) {
+      const presented = await Notifications.getPresentedNotificationsAsync();
+      for (const p of presented) {
+        if (p.request?.content?.data?.reminderId === reminderId) {
+          try {
             await Notifications.dismissNotificationAsync(p.request.identifier);
-          }
+          } catch (_e) {}
         }
-      } catch (_e) {}
-    }
+      }
+    } catch (_e) {}
   } catch (error) {
     console.error("Error checking last notification response:", error);
   }
@@ -409,17 +434,32 @@ export async function setupNotificationResponseListener(
 
     const subscription = Notifications.addNotificationResponseReceivedListener(
       async (response) => {
-        await AlarmService.stopAlarm();
+        try {
+          await AlarmService.stopAlarm();
 
-        const actionIdentifier = response.actionIdentifier;
-        const data = response.notification.request.content.data;
-        const reminderId = data?.reminderId as string;
-        const reminderTitle = response.notification.request.content.title || "";
-        const soundEnabled = data?.soundEnabled as boolean || false;
-        const notificationId = response.notification.request.identifier;
+          const actionIdentifier = response.actionIdentifier;
+          const data = response.notification.request.content.data;
+          const reminderId = data?.reminderId as string;
+          const reminderTitle = response.notification.request.content.title || "";
+          const soundEnabled = data?.soundEnabled as boolean || false;
+          const notificationId = response.notification.request.identifier;
 
-        if (reminderId) {
-          await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+          if (reminderId) {
+            const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
+            if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
+              return;
+            }
+
+            processingNotificationIds.add(notificationId);
+            try {
+              await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+              await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
+            } finally {
+              processingNotificationIds.delete(notificationId);
+            }
+          }
+        } catch (error) {
+          console.error("Error handling notification response:", error);
         }
       }
     );
