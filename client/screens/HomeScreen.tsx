@@ -149,6 +149,7 @@ export default function HomeScreen() {
 
   const todaysReminders = reminders
     .filter((r) => {
+      if (!r.isActive) return false;
       const next = new Date(r.nextOccurrence || "");
       next.setHours(0, 0, 0, 0);
       return next.getTime() === today.getTime();
@@ -158,6 +159,7 @@ export default function HomeScreen() {
 
   const upcomingReminders = reminders
     .filter((r) => {
+      if (!r.isActive) return false;
       const next = new Date(r.nextOccurrence || "");
       next.setHours(0, 0, 0, 0);
       return next > today && next <= threeDaysFromNow;
