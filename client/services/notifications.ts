@@ -428,25 +428,12 @@ export async function checkLastNotificationResponse(
       return;
     }
 
-    const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
-    if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
-      return;
-    }
-
-    processingNotificationIds.add(notificationId);
-    try {
-      await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
-      await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
-    } finally {
-      processingNotificationIds.delete(notificationId);
-    }
-
-    if (notificationId) {
-      try {
-        await Notifications.dismissNotificationAsync(notificationId);
-      } catch (_e) {}
-    }
-
+    // Dismiss using live presented IDs before dedup check — stale notificationId
+    // from getLastNotificationResponseAsync cannot be reliably dismissed on cold
+    // start because Expo's internal UUID→Android-ID mapping is lost when the
+    // app process is killed. getPresentedNotificationsAsync() returns IDs that
+    // are sourced live from Android's StatusBarNotification, so they always work.
+    // Running this before dedup ensures dismiss happens even on repeat launches.
     try {
       const presented = await Notifications.getPresentedNotificationsAsync();
       for (const p of presented) {
@@ -460,6 +447,19 @@ export async function checkLastNotificationResponse(
         }
       }
     } catch (_e) {}
+
+    const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
+    if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
+      return;
+    }
+
+    processingNotificationIds.add(notificationId);
+    try {
+      await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
+      await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
+    } finally {
+      processingNotificationIds.delete(notificationId);
+    }
   } catch (error) {
     console.error("Error checking last notification response:", error);
   }
