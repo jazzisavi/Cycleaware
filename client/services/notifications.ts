@@ -443,6 +443,12 @@ export async function checkLastNotificationResponse(
       }
     } catch (_e) {}
 
+    // If the reminder was deleted since the notification fired, dismiss already
+    // ran above — nothing left to process, return silently.
+    if (!LocalDatabase.getReminder(reminderId)) {
+      return;
+    }
+
     const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
     if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
       return;
