@@ -858,7 +858,9 @@ export async function syncAllNotifications(): Promise<void> {
       if (!reminder.nextOccurrence) continue;
 
       const nextDate = new Date(reminder.nextOccurrence);
-      if (nextDate <= now) {
+      const nextDateDay = new Date(nextDate);
+      nextDateDay.setHours(0, 0, 0, 0);
+      if (nextDateDay < todayStart) {
         LocalDatabase.updateReminder(reminder.id, {});
         const updated = LocalDatabase.getReminder(reminder.id);
         if (updated?.nextOccurrence) {
