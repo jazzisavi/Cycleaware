@@ -263,6 +263,10 @@ export default function HomeScreen() {
             {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => {
               const snoozed = isSnoozed(reminder.expandedKey);
               const snoozeUntilDate = getSnoozedUntil(reminder.expandedKey);
+              const slotDatetime = new Date(reminder.nextOccurrence || "");
+              const [slotH, slotM] = (reminder.displayTime || "00:00").split(":").map(Number);
+              slotDatetime.setHours(slotH, slotM, 0, 0);
+              const isDue = slotDatetime <= new Date();
               return (
                 <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
                   <View style={styles.activeCardTop}>
@@ -282,12 +286,14 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <View style={styles.actionRow}>
-                    <Pressable
-                      onPress={snoozed ? undefined : () => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
-                      disabled={snoozed}
-                    >
-                      <Text style={[styles.textActionButton, { color: snoozed ? theme.textTertiary : theme.info, opacity: snoozed ? 0.4 : 1 }]}>{Copy.home.snoozeButton}</Text>
-                    </Pressable>
+                    {isDue ? (
+                      <Pressable
+                        onPress={snoozed ? undefined : () => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
+                        disabled={snoozed}
+                      >
+                        <Text style={[styles.textActionButton, { color: snoozed ? theme.textTertiary : theme.info, opacity: snoozed ? 0.4 : 1 }]}>{Copy.home.snoozeButton}</Text>
+                      </Pressable>
+                    ) : null}
                     <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
                       <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.skipButton}</Text>
                     </Pressable>
