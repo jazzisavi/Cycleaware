@@ -146,7 +146,8 @@ export default function HomeScreen() {
       next.setHours(0, 0, 0, 0);
       return next.getTime() === today.getTime();
     })
-    .flatMap(expandReminder);
+    .flatMap(expandReminder)
+    .sort((a, b) => (a.displayTime || "").localeCompare(b.displayTime || ""));
 
   const upcomingReminders = reminders
     .filter((r) => {
@@ -154,7 +155,15 @@ export default function HomeScreen() {
       next.setHours(0, 0, 0, 0);
       return next > today && next <= threeDaysFromNow;
     })
-    .flatMap(expandReminder);
+    .flatMap(expandReminder)
+    .sort((a, b) => {
+      const dA = new Date(a.nextOccurrence || "");
+      dA.setHours(0, 0, 0, 0);
+      const dB = new Date(b.nextOccurrence || "");
+      dB.setHours(0, 0, 0, 0);
+      if (dA.getTime() !== dB.getTime()) return dA.getTime() - dB.getTime();
+      return (a.displayTime || "").localeCompare(b.displayTime || "");
+    });
 
   const unresolvedCount = notificationHistory.filter((entry) => {
     if (entry.status === "completed" || entry.status === "skipped" || entry.status === "snoozed") return false;
