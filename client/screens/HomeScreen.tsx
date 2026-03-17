@@ -19,7 +19,7 @@ import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { AppHeader } from "@/components/AppHeader";
-import { stopAlarm } from "@/services/notifications";
+import { stopAlarm, getSnoozeDuration } from "@/services/notifications";
 import { useLocalReminders, useLocalHistory } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { permissionStatus, openSettings, notificationsAvailable, checkPermissionStatus } = useNotificationPermission();
   const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
+  const [snoozedMap, setSnoozedMap] = useState<Map<string, Date>>(new Map());
   const [missedDismissedAt, setMissedDismissedAt] = useState<Date | null>(null);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -107,7 +108,13 @@ export default function HomeScreen() {
   const handleSnooze = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
     await stopAlarm();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setActionedIds(prev => new Set(prev).add(expandedKey));
+    const durationMinutes = await getSnoozeDuration();
+    const snoozeUntil = new Date(Date.now() + durationMinutes * 60 * 1000);
+    setSnoozedMap(prev => {
+      const next = new Map(prev);
+      next.set(expandedKey, snoozeUntil);
+      return next;
+    });
     LocalDatabase.addHistoryEntry({
       reminderId,
       title,
@@ -197,6 +204,17 @@ export default function HomeScreen() {
   };
 
   const isActioned = (key: string) => actionedIds.has(key);
+  const isSnoozed = (key: string) => snoozedMap.has(key);
+  const getSnoozedUntil = (key: string): Date | undefined => snoozedMap.get(key);
+
+  const formatSnoozedUntil = (date: Date): string => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    const minuteStr = minutes.toString().padStart(2, "0");
+    return `${hour12}:${minuteStr} ${ampm}`;
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -240,41 +258,53 @@ export default function HomeScreen() {
         {todaysReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.todaysReminders}</Text>
-            {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => (
-              <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
-                <View style={styles.activeCardTop}>
-                  <View style={[styles.bellIconCircle, { backgroundColor: theme.info + "25" }]}>
-                    <Feather name="bell" size={18} color={theme.info} />
+            {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => {
+              const snoozed = isSnoozed(reminder.expandedKey);
+              const snoozeUntilDate = getSnoozedUntil(reminder.expandedKey);
+              return (
+                <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
+                  <View style={styles.activeCardTop}>
+                    <View style={[styles.bellIconCircle, { backgroundColor: theme.info + "25" }]}>
+                      <Feather name="bell" size={18} color={theme.info} />
+                    </View>
+                    <View style={styles.activeCardInfo}>
+                      <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
+                      {reminder.notes ? (
+                        <Text style={[styles.activeNotes, { color: theme.textSecondary }]} numberOfLines={2}>
+                          {reminder.notes}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.activeTime, { color: theme.textSecondary }]}>
+                      {formatTime(reminder.displayTime)}
+                    </Text>
                   </View>
-                  <View style={styles.activeCardInfo}>
-                    <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
-                    {reminder.notes ? (
-                      <Text style={[styles.activeNotes, { color: theme.textSecondary }]} numberOfLines={2}>
-                        {reminder.notes}
-                      </Text>
-                    ) : null}
+                  <View style={styles.actionRow}>
+                    <Pressable
+                      onPress={snoozed ? undefined : () => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
+                      disabled={snoozed}
+                    >
+                      <Text style={[styles.textActionButton, { color: snoozed ? theme.textTertiary : theme.info, opacity: snoozed ? 0.4 : 1 }]}>{Copy.home.snoozeButton}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
+                      <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.skipButton}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.takeButton, { backgroundColor: theme.info }]}
+                      onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
+                      testID={`button-complete-${reminder.expandedKey}`}
+                    >
+                      <Text style={[styles.takeButtonText, { color: theme.buttonText }]}>{Copy.home.takeButton}</Text>
+                    </Pressable>
                   </View>
-                  <Text style={[styles.activeTime, { color: theme.textSecondary }]}>
-                    {formatTime(reminder.displayTime)}
-                  </Text>
+                  {snoozed && snoozeUntilDate ? (
+                    <Text style={[styles.snoozedLabel, { color: theme.textSecondary }]}>
+                      {`Snoozed until ${formatSnoozedUntil(snoozeUntilDate)}`}
+                    </Text>
+                  ) : null}
                 </View>
-                <View style={styles.actionRow}>
-                  <Pressable onPress={() => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
-                    <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.snoozeButton}</Text>
-                  </Pressable>
-                  <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
-                    <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.skipButton}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.takeButton, { backgroundColor: theme.info }]}
-                    onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
-                    testID={`button-complete-${reminder.expandedKey}`}
-                  >
-                    <Text style={[styles.takeButtonText, { color: theme.buttonText }]}>{Copy.home.takeButton}</Text>
-                  </Pressable>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         ) : null}
 
@@ -458,6 +488,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: FontFamily.sansSemiBold,
     letterSpacing: 0.5,
+  },
+  snoozedLabel: {
+    fontSize: 12,
+    fontFamily: FontFamily.sansRegular,
+    marginTop: Spacing.sm,
   },
   unresolvedCard: {
     borderTopLeftRadius: 32,
