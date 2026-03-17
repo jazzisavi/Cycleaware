@@ -428,20 +428,25 @@ export async function checkLastNotificationResponse(
       return;
     }
 
-    // Dismiss before dedup: stale notificationId may fail on cold start (Expo's
-    // UUID→Android-ID map is cleared on process death), but the presented sweep
-    // uses live StatusBarNotification IDs which always resolve correctly.
-    // Both run before the dedup check so dismiss fires even on repeat launches.
-    try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
-    try {
-      const presented = await Notifications.getPresentedNotificationsAsync();
-      for (const p of presented) {
-        const pd = p.request?.content?.data;
-        if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
-          try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
+    // Dismiss before dedup. Two attempts:
+    // 1. Immediate — covers the case where the notification system is ready.
+    // 2. Delayed (1500 ms) — on Android cold start, getPresentedNotificationsAsync
+    //    can return an empty array before the notification subsystem has fully
+    //    re-initialised. The retry runs after the app has settled.
+    const dismissMatchingNotifications = async () => {
+      try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
+      try {
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        for (const p of presented) {
+          const pd = p.request?.content?.data;
+          if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
+            try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
+          }
         }
-      }
-    } catch (_e) {}
+      } catch (_e) {}
+    };
+    await dismissMatchingNotifications();
+    setTimeout(() => { dismissMatchingNotifications(); }, 1500);
 
     // If the reminder was deleted since the notification fired, dismiss already
     // ran above — nothing left to process, return silently.
