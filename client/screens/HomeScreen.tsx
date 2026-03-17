@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -38,6 +38,12 @@ export default function HomeScreen() {
   const [missedDismissedAt, setMissedDismissedAt] = useState<Date | null>(null);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
@@ -266,7 +272,7 @@ export default function HomeScreen() {
               const slotDatetime = new Date(reminder.nextOccurrence || "");
               const [slotH, slotM] = (reminder.displayTime || "00:00").split(":").map(Number);
               slotDatetime.setHours(slotH, slotM, 0, 0);
-              const isDue = slotDatetime <= new Date();
+              const isDue = slotDatetime <= now;
               return (
                 <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
                   <View style={styles.activeCardTop}>
