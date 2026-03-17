@@ -50,7 +50,6 @@ function ExampleCard({
   categoryLabel,
   categoryColor,
   bgColor,
-  circleColor,
   iconName,
   iconColor,
   title,
@@ -59,7 +58,6 @@ function ExampleCard({
   categoryLabel: string;
   categoryColor: string;
   bgColor: string;
-  circleColor: string;
   iconName: keyof typeof Feather.glyphMap;
   iconColor: string;
   title: string;
@@ -68,7 +66,6 @@ function ExampleCard({
   const { theme } = useTheme();
   return (
     <View style={[styles.exampleCardOuter, { backgroundColor: bgColor }]}>
-      <View style={[styles.cardDecorativeCircle, { backgroundColor: circleColor }]} />
       <Text style={[styles.exampleCategoryLabel, { color: categoryColor }]}>
         {categoryLabel}
       </Text>
@@ -113,11 +110,8 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
   };
 
   const cycleCardBg = isDark ? "#1E3D2E" : "#E3F4EC";
-  const cycleCircleBg = isDark ? "#2E7D5240" : "#CAE3D7";
   const dailyCardBg = isDark ? "#3D2A1E" : "#F5E7D1";
-  const dailyCircleBg = isDark ? "#C47D0A40" : "#F5E7D1";
   const setDaysCardBg = isDark ? "#1E3040" : "#D6EFF5";
-  const setDaysCircleBg = isDark ? "#2A6E7A40" : "#E2F4F8";
 
   return (
     <KeyboardAvoidingView
@@ -137,7 +131,6 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   categoryLabel={Copy.onboarding.cycleAligned}
                   categoryColor={theme.accentMint}
                   bgColor={cycleCardBg}
-                  circleColor={cycleCircleBg}
                   iconName="circle"
                   iconColor={theme.accentMint}
                   title={Copy.onboarding.cycleExample}
@@ -148,7 +141,6 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   categoryLabel={Copy.onboarding.dailyRhythm}
                   categoryColor={theme.accentCoral}
                   bgColor={dailyCardBg}
-                  circleColor={dailyCircleBg}
                   iconName="sunrise"
                   iconColor={theme.saveButtonActive}
                   title={Copy.onboarding.dailyExample}
@@ -159,7 +151,6 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   categoryLabel={Copy.onboarding.setDays}
                   categoryColor={theme.info}
                   bgColor={setDaysCardBg}
-                  circleColor={setDaysCircleBg}
                   iconName="star"
                   iconColor={theme.info}
                   title={Copy.onboarding.setDaysExample}
@@ -261,15 +252,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xl,
     overflow: "hidden",
-  },
-  cardDecorativeCircle: {
-    position: "absolute",
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    bottom: -20,
-    right: -20,
-    opacity: 0.7,
   },
   exampleCategoryLabel: {
     fontFamily: FontFamily.serifBold,
