@@ -59,11 +59,42 @@ async function cancelRepromptsForReminder(reminderId: string): Promise<void> {
   } catch (_e) {}
 }
 
-async function handleTakeAction(reminderId: string, reminderTitle: string): Promise<{ success: boolean; message?: string }> {
+async function cancelNotificationForTimeSlot(reminderId: string, scheduledTime: string): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const Notifications = await import("expo-notifications");
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      const d = n.content.data;
+      if (d?.reminderId === reminderId && d?.scheduledTime === scheduledTime) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+  } catch (_e) {}
+}
+
+async function hasRemainingScheduledSlots(reminderId: string): Promise<boolean> {
+  if (!isNotificationsAvailable()) return false;
+  try {
+    const Notifications = await import("expo-notifications");
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    return scheduled.some(
+      (n) => n.content.data?.reminderId === reminderId && !n.content.data?.isReprompt
+    );
+  } catch (_e) {
+    return false;
+  }
+}
+
+async function handleTakeAction(reminderId: string, reminderTitle: string, scheduledTime?: string): Promise<{ success: boolean; message?: string }> {
   try {
     try {
-      await cancelPendingNotificationsForReminder(reminderId);
-      await cancelRepromptsForReminder(reminderId);
+      if (scheduledTime) {
+        await cancelNotificationForTimeSlot(reminderId, scheduledTime);
+      } else {
+        await cancelPendingNotificationsForReminder(reminderId);
+        await cancelRepromptsForReminder(reminderId);
+      }
     } catch (_e) {
     }
 
@@ -72,11 +103,19 @@ async function handleTakeAction(reminderId: string, reminderTitle: string): Prom
       return { success: false, message: "Reminder not found" };
     }
 
+    let scheduledAt = reminder.nextOccurrence || new Date().toISOString();
+    if (scheduledTime && reminder.nextOccurrence) {
+      const [hours, minutes] = scheduledTime.split(":").map(Number);
+      const d = new Date(reminder.nextOccurrence);
+      d.setHours(hours, minutes, 0, 0);
+      scheduledAt = d.toISOString();
+    }
+
     try {
       LocalDatabase.addHistoryEntry({
         reminderId,
         title: reminderTitle,
-        scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+        scheduledAt,
         status: "completed",
         completedAt: new Date().toISOString(),
       });
@@ -85,12 +124,14 @@ async function handleTakeAction(reminderId: string, reminderTitle: string): Prom
       return { success: false, message: "Failed to write history entry" };
     }
 
-    const updated = LocalDatabase.updateReminder(reminderId, {
-      completedOccurrences: (reminder.completedOccurrences || 0) + 1,
-    });
-
-    if (updated?.nextOccurrence) {
-      await scheduleAllTimesForReminder(updated);
+    const hasMore = await hasRemainingScheduledSlots(reminderId);
+    if (!hasMore) {
+      const updated = LocalDatabase.updateReminder(reminderId, {
+        completedOccurrences: (reminder.completedOccurrences || 0) + 1,
+      });
+      if (updated?.nextOccurrence) {
+        await scheduleAllTimesForReminder(updated);
+      }
     }
 
     return { success: true, message: "taken" };
@@ -100,20 +141,34 @@ async function handleTakeAction(reminderId: string, reminderTitle: string): Prom
   }
 }
 
-async function handleSkipAction(reminderId: string): Promise<{ success: boolean; message?: string }> {
+async function handleSkipAction(reminderId: string, scheduledTime?: string): Promise<{ success: boolean; message?: string }> {
   try {
     const reminder = LocalDatabase.getReminder(reminderId);
     if (!reminder) {
       return { success: false, message: "Reminder not found" };
     }
 
-    await cancelRepromptsForReminder(reminderId);
+    try {
+      if (scheduledTime) {
+        await cancelNotificationForTimeSlot(reminderId, scheduledTime);
+      } else {
+        await cancelRepromptsForReminder(reminderId);
+      }
+    } catch (_e) {}
+
+    let scheduledAt = reminder.nextOccurrence || new Date().toISOString();
+    if (scheduledTime && reminder.nextOccurrence) {
+      const [hours, minutes] = scheduledTime.split(":").map(Number);
+      const d = new Date(reminder.nextOccurrence);
+      d.setHours(hours, minutes, 0, 0);
+      scheduledAt = d.toISOString();
+    }
 
     try {
       LocalDatabase.addHistoryEntry({
         reminderId,
         title: reminder.title,
-        scheduledAt: reminder.nextOccurrence || new Date().toISOString(),
+        scheduledAt,
         status: "skipped",
       });
     } catch (historyError) {
@@ -121,10 +176,12 @@ async function handleSkipAction(reminderId: string): Promise<{ success: boolean;
       return { success: false, message: "Failed to write history entry" };
     }
 
-    const updated = LocalDatabase.updateReminder(reminderId, {});
-
-    if (updated?.nextOccurrence) {
-      await scheduleAllTimesForReminder(updated);
+    const hasMore = await hasRemainingScheduledSlots(reminderId);
+    if (!hasMore) {
+      const updated = LocalDatabase.updateReminder(reminderId, {});
+      if (updated?.nextOccurrence) {
+        await scheduleAllTimesForReminder(updated);
+      }
     }
 
     return { success: true, message: "skipped" };
@@ -134,12 +191,18 @@ async function handleSkipAction(reminderId: string): Promise<{ success: boolean;
   }
 }
 
-async function handleSnoozeAction(reminderId: string, reminderTitle: string, soundEnabled: boolean): Promise<{ success: boolean; message?: string }> {
+async function handleSnoozeAction(reminderId: string, reminderTitle: string, soundEnabled: boolean, scheduledTime?: string): Promise<{ success: boolean; message?: string }> {
   try {
     const snoozeDuration = await getSnoozeDuration();
     const snoozeTime = new Date(Date.now() + snoozeDuration * 60 * 1000);
 
-    await cancelRepromptsForReminder(reminderId);
+    try {
+      if (scheduledTime) {
+        await cancelNotificationForTimeSlot(reminderId, scheduledTime);
+      } else {
+        await cancelRepromptsForReminder(reminderId);
+      }
+    } catch (_e) {}
 
     LocalDatabase.addHistoryEntry({
       reminderId,
@@ -272,7 +335,8 @@ export async function scheduleReminderNotification(
   title: string,
   notes: string | null,
   triggerDate: Date,
-  soundEnabled: boolean = false
+  soundEnabled: boolean = false,
+  scheduledTime?: string
 ): Promise<string | null> {
   if (!isNotificationsAvailable()) {
     console.log("Notifications not available, skipping schedule");
@@ -286,7 +350,7 @@ export async function scheduleReminderNotification(
       content: {
         title: title,
         body: notes || "",
-        data: { reminderId, soundEnabled },
+        data: { reminderId, soundEnabled, ...(scheduledTime ? { scheduledTime } : {}) },
         categoryIdentifier: "reminder",
         ...(Platform.OS === "android" ? {
           channelId: "reminders",
@@ -313,7 +377,8 @@ export async function handleNotificationAction(
   reminderId: string,
   reminderTitle: string,
   soundEnabled: boolean = false,
-  notificationId?: string
+  notificationId?: string,
+  scheduledTime?: string
 ): Promise<{ success: boolean; message?: string }> {
   await AlarmService.stopAlarm();
 
@@ -323,11 +388,11 @@ export async function handleNotificationAction(
 
   switch (actionIdentifier) {
     case "take":
-      return handleTakeAction(reminderId, reminderTitle);
+      return handleTakeAction(reminderId, reminderTitle, scheduledTime);
     case "skip":
-      return handleSkipAction(reminderId);
+      return handleSkipAction(reminderId, scheduledTime);
     case "snooze":
-      return handleSnoozeAction(reminderId, reminderTitle, soundEnabled);
+      return handleSnoozeAction(reminderId, reminderTitle, soundEnabled, scheduledTime);
     case "expo.modules.notifications.actions.DEFAULT":
     default:
       return { success: true, message: "Notification tapped" };
@@ -335,7 +400,7 @@ export async function handleNotificationAction(
 }
 
 export async function checkLastNotificationResponse(
-  onAction: (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string) => Promise<void>
+  onAction: (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string, scheduledTime?: string) => Promise<void>
 ): Promise<void> {
   if (!isNotificationsAvailable()) {
     return;
@@ -353,6 +418,7 @@ export async function checkLastNotificationResponse(
     const reminderTitle = lastResponse.notification.request.content.title || "";
     const soundEnabled = (data?.soundEnabled as boolean) || false;
     const notificationId = lastResponse.notification.request.identifier;
+    const scheduledTime = (data?.scheduledTime as string) || undefined;
 
     if (actionIdentifier === "expo.modules.notifications.actions.DEFAULT") {
       return;
@@ -369,7 +435,7 @@ export async function checkLastNotificationResponse(
 
     processingNotificationIds.add(notificationId);
     try {
-      await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+      await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
       await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
     } finally {
       processingNotificationIds.delete(notificationId);
@@ -384,7 +450,10 @@ export async function checkLastNotificationResponse(
     try {
       const presented = await Notifications.getPresentedNotificationsAsync();
       for (const p of presented) {
-        if (p.request?.content?.data?.reminderId === reminderId) {
+        const pd = p.request?.content?.data;
+        const sameReminder = pd?.reminderId === reminderId;
+        const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
+        if (sameReminder && sameSlot) {
           try {
             await Notifications.dismissNotificationAsync(p.request.identifier);
           } catch (_e) {}
@@ -423,7 +492,7 @@ export async function setupNotificationReceivedListener(): Promise<(() => void) 
 }
 
 export async function setupNotificationResponseListener(
-  onAction: (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string) => Promise<void>
+  onAction: (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string, scheduledTime?: string) => Promise<void>
 ): Promise<(() => void) | null> {
   if (!isNotificationsAvailable()) {
     return null;
@@ -443,6 +512,7 @@ export async function setupNotificationResponseListener(
           const reminderTitle = response.notification.request.content.title || "";
           const soundEnabled = data?.soundEnabled as boolean || false;
           const notificationId = response.notification.request.identifier;
+          const scheduledTime = (data?.scheduledTime as string) || undefined;
 
           if (reminderId) {
             const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
@@ -452,11 +522,32 @@ export async function setupNotificationResponseListener(
 
             processingNotificationIds.add(notificationId);
             try {
-              await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId);
+              await onAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
               await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
             } finally {
               processingNotificationIds.delete(notificationId);
             }
+
+            if (notificationId) {
+              try {
+                await Notifications.dismissNotificationAsync(notificationId);
+              } catch (_e) {}
+            }
+
+            try {
+              const presented = await Notifications.getPresentedNotificationsAsync();
+              for (const p of presented) {
+                const pd = p.request?.content?.data;
+                const sameReminder = pd?.reminderId === reminderId;
+                const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
+                if (sameReminder && sameSlot) {
+                  try {
+                    await Notifications.dismissNotificationAsync(p.request.identifier);
+                  } catch (_e) {}
+                }
+              }
+            } catch (_e) {}
+
           }
         } catch (error) {
           console.error("Error handling notification response:", error);
@@ -504,20 +595,32 @@ export async function scheduleAllTimesForReminder(reminder: {
   soundEnabled: boolean;
 }): Promise<void> {
   if (!isNotificationsAvailable()) return;
+  if (!reminder.nextOccurrence) return;
 
-  const dates = getScheduleDatesForReminder(reminder);
+  const times = reminder.reminderTimes && reminder.reminderTimes.length > 0
+    ? reminder.reminderTimes
+    : [reminder.reminderTime];
+
+  const baseDate = new Date(reminder.nextOccurrence);
   const now = new Date();
   const endOfDay = new Date(now);
   endOfDay.setHours(23, 59, 59, 999);
   const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-  for (const date of dates) {
+  for (const slotTime of times) {
+    const [hours, minutes] = slotTime.split(":").map(Number);
+    const date = new Date(baseDate);
+    date.setHours(hours, minutes, 0, 0);
+
+    if (date <= now) continue;
+
     await scheduleReminderNotification(
       reminder.id,
       reminder.title,
       reminder.notes,
       date,
-      reminder.soundEnabled
+      reminder.soundEnabled,
+      slotTime
     );
 
     if (date <= twentyFourHoursFromNow) {
@@ -533,6 +636,7 @@ export async function scheduleAllTimesForReminder(reminder: {
                 reminderId: reminder.id,
                 soundEnabled: reminder.soundEnabled,
                 isReprompt: true,
+                scheduledTime: slotTime,
               },
               categoryIdentifier: "reminder",
               ...(Platform.OS === "android" ? {

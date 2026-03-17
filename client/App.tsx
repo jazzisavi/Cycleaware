@@ -47,8 +47,8 @@ function AppContent() {
     let responseCleanup: (() => void) | null = null;
     let receivedCleanup: (() => void) | null = null;
 
-    const actionHandler = async (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string) => {
-      const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId);
+    const actionHandler = async (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string, scheduledTime?: string) => {
+      const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
       if (!result.success) {
         throw new Error(result.message || "Action failed");
       }
