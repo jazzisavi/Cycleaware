@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet, Image } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
   withDelay,
   Easing,
 } from "react-native-reanimated";
@@ -12,9 +11,7 @@ import { FontFamily } from "@/constants/theme";
 
 import splashLogo from "../../assets/images/splash-logo.png";
 
-const WORDS = ["HRT.", "Reminders,", "Life."];
 const TAGLINE = "Sinct to your cycle";
-const CYCLE_DURATION = 2800;
 
 interface AnimatedSplashScreenProps {
   onFinish: () => void;
@@ -26,12 +23,6 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
   const logoOpacity = useSharedValue(0);
   const wordOpacity = useSharedValue(0);
   const taglineOpacity = useSharedValue(0);
-  const [currentWord, setCurrentWord] = React.useState(0);
-  const cycleCount = useRef(0);
-
-  const updateWord = (index: number) => {
-    setCurrentWord(index);
-  };
 
   useEffect(() => {
     logoOpacity.value = withTiming(1, { duration: 600 });
@@ -45,34 +36,11 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
     wordOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
     taglineOpacity.value = withDelay(900, withTiming(1, { duration: 500 }));
 
-    const interval = setInterval(() => {
-      cycleCount.current += 1;
-
-      wordOpacity.value = withSequence(
-        withTiming(0, { duration: 300 }),
-        withTiming(1, { duration: 400 })
-      );
-
-      const nextIndex = cycleCount.current % WORDS.length;
-      setTimeout(() => {
-        updateWord(nextIndex);
-      }, 300);
-
-      if (cycleCount.current >= 4) {
-        clearInterval(interval);
-        setTimeout(() => {
-          onFinish();
-        }, 1000);
-      }
-    }, CYCLE_DURATION);
-
     const timeout = setTimeout(() => {
-      clearInterval(interval);
       onFinish();
-    }, 14000);
+    }, 1400);
 
     return () => {
-      clearInterval(interval);
       clearTimeout(timeout);
     };
   }, []);
@@ -103,7 +71,7 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
         <View style={styles.textContainer}>
           <View style={styles.headlineRow}>
             <Animated.Text style={[styles.boldWord, wordAnimatedStyle]}>
-              {WORDS[currentWord]}
+              HRT.
             </Animated.Text>
           </View>
           <Animated.Text style={[styles.tagline, taglineAnimatedStyle]}>
