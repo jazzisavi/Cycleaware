@@ -137,6 +137,21 @@ export default function HomeScreen() {
   const threeDaysFromNow = new Date(today);
   threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
+  // Build a set of slots already actioned via notification today.
+  // Key format: `${reminderId}-${HH:MM}` derived from scheduledAt.
+  // This lets us hide cards for slots taken/skipped via notification
+  // even before actionedIds (homepage taps) or nextOccurrence advance pick it up.
+  const todayStr = today.toDateString();
+  const historicallyActionedKeys = new Set<string>();
+  for (const entry of notificationHistory) {
+    if (entry.status !== "completed" && entry.status !== "skipped") continue;
+    const scheduled = new Date(entry.scheduledAt);
+    if (scheduled.toDateString() !== todayStr) continue;
+    const hh = scheduled.getHours().toString().padStart(2, "0");
+    const mm = scheduled.getMinutes().toString().padStart(2, "0");
+    historicallyActionedKeys.add(`${entry.reminderId}-${hh}:${mm}`);
+  }
+
   interface ExpandedReminder extends LocalReminder {
     displayTime: string;
     expandedKey: string;
@@ -161,6 +176,7 @@ export default function HomeScreen() {
       return next.getTime() === today.getTime();
     })
     .flatMap(expandReminder)
+    .filter((r) => !historicallyActionedKeys.has(`${r.id}-${r.displayTime}`))
     .sort((a, b) => (a.displayTime || "").localeCompare(b.displayTime || ""));
 
   const upcomingReminders = reminders

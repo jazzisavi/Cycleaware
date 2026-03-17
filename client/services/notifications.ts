@@ -428,6 +428,21 @@ export async function checkLastNotificationResponse(
       return;
     }
 
+    // Dismiss before dedup: stale notificationId may fail on cold start (Expo's
+    // UUID→Android-ID map is cleared on process death), but the presented sweep
+    // uses live StatusBarNotification IDs which always resolve correctly.
+    // Both run before the dedup check so dismiss fires even on repeat launches.
+    try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
+    try {
+      const presented = await Notifications.getPresentedNotificationsAsync();
+      for (const p of presented) {
+        const pd = p.request?.content?.data;
+        if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
+          try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
+        }
+      }
+    } catch (_e) {}
+
     const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
     if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
       return;
@@ -440,26 +455,6 @@ export async function checkLastNotificationResponse(
     } finally {
       processingNotificationIds.delete(notificationId);
     }
-
-    if (notificationId) {
-      try {
-        await Notifications.dismissNotificationAsync(notificationId);
-      } catch (_e) {}
-    }
-
-    try {
-      const presented = await Notifications.getPresentedNotificationsAsync();
-      for (const p of presented) {
-        const pd = p.request?.content?.data;
-        const sameReminder = pd?.reminderId === reminderId;
-        const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
-        if (sameReminder && sameSlot) {
-          try {
-            await Notifications.dismissNotificationAsync(p.request.identifier);
-          } catch (_e) {}
-        }
-      }
-    } catch (_e) {}
   } catch (error) {
     console.error("Error checking last notification response:", error);
   }
@@ -515,6 +510,17 @@ export async function setupNotificationResponseListener(
           const scheduledTime = (data?.scheduledTime as string) || undefined;
 
           if (reminderId) {
+            try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
+            try {
+              const presented = await Notifications.getPresentedNotificationsAsync();
+              for (const p of presented) {
+                const pd = p.request?.content?.data;
+                if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
+                  try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
+                }
+              }
+            } catch (_e) {}
+
             const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
             if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
               return;
@@ -527,27 +533,6 @@ export async function setupNotificationResponseListener(
             } finally {
               processingNotificationIds.delete(notificationId);
             }
-
-            if (notificationId) {
-              try {
-                await Notifications.dismissNotificationAsync(notificationId);
-              } catch (_e) {}
-            }
-
-            try {
-              const presented = await Notifications.getPresentedNotificationsAsync();
-              for (const p of presented) {
-                const pd = p.request?.content?.data;
-                const sameReminder = pd?.reminderId === reminderId;
-                const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
-                if (sameReminder && sameSlot) {
-                  try {
-                    await Notifications.dismissNotificationAsync(p.request.identifier);
-                  } catch (_e) {}
-                }
-              }
-            } catch (_e) {}
-
           }
         } catch (error) {
           console.error("Error handling notification response:", error);
@@ -873,7 +858,9 @@ export async function syncAllNotifications(): Promise<void> {
       if (!reminder.nextOccurrence) continue;
 
       const nextDate = new Date(reminder.nextOccurrence);
-      if (nextDate <= now) {
+      const nextDateDay = new Date(nextDate);
+      nextDateDay.setHours(0, 0, 0, 0);
+      if (nextDateDay < todayStart) {
         LocalDatabase.updateReminder(reminder.id, {});
         const updated = LocalDatabase.getReminder(reminder.id);
         if (updated?.nextOccurrence) {
