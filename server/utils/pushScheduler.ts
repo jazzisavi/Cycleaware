@@ -102,7 +102,7 @@ export async function runSchedulerTick(): Promise<void> {
 
           messages.push({
             to: token.token,
-            title: config.title,
+            title: `Day ${cycleCheck.currentCycleDay} - ${config.title}`,
             body: config.notes || "",
             data: {
               reminderId: config.id,
@@ -123,7 +123,7 @@ export async function runSchedulerTick(): Promise<void> {
         ) {
           repromptMessages.push({
             to: token.token,
-            title: `Reminder: ${config.title}`,
+            title: `Reminder: Day ${cycleCheck.currentCycleDay} - ${config.title}`,
             body: config.notes || "",
             data: {
               reminderId: config.id,
