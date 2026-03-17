@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Image } from "react-native";
+import { StyleSheet, View, Image, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
@@ -11,7 +12,7 @@ import { TextInput } from "@/components/TextInput";
 import { Button } from "@/components/Button";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -36,11 +37,23 @@ export default function ProfileScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={[styles.backButton, { backgroundColor: theme.backgroundDefault }]}
+          hitSlop={8}
+        >
+          <Feather name="arrow-left" size={20} color={theme.text} />
+        </Pressable>
+        <ThemedText style={styles.headerTitle}>
+          {Copy.profile.title}
+        </ThemedText>
+      </View>
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Spacing.lg,
+            paddingTop: Spacing.md,
             paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
@@ -99,6 +112,19 @@ export default function ProfileScreen() {
           </Button>
         </View>
 
+        <SectionHeader title="General" />
+        <Pressable
+          style={[styles.reviewOnboardingRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}
+          onPress={() => navigation.navigate("Onboarding")}
+          testID="button-review-onboarding"
+        >
+          <View style={[styles.reviewOnboardingIcon, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="book-open" size={18} color={theme.text} />
+          </View>
+          <ThemedText type="body" style={{ flex: 1 }}>Review onboarding</ThemedText>
+          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        </Pressable>
+
         <View style={styles.saveSection}>
           <Button onPress={handleSave} loading={isLoading} testID="button-save">
             {Copy.profile.saveChanges}
@@ -112,6 +138,25 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: FontFamily.serifBold,
+    fontWeight: "700",
   },
   content: {
     paddingHorizontal: Spacing.lg,
@@ -143,6 +188,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.xs,
+  },
+  reviewOnboardingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  reviewOnboardingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
   },
   saveSection: {
     marginTop: Spacing["3xl"],

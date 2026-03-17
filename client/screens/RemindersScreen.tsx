@@ -19,12 +19,10 @@ import * as Haptics from "expo-haptics";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
-import { EmptyState } from "@/components/EmptyState";
-import { Button } from "@/components/Button";
 import { AppHeader } from "@/components/AppHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useLocalReminders } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
@@ -205,15 +203,19 @@ export default function RemindersScreen() {
   };
 
   const renderEmpty = () => (
-    <EmptyState
-      title={Copy.remindersScreen.noRemindersTitle}
-      description={Copy.remindersScreen.noRemindersDescription}
-      action={
-        <Button onPress={handleCreatePress} testID="button-create-first" icon="plus">
-          {Copy.remindersScreen.createReminderButton}
-        </Button>
-      }
-    />
+    <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
+      <View style={styles.welcomeDecorativeCircle} />
+      <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive }]}>{Copy.home.welcomeTitle}</Text>
+      <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.home.welcomeText}</Text>
+      <Pressable
+        style={[styles.ctaButton, { backgroundColor: theme.saveButtonActive }]}
+        onPress={handleCreatePress}
+        testID="button-create-first"
+      >
+        <Feather name="plus" size={20} color={theme.buttonText} style={{ marginRight: Spacing.sm }} />
+        <Text style={[styles.ctaButtonText, { color: theme.buttonText }]}>{Copy.home.createReminderButton}</Text>
+      </Pressable>
+    </View>
   );
 
   const renderItem = ({ item }: { item: LocalReminder }) => (
@@ -234,13 +236,13 @@ export default function RemindersScreen() {
             style={[
               styles.checkbox,
               {
-                borderColor: selectedIds.has(item.id) ? theme.primary : theme.border,
-                backgroundColor: selectedIds.has(item.id) ? theme.primary : "transparent",
+                borderColor: selectedIds.has(item.id) ? theme.saveButtonActive : theme.border,
+                backgroundColor: selectedIds.has(item.id) ? theme.saveButtonActive : "transparent",
               },
             ]}
           >
             {selectedIds.has(item.id) ? (
-              <Feather name="check" size={14} color="#FFFFFF" />
+              <Feather name="check" size={14} color={theme.buttonText} />
             ) : null}
           </View>
         </Pressable>
@@ -264,8 +266,8 @@ export default function RemindersScreen() {
         <Switch
           value={item.isActive}
           onValueChange={() => handleToggle(item)}
-          trackColor={{ false: theme.borderLight, true: theme.primary + "60" }}
-          thumbColor={item.isActive ? theme.primary : theme.textTertiary}
+          trackColor={{ false: theme.borderLight, true: theme.saveButtonActive + "60" }}
+          thumbColor={item.isActive ? theme.saveButtonActive : theme.textTertiary}
           style={styles.switch}
         />
       </View>
@@ -302,7 +304,7 @@ export default function RemindersScreen() {
           }}
           style={styles.toolbarButton}
         >
-          <ThemedText type="body" style={{ color: theme.primary }}>
+          <ThemedText type="body" style={{ color: "#2C2118" }}>
             {isSelecting ? (allSelected ? Copy.remindersScreen.deselectAll : Copy.remindersScreen.selectAll) : Copy.remindersScreen.selectAll}
           </ThemedText>
         </Pressable>
@@ -455,5 +457,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     marginTop: Spacing.xs,
+  },
+  welcomeCard: {
+    padding: Spacing.xl,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
+    marginBottom: Spacing.lg,
+    overflow: "hidden",
+  },
+  welcomeDecorativeCircle: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    bottom: -30,
+    right: -30,
+    backgroundColor: "#C5E8EE",
+    opacity: 0.7,
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontFamily: FontFamily.serifBold,
+    marginBottom: Spacing.sm,
+  },
+  welcomeText: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: FontFamily.sansRegular,
+    marginBottom: Spacing.xl,
+  },
+  ctaButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: BorderRadius["2xl"],
+  },
+  ctaButtonText: {
+    fontSize: 16,
+    fontFamily: FontFamily.sansSemiBold,
   },
 });

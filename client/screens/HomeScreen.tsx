@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,59 +6,81 @@ import {
   ScrollView,
   Pressable,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
-import { Card } from "@/components/Card";
 import { AppHeader } from "@/components/AppHeader";
-import { Button } from "@/components/Button";
 import { stopAlarm } from "@/services/notifications";
 import { useLocalReminders, useLocalHistory } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
+const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
+
 export default function HomeScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { permissionStatus, openSettings, notificationsAvailable } = useNotificationPermission();
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  
+  const { permissionStatus, openSettings, notificationsAvailable, checkPermissionStatus } = useNotificationPermission();
+  const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
+  const [missedDismissedAt, setMissedDismissedAt] = useState<Date | null>(null);
+
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
-  
+
   const hasReminders = reminders.length > 0;
-  const showNotificationWarning = notificationsAvailable && 
-    permissionStatus !== "granted" && 
-    permissionStatus !== "unavailable" && 
-    hasReminders && 
+  const showNotificationWarning = notificationsAvailable &&
+    permissionStatus !== "granted" &&
+    permissionStatus !== "unavailable" &&
+    hasReminders &&
     !bannerDismissed;
 
-  const incompleteCount = notificationHistory.filter(
-    (item) => item.status !== "completed"
-  ).length;
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+      refreshHistory();
+      checkPermissionStatus();
+      AsyncStorage.getItem(MISSED_DISMISSED_AT_KEY).then((val) => {
+        setMissedDismissedAt(val ? new Date(val) : null);
+      });
+    }, [])
+  );
 
-  const handleComplete = async (expandedKey: string, reminderId: string, title: string) => {
+  const handleDismissMissed = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const now = new Date();
+    await AsyncStorage.setItem(MISSED_DISMISSED_AT_KEY, now.toISOString());
+    setMissedDismissedAt(now);
+  };
+
+  const buildScheduledAt = (displayTime: string): string => {
+    const [hours, minutes] = displayTime.split(":").map(Number);
+    const d = new Date();
+    d.setHours(hours, minutes, 0, 0);
+    return d.toISOString();
+  };
+
+  const handleComplete = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
     await stopAlarm();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setCompletedIds(prev => new Set(prev).add(expandedKey));
-
+    setActionedIds(prev => new Set(prev).add(expandedKey));
     LocalDatabase.addHistoryEntry({
       reminderId,
       title,
-      scheduledAt: new Date().toISOString(),
+      scheduledAt: buildScheduledAt(displayTime),
       status: 'completed',
       completedAt: new Date().toISOString(),
     });
@@ -67,12 +89,38 @@ export default function HomeScreen() {
     refreshHistory();
   };
 
+  const handleSkip = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
+    await stopAlarm();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setActionedIds(prev => new Set(prev).add(expandedKey));
+    LocalDatabase.addHistoryEntry({
+      reminderId,
+      title,
+      scheduledAt: buildScheduledAt(displayTime),
+      status: 'skipped',
+    });
+    LocalDatabase.updateReminder(reminderId, {});
+    refresh();
+    refreshHistory();
+  };
+
+  const handleSnooze = async (expandedKey: string, reminderId: string, title: string, displayTime: string) => {
+    await stopAlarm();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActionedIds(prev => new Set(prev).add(expandedKey));
+    LocalDatabase.addHistoryEntry({
+      reminderId,
+      title,
+      scheduledAt: buildScheduledAt(displayTime),
+      status: 'snoozed',
+    });
+    refresh();
+    refreshHistory();
+  };
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
+
   const threeDaysFromNow = new Date(today);
   threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
@@ -108,6 +156,17 @@ export default function HomeScreen() {
     })
     .flatMap(expandReminder);
 
+  const unresolvedCount = notificationHistory.filter((entry) => {
+    if (entry.status === "completed" || entry.status === "skipped" || entry.status === "snoozed") return false;
+    const scheduled = new Date(entry.scheduledAt);
+    scheduled.setHours(0, 0, 0, 0);
+    if (scheduled >= today) return false;
+    if (missedDismissedAt && new Date(entry.scheduledAt) <= missedDismissedAt) return false;
+    return true;
+  }).length;
+
+  const showUnresolved = unresolvedCount > 0;
+
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(":");
     const hour = parseInt(hours, 10);
@@ -116,214 +175,160 @@ export default function HomeScreen() {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const formatDate = (dateString: string) => {
+  const formatUpcomingDate = (dateString: string) => {
     const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = { weekday: "short", month: "short", day: "numeric" };
-    return date.toLocaleDateString("en-US", options);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    const tomorrowDate = new Date(todayDate);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    if (targetDate.getTime() === tomorrowDate.getTime()) return "TOMORROW";
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
   };
+
+  const isActioned = (key: string) => actionedIds.has(key);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <AppHeader title={Copy.navigation.today} />
+      <AppHeader title={Copy.navigation.today} showGreeting />
 
       {showNotificationWarning ? (
-        <View 
-          style={styles.notificationBanner}
-          testID="banner-notification-warning"
-        >
+        <View style={[styles.notificationBanner, { backgroundColor: theme.error + "15", borderColor: theme.error + "30" }]} testID="banner-notification-warning">
           <View style={styles.notificationBannerHeader}>
-            <Text style={styles.notificationBannerTitle}>
-              {Copy.home.notificationBannerTitle}
-            </Text>
-            <Pressable 
-              onPress={() => setBannerDismissed(true)}
-              style={styles.notificationBannerClose}
-              hitSlop={8}
-            >
+            <Text style={[styles.notificationBannerTitle, { color: theme.error }]}>{Copy.home.notificationBannerTitle}</Text>
+            <Pressable onPress={() => setBannerDismissed(true)} style={styles.notificationBannerClose} hitSlop={8}>
               <Feather name="x" size={18} color={theme.textSecondary} />
             </Pressable>
           </View>
-          <Text style={styles.notificationBannerText}>
-            {Copy.home.notificationBannerText}
-          </Text>
-          <Pressable 
-            onPress={openSettings}
-            style={styles.notificationBannerButton}
-          >
-            <Text style={styles.notificationBannerButtonText}>
-              {Copy.home.notificationBannerButton}
-            </Text>
+          <Text style={[styles.notificationBannerText, { color: theme.textSecondary }]}>{Copy.home.notificationBannerText}</Text>
+          <Pressable onPress={openSettings} style={[styles.notificationBannerButton, { backgroundColor: theme.error }]}>
+            <Text style={[styles.notificationBannerButtonText, { color: theme.buttonText }]}>{Copy.home.notificationBannerButton}</Text>
           </Pressable>
         </View>
       ) : null}
 
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingBottom: tabBarHeight + 80,
-          },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
       >
         {reminders.length === 0 ? (
-          <View style={[styles.welcomeCard, { backgroundColor: "#D5DBD6" }]}>
-            <Text style={[styles.welcomeTitle, { color: theme.text }]}>
-              {Copy.home.welcomeTitle}
-            </Text>
-            <Text style={[styles.welcomeText, { color: theme.textSecondary }]}>
-              {Copy.home.welcomeText}
-            </Text>
+          <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
+            <View style={styles.welcomeDecorativeCircle} />
+            <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive }]}>{Copy.home.welcomeTitle}</Text>
+            <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.home.welcomeText}</Text>
             <Pressable
-              style={[styles.ctaButton, { backgroundColor: theme.primary }]}
+              style={[styles.ctaButton, { backgroundColor: theme.saveButtonActive }]}
               onPress={() => navigation.navigate("CreateReminder")}
               testID="button-create-reminder"
             >
-              <Text style={styles.ctaButtonText}>
-                {Copy.home.createReminderButton}
-              </Text>
+              <Feather name="plus" size={20} color={theme.buttonText} style={{ marginRight: Spacing.sm }} />
+              <Text style={[styles.ctaButtonText, { color: theme.buttonText }]}>{Copy.home.createReminderButton}</Text>
             </Pressable>
           </View>
         ) : null}
 
         {todaysReminders.length > 0 ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              {Copy.home.todaysReminders}
-            </Text>
-            {todaysReminders.map((reminder) => {
-              const isCompleted = completedIds.has(reminder.expandedKey);
-              return (
-                <Card key={reminder.expandedKey} style={styles.reminderCard}>
-                  <View style={styles.reminderContent}>
-                    <View
-                      style={[
-                        styles.typeIndicator,
-                        {
-                          backgroundColor:
-                            reminder.reminderType === "cycle"
-                              ? Colors.light.accentCoral
-                              : Colors.light.accentMint,
-                        },
-                      ]}
-                    />
-                    <View style={styles.reminderInfo}>
-                      <View style={styles.titleRow}>
-                        <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                          {reminder.title}
-                        </Text>
-                      </View>
-                      <Text style={[styles.reminderTime, { color: theme.textSecondary }]}>
-                        {Copy.home.timeToday(formatTime(reminder.displayTime))}
-                      </Text>
-                      {reminder.notes ? (
-                        <Text 
-                          style={[styles.reminderNotes, { color: theme.textSecondary }]}
-                          numberOfLines={2}
-                        >
-                          {reminder.notes}
-                        </Text>
-                      ) : null}
-                      {showNotificationWarning ? (
-                        <Text style={styles.notificationsDisabledText}>
-                          {Copy.home.notificationsDisabled}
-                        </Text>
-                      ) : (
-                        <Text style={[styles.reminderStatus, { color: theme.textTertiary }]}>
-                          {Copy.home.statusActive}
-                        </Text>
-                      )}
-                    </View>
-                    <Pressable 
-                      style={[
-                        styles.takenButton,
-                        { 
-                          backgroundColor: isCompleted ? theme.success : theme.primary,
-                          opacity: isCompleted ? 0.6 : 1,
-                        }
-                      ]}
-                      onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title)}
-                      disabled={isCompleted}
-                      testID={`button-complete-${reminder.expandedKey}`}
-                    >
-                      <Text style={styles.takenButtonText}>
-                        {isCompleted ? Copy.home.doneButton : Copy.home.takeButton}
-                      </Text>
-                    </Pressable>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.todaysReminders}</Text>
+            {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => (
+              <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.activeCardTop}>
+                  <View style={[styles.bellIconCircle, { backgroundColor: theme.info + "25" }]}>
+                    <Feather name="bell" size={18} color={theme.info} />
                   </View>
-                </Card>
-              );
-            })}
+                  <View style={styles.activeCardInfo}>
+                    <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
+                    {reminder.notes ? (
+                      <Text style={[styles.activeNotes, { color: theme.textSecondary }]} numberOfLines={2}>
+                        {reminder.notes}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.activeTime, { color: theme.textSecondary }]}>
+                    {formatTime(reminder.displayTime)}
+                  </Text>
+                </View>
+                <View style={styles.actionRow}>
+                  <Pressable onPress={() => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
+                    <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.snoozeButton}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
+                    <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.skipButton}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.takeButton, { backgroundColor: theme.info }]}
+                    onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
+                    testID={`button-complete-${reminder.expandedKey}`}
+                  >
+                    <Text style={[styles.takeButtonText, { color: theme.buttonText }]}>{Copy.home.takeButton}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {showUnresolved ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.unresolved}</Text>
+            <Pressable
+              style={[styles.unresolvedCard, { backgroundColor: isDark ? "#3D2A1E" : "#F0E6D8" }]}
+              onPress={() => navigation.navigate("History")}
+              testID="button-unresolved-card"
+            >
+              <View style={styles.unresolvedHeader}>
+                <View style={styles.unresolvedIconRow}>
+                  <View style={[styles.unresolvedIconCircle, { backgroundColor: theme.accentCoral + "20" }]}>
+                    <Feather name="clock" size={16} color={theme.accentCoral} />
+                  </View>
+                  <Text style={[styles.unresolvedTitle, { color: theme.accentCoral }]}>{Copy.home.unresolvedTitle}</Text>
+                </View>
+                <Pressable
+                  onPress={handleDismissMissed}
+                  hitSlop={8}
+                >
+                  <Feather name="x" size={18} color={theme.textTertiary} />
+                </Pressable>
+              </View>
+              <Text style={[styles.unresolvedBody, { color: theme.text }]}>{Copy.home.unresolvedBody}</Text>
+              <Text style={[styles.unresolvedSubtext, { color: theme.textSecondary }]}>{Copy.home.unresolvedSubtext}</Text>
+              <Text style={[styles.viewHistoryLink, { color: theme.text }]}>{Copy.home.viewHistory}</Text>
+            </Pressable>
           </View>
         ) : null}
 
         {upcomingReminders.length > 0 ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              {Copy.home.upcoming}
-            </Text>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.upcoming}</Text>
             {upcomingReminders.map((reminder) => (
-              <Card key={reminder.expandedKey} style={styles.reminderCard}>
-                <View style={styles.reminderContent}>
-                  <View
-                    style={[
-                      styles.typeIndicator,
-                      {
-                        backgroundColor:
-                          reminder.reminderType === "cycle"
-                            ? Colors.light.accentCoral
-                            : Colors.light.accentMint,
-                      },
-                    ]}
-                  />
-                  <View style={styles.reminderInfo}>
-                    <Text style={[styles.reminderTitle, { color: theme.text }]}>
-                      {reminder.title}
-                    </Text>
-                    <Text style={[styles.reminderMeta, { color: theme.textSecondary }]}>
-                      {Copy.home.dateAtTime(formatDate(reminder.nextOccurrence || ""), formatTime(reminder.displayTime))}
-                    </Text>
+              <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.upcomingCardContent}>
+                  <View style={[styles.upcomingBellCircle, { backgroundColor: "#FFFFFF" }]}>
+                    <Feather name="bell" size={18} color={theme.textTertiary} />
+                  </View>
+                  <View style={styles.upcomingInfo}>
+                    <Text style={[styles.upcomingTitle, { color: theme.text }]}>{reminder.title}</Text>
                     {reminder.notes ? (
-                      <Text 
-                        style={[styles.reminderNotes, { color: theme.textSecondary }]}
-                        numberOfLines={2}
-                      >
+                      <Text style={[styles.upcomingNotes, { color: theme.textSecondary }]} numberOfLines={2}>
                         {reminder.notes}
                       </Text>
                     ) : null}
-                    {showNotificationWarning ? (
-                      <Text style={styles.notificationsDisabledText}>
-                        {Copy.home.notificationsDisabled}
-                      </Text>
-                    ) : null}
+                  </View>
+                  <View style={styles.upcomingDateCol}>
+                    <Text style={[styles.upcomingDateLabel, { color: theme.textSecondary }]}>
+                      {formatUpcomingDate(reminder.nextOccurrence || "")}
+                    </Text>
+                    <Text style={[styles.upcomingTimeLabel, { color: theme.textSecondary }]}>
+                      {formatTime(reminder.displayTime)}
+                    </Text>
                   </View>
                 </View>
-              </Card>
+              </View>
             ))}
           </View>
         ) : null}
 
-        {notificationHistory.length > 0 && incompleteCount > 3 ? (
-          <Pressable 
-            style={[styles.historyBanner, { backgroundColor: theme.backgroundDefault }]}
-            onPress={() => navigation.navigate("History")}
-            testID="button-view-history"
-          >
-            <View style={styles.historyContent}>
-              <Text style={[styles.historyTitle, { color: theme.text }]}>
-                {Copy.home.checkHistory}
-              </Text>
-              <Text style={[styles.historyText, { color: theme.textSecondary }]}>
-                {Copy.home.checkHistoryText(incompleteCount)}
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={24} color={theme.textSecondary} />
-          </Pressable>
-        ) : null}
-
-        <Text style={[styles.versionText, { color: theme.textTertiary }]}>
-          v1.0.10
-        </Text>
       </ScrollView>
     </View>
   );
@@ -338,113 +343,207 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   welcomeCard: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
     marginBottom: Spacing.lg,
+    overflow: "hidden",
+  },
+  welcomeDecorativeCircle: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    bottom: -30,
+    right: -30,
+    backgroundColor: "#C5E8EE",
+    opacity: 0.7,
   },
   welcomeTitle: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 26,
+    fontFamily: FontFamily.serifBold,
     marginBottom: Spacing.sm,
   },
   welcomeText: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
-    marginBottom: Spacing.lg,
+    fontFamily: FontFamily.sansRegular,
+    marginBottom: Spacing.xl,
   },
   ctaButton: {
-    paddingVertical: 14,
-    borderRadius: BorderRadius.lg,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: BorderRadius["2xl"],
   },
   ctaButtonText: {
-    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FontFamily.sansSemiBold,
   },
   section: {
     marginBottom: Spacing.xl,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+  sectionLabel: {
+    fontSize: 12,
+    fontFamily: FontFamily.sansSemiBold,
+    letterSpacing: 1.5,
     marginBottom: Spacing.md,
   },
-  reminderCard: {
+  activeCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     marginBottom: Spacing.sm,
   },
-  reminderContent: {
+  activeCardTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
-  typeIndicator: {
-    width: 4,
+  bellIconCircle: {
+    width: 40,
     height: 40,
-    borderRadius: 2,
-    marginRight: Spacing.md,
-  },
-  reminderInfo: {
-    flex: 1,
-  },
-  reminderTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  reminderTime: {
-    fontSize: 14,
-  },
-  reminderMeta: {
-    fontSize: 14,
-  },
-  reminderNotes: {
-    fontSize: 14,
-    marginTop: Spacing.xs,
-    lineHeight: 18,
-  },
-  reminderStatus: {
-    fontSize: 12,
-    marginTop: Spacing.sm,
-  },
-  takenButton: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: Spacing.md,
   },
-  takenButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  historyBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.xl,
-  },
-  historyContent: {
+  activeCardInfo: {
     flex: 1,
   },
-  historyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+  activeTitle: {
+    fontSize: 16,
+    fontFamily: FontFamily.sansSemiBold,
+    marginBottom: 2,
+  },
+  activeNotes: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansRegular,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  activeTime: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansMedium,
+    marginLeft: Spacing.sm,
+    marginTop: 2,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: Spacing.lg,
+  },
+  textActionButton: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansSemiBold,
+    letterSpacing: 0.5,
+  },
+  takeButton: {
+    paddingHorizontal: Spacing["2xl"],
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+  },
+  takeButtonText: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansSemiBold,
+    letterSpacing: 0.5,
+  },
+  unresolvedCard: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
+    padding: Spacing.lg,
+  },
+  unresolvedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.sm,
+  },
+  unresolvedIconRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  unresolvedIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unresolvedTitle: {
+    fontSize: 15,
+    fontFamily: FontFamily.sansSemiBold,
+  },
+  unresolvedBody: {
+    fontSize: 14,
+    fontFamily: FontFamily.sansSemiBold,
     marginBottom: Spacing.xs,
   },
-  historyText: {
+  unresolvedSubtext: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansRegular,
+    lineHeight: 18,
+    marginBottom: Spacing.md,
+  },
+  viewHistoryLink: {
     fontSize: 14,
-    lineHeight: 20,
+    fontFamily: FontFamily.sansSemiBold,
+  },
+  upcomingCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  upcomingCardContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  upcomingBellCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  upcomingInfo: {
+    flex: 1,
+  },
+  upcomingTitle: {
+    fontSize: 16,
+    fontFamily: FontFamily.sansSemiBold,
+    marginBottom: 2,
+  },
+  upcomingNotes: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansRegular,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  upcomingDateCol: {
+    alignItems: "flex-end",
+    marginLeft: Spacing.sm,
+  },
+  upcomingDateLabel: {
+    fontSize: 11,
+    fontFamily: FontFamily.sansSemiBold,
+    letterSpacing: 0.5,
+  },
+  upcomingTimeLabel: {
+    fontSize: 13,
+    fontFamily: FontFamily.sansRegular,
+    marginTop: 2,
   },
   notificationBanner: {
-    backgroundColor: Colors.light.error + "15",
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.sm,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: "#FECACA",
     padding: Spacing.md,
   },
   notificationBannerHeader: {
@@ -455,55 +554,23 @@ const styles = StyleSheet.create({
   },
   notificationBannerTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.error,
+    fontFamily: FontFamily.sansSemiBold,
   },
   notificationBannerClose: {
     padding: 4,
   },
   notificationBannerText: {
-    color: Colors.light.textSecondary,
     fontSize: 14,
+    fontFamily: FontFamily.sansRegular,
     marginBottom: Spacing.md,
   },
   notificationBannerButton: {
-    backgroundColor: Colors.light.error,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
     alignItems: "center",
   },
   notificationBannerButtonText: {
-    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "600",
-  },
-  cardWarningBadge: {
-    position: "absolute",
-    top: Spacing.sm,
-    right: Spacing.sm,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.light.warning,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
-  versionText: {
-    textAlign: "center",
-    fontSize: 12,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.md,
-  },
-  notificationsDisabledText: {
-    color: Colors.light.error,
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: Spacing.xs,
+    fontFamily: FontFamily.sansSemiBold,
   },
 });

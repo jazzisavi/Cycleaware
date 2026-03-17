@@ -1,13 +1,14 @@
 import React from "react";
-import { FlatList, StyleSheet, View, RefreshControl } from "react-native";
+import { FlatList, StyleSheet, View, RefreshControl, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useLocalHistory } from "@/hooks/useLocalReminders";
 import type { LocalHistoryEntry } from "@/services/LocalDatabase";
@@ -15,6 +16,7 @@ import type { LocalHistoryEntry } from "@/services/LocalDatabase";
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const navigation = useNavigation();
 
   const { history, isLoaded, refresh } = useLocalHistory();
 
@@ -121,6 +123,18 @@ export default function HistoryScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={[styles.backButton, { backgroundColor: theme.backgroundDefault }]}
+          hitSlop={8}
+        >
+          <Feather name="arrow-left" size={20} color={theme.text} />
+        </Pressable>
+        <ThemedText style={styles.headerTitle}>
+          {Copy.history.title}
+        </ThemedText>
+      </View>
       <FlatList
         data={history}
         renderItem={renderItem}
@@ -129,7 +143,7 @@ export default function HistoryScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: Spacing.lg,
+            paddingTop: Spacing.md,
             paddingBottom: insets.bottom + Spacing["2xl"],
             flex: history.length === 0 ? 1 : undefined,
           },
@@ -146,6 +160,25 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: FontFamily.serifBold,
+    fontWeight: "700",
   },
   listContent: {
     paddingHorizontal: Spacing.lg,

@@ -77,7 +77,7 @@ export function ActionConfirmationToast({
     <Animated.View
       style={[
         styles.container,
-        { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
+        { backgroundColor: theme.backgroundSecondary, borderColor: theme.border, shadowColor: theme.text },
         animatedStyle,
       ]}
     >
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    shadowColor: "#000",
+    shadowColor: undefined,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

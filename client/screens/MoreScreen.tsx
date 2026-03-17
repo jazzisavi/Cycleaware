@@ -1,15 +1,21 @@
 import React from "react";
-import { StyleSheet, View, ScrollView, Pressable } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { reloadAppAsync } from "expo";
+import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
+import Constants from "expo-constants";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { SettingsRow } from "@/components/SettingsRow";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -22,98 +28,133 @@ export default function MoreScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { isSubscribed, currentPlan } = useSubscription();
 
+  const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+  const platformInfo = `${Platform.OS} ${Platform.Version}`;
+
+  const handleClose = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+
+  const handleSupportEmail = (type: "issue" | "feature") => {
+    const subject =
+      type === "issue" ? Copy.more.issueEmailSubject : Copy.more.featureEmailSubject;
+    const body =
+      type === "issue"
+        ? Copy.more.issueEmailBody(appVersion, platformInfo)
+        : Copy.more.featureEmailBody(appVersion, platformInfo);
+
+    const mailto = `mailto:${Copy.more.supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    Linking.openURL(mailto);
+  };
+
   return (
     <ThemedView style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <Pressable
+          onPress={handleClose}
+          style={[styles.closeButton, { backgroundColor: theme.backgroundSecondary }]}
+          testID="button-close-account"
+        >
+          <Feather name="x" size={20} color={theme.text} />
+        </Pressable>
+        <ThemedText style={styles.headerTitle}>{Copy.more.title}</ThemedText>
+        <View style={styles.closeButton} />
+      </View>
+
       <ScrollView
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Spacing.lg,
             paddingBottom: insets.bottom + Spacing["2xl"],
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <SectionHeader title={Copy.more.settingsSection} />
-        <SettingsRow
-          icon="clock"
-          iconColor={theme.warning}
-          title={Copy.more.historyTitle}
-          subtitle={Copy.more.historySubtitle}
-          onPress={() => navigation.navigate("History")}
-          testID="row-history"
-        />
-        <SettingsRow
-          icon="pause-circle"
-          iconColor={theme.info}
-          title={Copy.more.snoozeTitle}
-          subtitle={Copy.more.snoozeSubtitle}
-          onPress={() => navigation.navigate("SnoozeSettings")}
-          testID="row-snooze"
-        />
-        <SettingsRow
-          icon="volume-2"
-          iconColor={theme.success}
-          title={Copy.more.alarmSoundsTitle}
-          subtitle={Copy.more.alarmSoundsSubtitle}
-          onPress={() => navigation.navigate("AlarmSounds")}
-          testID="row-sounds"
-        />
-
-        <SectionHeader title={Copy.more.accountSection} />
         <Pressable
           onPress={() => navigation.navigate("Paywall")}
-          style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: isSubscribed ? theme.success : theme.borderLight }]}
+          style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault }]}
           testID="card-subscription"
         >
           <View style={styles.subscriptionHeader}>
-            <ThemedText type="h4">
-              {isSubscribed ? `GoFlo Pro` : Copy.more.freeTrialTitle}
+            <ThemedText type="h3">
+              {isSubscribed ? "GoFlo Pro" : Copy.more.freeTrialTitle}
             </ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
-              <ThemedText type="caption" style={{ color: theme.success }}>
-                {isSubscribed ? (currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel) : Copy.common.active}
+              <ThemedText type="caption" style={[styles.badgeText, { color: theme.success }]}>
+                {isSubscribed ? (currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel) : Copy.more.activeBadge}
               </ThemedText>
             </View>
           </View>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {isSubscribed ? Copy.paywall.subscribedMessage : Copy.more.trialRemaining(30)}
+            {isSubscribed ? Copy.paywall.subscribedMessage : Copy.more.freeTrialSubtitle}
           </ThemedText>
         </Pressable>
 
         <SettingsRow
           icon="user"
-          iconColor={theme.primary}
+          iconColor={theme.warning}
           title={Copy.more.profileTitle}
           subtitle={Copy.more.profileSubtitle}
           onPress={() => navigation.navigate("Profile")}
           testID="row-profile"
         />
+
+        <SectionHeader title={Copy.more.settingsSection} />
+
         <SettingsRow
-          icon="mail"
-          iconColor={theme.textSecondary}
-          title={Copy.more.emailTitle}
-          value={Copy.more.emailNotSet}
-          onPress={() => navigation.navigate("Profile")}
-          testID="row-email"
-        />
-        <SettingsRow
-          icon="log-out"
-          iconColor={theme.error}
-          title={Copy.more.signOutTitle}
-          showChevron={false}
-          onPress={() => {}}
-          testID="row-signout"
+          icon="clock"
+          iconColor={theme.info}
+          title={Copy.more.historyTitle}
+          subtitle={Copy.more.historySubtitle}
+          onPress={() => navigation.navigate("History")}
+          testID="row-history"
         />
 
-        <SectionHeader title={Copy.more.aboutSection} />
+        <SectionHeader title={Copy.more.supportSection} />
+
         <SettingsRow
-          icon="info"
-          title={Copy.more.versionTitle}
-          value="1.0.0"
-          showChevron={false}
-          testID="row-version"
+          icon="alert-circle"
+          iconColor={theme.error}
+          title={Copy.more.reportIssueTitle}
+          subtitle={Copy.more.reportIssueSubtitle}
+          onPress={() => handleSupportEmail("issue")}
+          testID="row-report-issue"
         />
+
+        <SettingsRow
+          icon="message-circle"
+          iconColor={theme.info}
+          title={Copy.more.requestFeatureTitle}
+          subtitle={Copy.more.requestFeatureSubtitle}
+          onPress={() => handleSupportEmail("feature")}
+          testID="row-request-feature"
+        />
+
+        <View style={styles.devSection}>
+          <SettingsRow
+            icon="refresh-cw"
+            iconColor={theme.warning}
+            title="Reset Onboarding"
+            subtitle="See the onboarding screens again"
+            onPress={async () => {
+              await AsyncStorage.removeItem("@goflo/onboarding_complete");
+              await AsyncStorage.removeItem("@goflo/user_name");
+              reloadAppAsync();
+            }}
+            testID="row-reset-onboarding"
+          />
+        </View>
+
+        <ThemedText
+          type="small"
+          style={[styles.versionText, { color: theme.textTertiary }]}
+          testID="text-app-version"
+        >
+          v{appVersion}
+        </ThemedText>
       </ScrollView>
     </ThemedView>
   );
@@ -123,17 +164,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontFamily: FontFamily.serifBold,
+    fontSize: 20,
+    lineHeight: 28,
+    textAlign: "center",
+    flex: 1,
+  },
   content: {
     paddingHorizontal: Spacing.lg,
-  },
-  screenTitle: {
-    marginBottom: Spacing.lg,
+    paddingTop: Spacing.xl,
   },
   subscriptionCard: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   subscriptionHeader: {
     flexDirection: "row",
@@ -145,5 +204,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.xs,
+  },
+  badgeText: {
+    fontWeight: "600",
+  },
+  devSection: {
+    marginTop: Spacing["3xl"],
+  },
+  versionText: {
+    textAlign: "center" as const,
+    marginTop: Spacing.xl,
   },
 });

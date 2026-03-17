@@ -7,24 +7,23 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import HomeScreen from "@/screens/HomeScreen";
 import RemindersScreen from "@/screens/RemindersScreen";
-import { Colors, Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/useTheme";
 import type { RootStackParamList } from "./RootStackNavigator";
+import { useTheme } from "@/hooks/useTheme";
 
 const Tab = createBottomTabNavigator();
 
 function CreateButton() {
-  const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { theme } = useTheme();
 
   return (
     <View style={styles.createButtonContainer}>
       <Pressable
-        style={[styles.createButton, { backgroundColor: theme.primary }]}
+        style={[styles.createButton, { backgroundColor: theme.saveButtonActive }]}
         onPress={() => navigation.navigate("CreateReminder")}
         testID="fab-create"
       >
-        <Feather name="plus" size={28} color="#FFFFFF" />
+        <Feather name="plus" size={28} color={theme.buttonText} />
       </Pressable>
     </View>
   );
@@ -38,14 +37,17 @@ export default function MainTabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.backgroundDefault,
-          borderTopColor: theme.border,
+          backgroundColor: theme.backgroundRoot,
+          borderTopColor: "transparent",
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
           height: 85,
           paddingBottom: 25,
           paddingTop: 10,
         },
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.textSecondary,
+        tabBarActiveTintColor: theme.saveButtonActive,
+        tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "500",
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
   createButton: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

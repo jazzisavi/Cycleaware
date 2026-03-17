@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { FlatList, StyleSheet, View, Pressable, Platform } from "react-native";
+import { StyleSheet, View, Pressable, ScrollView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
 
-import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { AlarmService, AlarmSoundId } from "@/services/AlarmService";
 
@@ -78,91 +77,97 @@ export default function AlarmSoundsScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: AlarmSound }) => {
-    const isSelected = selectedSound === item.id;
-    const isPlaying = playingSound === item.id;
-
-    return (
-      <Pressable
-        onPress={() => handleSelect(item.id)}
-        style={[
-          styles.soundItem,
-          {
-            backgroundColor: isSelected ? theme.primary + "10" : theme.backgroundDefault,
-            borderColor: isSelected ? theme.primary : theme.borderLight,
-          },
-        ]}
-        testID={`sound-option-${item.id}`}
-      >
-        <View style={styles.soundInfo}>
-          {isSelected ? (
-            <View style={[styles.radioOuter, { borderColor: theme.primary }]}>
-              <View style={[styles.radioInner, { backgroundColor: theme.primary }]} />
-            </View>
-          ) : (
-            <View style={[styles.radioOuter, { borderColor: theme.border }]} />
-          )}
-          <ThemedText type="body" style={{ marginLeft: Spacing.md }}>
-            {Copy.alarmSounds.sounds[item.labelKey]}
-          </ThemedText>
-        </View>
-        <Pressable
-          onPress={() => handlePlay(item.id)}
-          style={[styles.playButton, { backgroundColor: theme.backgroundSecondary }]}
-          hitSlop={8}
-          testID={`play-sound-${item.id}`}
-        >
-          <Feather
-            name={isPlaying ? "pause" : "play"}
-            size={18}
-            color={theme.primary}
-          />
-        </Pressable>
-      </Pressable>
-    );
-  };
-
   return (
-    <ThemedView style={styles.container}>
-      <FlatList
-        data={ALARM_SOUNDS}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <ThemedText type="h2" style={styles.title}>
-              {Copy.alarmSounds.title}
-            </ThemedText>
-            <ThemedText type="body" style={[styles.description, { color: theme.textSecondary }]}>
-              {Copy.alarmSounds.description}
-            </ThemedText>
-          </View>
-        }
-        ListFooterComponent={
-          <View style={styles.footer}>
-            {Platform.OS === "web" ? (
-              <View style={[styles.webNotice, { backgroundColor: theme.warning + "20" }]}>
-                <Feather name="alert-circle" size={18} color={theme.warning} />
-                <ThemedText type="small" style={{ color: theme.warning, marginLeft: Spacing.sm, flex: 1 }}>
-                  {Copy.alarmSounds.webNotice}
-                </ThemedText>
-              </View>
-            ) : null}
-            <Button onPress={handleSave} loading={isLoading} testID="button-save-sound">
-              {Copy.alarmSounds.saveButton}
-            </Button>
-          </View>
-        }
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={[styles.backButton, { backgroundColor: theme.backgroundDefault }]}
+          hitSlop={8}
+          testID="button-back-alarm"
+        >
+          <Feather name="arrow-left" size={20} color={theme.text} />
+        </Pressable>
+        <ThemedText style={styles.headerTitle}>
+          {Copy.alarmSounds.title}
+        </ThemedText>
+        <View style={styles.backButton} />
+      </View>
+
+      <ScrollView
         contentContainerStyle={[
-          styles.listContent,
-          {
-            paddingTop: Spacing.lg,
-            paddingBottom: insets.bottom + Spacing["2xl"],
-          },
+          styles.content,
+          { paddingBottom: insets.bottom + Spacing["2xl"] },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
-      />
-    </ThemedView>
+      >
+        <View style={styles.soundsList}>
+          {ALARM_SOUNDS.map((item) => {
+            const isSelected = selectedSound === item.id;
+            const isPlaying = playingSound === item.id;
+
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => handleSelect(item.id)}
+                style={[
+                  styles.soundItem,
+                  {
+                    backgroundColor: isSelected ? theme.pillActiveBg : theme.backgroundDefault,
+                    borderColor: isSelected ? theme.pillActiveBorder : "transparent",
+                    borderWidth: isSelected ? 1.5 : 1.5,
+                  },
+                  !isSelected && { borderColor: "transparent" },
+                ]}
+                testID={`sound-option-${item.id}`}
+              >
+                <View style={styles.soundInfo}>
+                  {isSelected ? (
+                    <View style={[styles.radioOuter, { borderColor: theme.pillActiveBorder }]}>
+                      <View style={[styles.radioInner, { backgroundColor: theme.pillActiveBorder }]} />
+                    </View>
+                  ) : (
+                    <View style={[styles.radioOuter, { borderColor: theme.border }]} />
+                  )}
+                  <ThemedText type="body" style={{ marginLeft: Spacing.md }}>
+                    {Copy.alarmSounds.sounds[item.labelKey]}
+                  </ThemedText>
+                </View>
+                <Pressable
+                  onPress={() => handlePlay(item.id)}
+                  hitSlop={8}
+                  testID={`play-sound-${item.id}`}
+                >
+                  <Feather
+                    name={isPlaying ? "pause" : "play"}
+                    size={20}
+                    color={isSelected ? theme.pillActiveBorder : theme.border}
+                  />
+                </Pressable>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {Platform.OS === "web" ? (
+          <View style={[styles.webNotice, { backgroundColor: theme.warning + "20" }]}>
+            <Feather name="alert-circle" size={18} color={theme.warning} />
+            <ThemedText type="small" style={{ color: theme.warning, marginLeft: Spacing.sm, flex: 1 }}>
+              {Copy.alarmSounds.webNotice}
+            </ThemedText>
+          </View>
+        ) : null}
+
+        <Button
+          onPress={handleSave}
+          loading={isLoading}
+          style={[styles.saveButton, { backgroundColor: theme.saveButtonActive }]}
+          testID="button-save-sound"
+        >
+          {Copy.alarmSounds.saveButton}
+        </Button>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -170,26 +175,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  listContent: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: FontFamily.serifBold,
+    fontWeight: "700",
+  },
+  content: {
     paddingHorizontal: Spacing.lg,
   },
-  header: {
+  soundsList: {
+    gap: Spacing.sm,
     marginBottom: Spacing["2xl"],
-  },
-  title: {
-    marginBottom: Spacing.sm,
-  },
-  description: {
-    marginBottom: Spacing.lg,
   },
   soundItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.full,
   },
   soundInfo: {
     flexDirection: "row",
@@ -208,15 +226,9 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
-  playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footer: {
-    marginTop: Spacing.xl,
+  saveButton: {
+    marginTop: Spacing.lg,
+    borderRadius: BorderRadius.full,
   },
   webNotice: {
     flexDirection: "row",

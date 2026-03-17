@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert } from "react-native";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert, KeyboardAvoidingView, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -47,6 +47,7 @@ export default function CreateReminderScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { requestPermission } = useNotificationPermission();
+  const titleInputRef = useRef<RNTextInput>(null);
 
   const reminderId = route.params?.reminderId;
   const isEditMode = !!reminderId;
@@ -81,6 +82,12 @@ export default function CreateReminderScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const { reminder: reminderData } = useLocalReminder(isEditMode ? reminderId : undefined);
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setTimeout(() => titleInputRef.current?.focus(), 300);
+    }
+  }, [isEditMode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -130,12 +137,12 @@ export default function CreateReminderScreen() {
           setEndDate(new Date(reminderData.cycleEndDate));
         }
       } else if (reminderData.reminderType === "calendar") {
-        if (reminderData.repeatUnit === "day") {
-          setFrequency("interval");
-          setIntervalDays(reminderData.repeatInterval || 1);
-        } else {
+        if (reminderData.weeklyRepeatDays && reminderData.weeklyRepeatDays.length > 0) {
           setFrequency("weekdays");
           setSelectedWeekdays(reminderData.weeklyRepeatDays || []);
+        } else {
+          setFrequency("interval");
+          setIntervalDays(reminderData.repeatInterval || 1);
         }
         if (reminderData.calendarStartDate) {
           setStartDate(new Date(reminderData.calendarStartDate));
@@ -150,6 +157,7 @@ export default function CreateReminderScreen() {
   }, [reminderData, isEditMode, isLoaded]);
 
   const handleFrequencyChange = (f: FrequencyType) => {
+    Keyboard.dismiss();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (f === frequency) return;
     setFrequency(f);
@@ -159,8 +167,14 @@ export default function CreateReminderScreen() {
     setCycleStartDate(null);
     setIntervalDays(1);
     setSelectedWeekdays([]);
-    setStartDate(null);
     setEndDate(null);
+    if (f === "interval" || f === "weekdays") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setStartDate(today);
+    } else {
+      setStartDate(null);
+    }
   };
 
   const toggleWeekday = (day: string) => {
@@ -263,7 +277,12 @@ export default function CreateReminderScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const canSave = title.trim() && frequency !== null;
+  const handleClearEndDate = () => {
+    setEndDate(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const canSave = title.trim() && frequency !== null && reminderTimes.length > 0;
 
   const handleSave = async () => {
     if (!canSave || isSaving) return;
@@ -302,7 +321,7 @@ export default function CreateReminderScreen() {
         payload = {
           ...payload,
           reminderType: "calendar" as const,
-          repeatUnit: "day",
+          repeatUnit: "day" as const,
           repeatInterval: intervalDays,
           calendarStartDate: start.toISOString(),
           calendarEndDate: endDate ? endDate.toISOString() : null,
@@ -369,40 +388,82 @@ export default function CreateReminderScreen() {
   };
 
   const iconColor = useCallback((hasData: boolean) => {
-    return hasData ? "#E8614F" : "#6B5744";
-  }, []);
+    return hasData ? theme.iconFilled : theme.iconEmpty;
+  }, [theme]);
 
-  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 999) => (
-    <View style={styles.stepperContainer}>
-      <View style={[styles.stepperValueBox, { borderColor: theme.border }]}>
-        <RNTextInput
-          style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.serifBold }]}
-          keyboardType="number-pad"
-          value={String(value)}
-          onChangeText={(text) => {
-            const num = parseInt(text, 10);
-            if (!isNaN(num)) {
-              onChangeValue(Math.max(min, Math.min(max, num)));
-            } else if (text === "") {
-              onChangeValue(min);
-            }
-          }}
-          selectTextOnFocus
-        />
-        <ThemedText type="caption" style={[styles.stepperUnit, { color: "#6B5744" }]}>{unitLabel}</ThemedText>
+  const renderStepper = (value: number, onDecrement: () => void, onIncrement: () => void, unitLabel: string, onChangeValue: (v: number) => void, min: number = 1, max: number = 99) => (
+    <View style={styles.stepperOuterRow}>
+      <View style={[styles.stepperContainer, { borderColor: theme.border }]}>
+        <Pressable
+          style={[styles.stepperButton, { backgroundColor: theme.backgroundSecondary }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
+        >
+          <Feather name="minus" size={20} color={theme.text} />
+        </Pressable>
+        <View style={styles.stepperValueBox}>
+          <RNTextInput
+            style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+            keyboardType="number-pad"
+            maxLength={2}
+            value={String(value)}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9]/g, "").slice(0, 2);
+              const num = parseInt(cleaned, 10);
+              if (!isNaN(num)) {
+                onChangeValue(Math.max(min, Math.min(max, num)));
+              } else if (cleaned === "") {
+                onChangeValue(min);
+              }
+            }}
+            selectTextOnFocus
+          />
+        </View>
+        <Pressable
+          style={[styles.stepperButton, { backgroundColor: theme.backgroundSecondary }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
+        >
+          <Feather name="plus" size={20} color={theme.text} />
+        </Pressable>
       </View>
-      <Pressable
-        style={[styles.stepperButton, { borderColor: theme.border }]}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
-      >
-        <Feather name="minus" size={18} color={theme.text} />
-      </Pressable>
-      <Pressable
-        style={[styles.stepperButton, { borderColor: theme.border }]}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
-      >
-        <Feather name="plus" size={18} color={theme.text} />
-      </Pressable>
+      <ThemedText type="body" style={[styles.stepperUnitLabel, { color: theme.text, fontFamily: FontFamily.sansBold }]}>{unitLabel}</ThemedText>
+    </View>
+  );
+
+  const renderMiniStepper = (label: string, value: number, onDecrement: () => void, onIncrement: () => void, onChangeValue: (v: number) => void, min: number = 1, max: number = 99) => (
+    <View style={styles.dayRangeItem}>
+      <ThemedText type="caption" style={[styles.dayRangeLabel, { color: theme.text }]}>{label}</ThemedText>
+      <View style={[styles.miniStepperContainer, { borderColor: theme.border }]}>
+        <Pressable
+          style={[styles.miniStepperButton, { backgroundColor: theme.backgroundSecondary }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecrement(); }}
+        >
+          <Feather name="minus" size={16} color={theme.text} />
+        </Pressable>
+        <View style={styles.miniStepperValueBox}>
+          <RNTextInput
+            style={[styles.miniStepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+            keyboardType="number-pad"
+            maxLength={2}
+            value={String(value)}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9]/g, "").slice(0, 2);
+              const num = parseInt(cleaned, 10);
+              if (!isNaN(num)) {
+                onChangeValue(Math.max(min, Math.min(max, num)));
+              } else if (cleaned === "") {
+                onChangeValue(min);
+              }
+            }}
+            selectTextOnFocus
+          />
+        </View>
+        <Pressable
+          style={[styles.miniStepperButton, { backgroundColor: theme.backgroundSecondary }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onIncrement(); }}
+        >
+          <Feather name="plus" size={16} color={theme.text} />
+        </Pressable>
+      </View>
     </View>
   );
 
@@ -416,17 +477,39 @@ export default function CreateReminderScreen() {
     extra?: React.ReactNode,
   ) => (
     <Pressable style={styles.detailRow} onPress={onPress} testID={`row-${label.toLowerCase().replace(/\s/g, "-")}`}>
-      <View style={[styles.detailIconContainer, { backgroundColor: hasData ? "#FDEEE9" : "#F0EBE3" }]}>
+      <View style={[styles.detailIconContainer, { backgroundColor: hasData ? theme.pillActiveBg : theme.backgroundSecondary }]}>
         <Feather name={iconName} size={18} color={iconColor(hasData)} />
       </View>
       <View style={styles.detailContent}>
         <ThemedText type="body" style={[styles.detailLabel, { fontFamily: FontFamily.sansSemiBold }]}>{label}</ThemedText>
-        <ThemedText type="small" style={{ color: "#6B5744" }}>{subtitle}</ThemedText>
+        <ThemedText type="small" style={{ color: theme.textSecondary }}>{subtitle}</ThemedText>
       </View>
       {extra}
-      {showChevron ? <Feather name="chevron-right" size={20} color="#6B5744" /> : null}
+      {showChevron ? <Feather name="chevron-right" size={20} color={theme.textSecondary} /> : null}
     </Pressable>
   );
+
+  const renderEndDateRow = () => {
+    const endDateExtra = endDate ? (
+      <Pressable
+        onPress={handleClearEndDate}
+        hitSlop={8}
+        style={{ marginRight: Spacing.xs }}
+      >
+        <Feather name="x-circle" size={20} color={theme.textSecondary} />
+      </Pressable>
+    ) : undefined;
+
+    return renderDetailRow(
+      "calendar",
+      Copy.createReminder.endDate,
+      endDate ? formatDate(endDate) : Copy.common.never,
+      true,
+      () => handleOpenDatePicker("end"),
+      true,
+      endDateExtra,
+    );
+  };
 
   const renderFrequencyPill = (type: FrequencyType, label: string) => {
     const isActive = frequency === type;
@@ -434,17 +517,18 @@ export default function CreateReminderScreen() {
       <Pressable
         style={[
           styles.pill,
-          { borderColor: isActive ? "#E8614F" : theme.border },
-          isActive && { backgroundColor: "#F9E8E4" },
+          { borderColor: isActive ? theme.pillActiveBorder : theme.border, backgroundColor: isActive ? theme.pillActiveBg : theme.backgroundDefault },
         ]}
         onPress={() => handleFrequencyChange(type)}
         testID={`pill-${type}`}
       >
-        {isActive ? <Feather name="check" size={14} color="#E8614F" style={{ marginRight: 4 }} /> : null}
-        <ThemedText type="small" style={[styles.pillText, isActive && { color: "#E8614F" }]}>{label}</ThemedText>
+        {isActive ? <Feather name="check" size={14} color={theme.pillActiveBorder} style={{ marginRight: 4 }} /> : null}
+        <ThemedText type="small" style={[styles.pillText, isActive && { color: theme.pillActiveBorder }]}>{label}</ThemedText>
       </Pressable>
     );
   };
+
+  const intervalUnitLabel = intervalDays === 1 ? "DAY" : "DAYS";
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -465,9 +549,10 @@ export default function CreateReminderScreen() {
       >
         <View style={[styles.nameCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
           <RNTextInput
+            ref={titleInputRef}
             style={[styles.nameInput, { color: theme.text, fontFamily: FontFamily.sansRegular }]}
             placeholder={Copy.createReminder.namePlaceholder}
-            placeholderTextColor="#6B5744"
+            placeholderTextColor={theme.textSecondary}
             value={title}
             onChangeText={setTitle}
             testID="input-title"
@@ -477,7 +562,7 @@ export default function CreateReminderScreen() {
         <View style={styles.frequencySection}>
           <View style={styles.frequencyHeader}>
             <ThemedText type="h2" style={styles.sectionTitle}>{Copy.createReminder.frequencyTitle}</ThemedText>
-            <ThemedText type="caption" style={[styles.chooseOneLabel, { color: "#6B5744" }]}>{Copy.createReminder.chooseOne}</ThemedText>
+            <ThemedText type="caption" style={[styles.chooseOneLabel, { color: theme.textSecondary }]}>{Copy.createReminder.chooseOne}</ThemedText>
           </View>
           <View style={styles.pillRow}>
             {renderFrequencyPill("cycle", Copy.createReminder.cyclePill)}
@@ -487,137 +572,128 @@ export default function CreateReminderScreen() {
         </View>
 
         {frequency === "cycle" ? (
-          <>
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="h4" style={styles.cardTitle}>{Copy.createReminder.cycleLength}</ThemedText>
-              <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
-                {Copy.createReminder.cycleLengthDescription}
-              </ThemedText>
-              {renderStepper(
-                cycleLength,
-                () => setCycleLength(Math.max(1, cycleLength - 1)),
-                () => setCycleLength(cycleLength + 1),
-                Copy.createReminder.daysLabel,
-                setCycleLength,
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.cycleLength}</ThemedText>
+            <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
+              {Copy.createReminder.cycleLengthDescription}
+            </ThemedText>
+            {renderStepper(
+              cycleLength,
+              () => {
+                const newLength = Math.max(2, cycleLength - 1);
+                setCycleLength(newLength);
+                if (cycleDayEnd > newLength) setCycleDayEnd(newLength);
+                if (cycleDayStart >= newLength) setCycleDayStart(Math.max(1, newLength - 1));
+              },
+              () => setCycleLength(Math.min(99, cycleLength + 1)),
+              Copy.createReminder.daysLabel,
+              (v: number) => {
+                const newLength = Math.max(2, Math.min(99, v));
+                setCycleLength(newLength);
+                if (cycleDayEnd > newLength) setCycleDayEnd(newLength);
+                if (cycleDayStart >= newLength) setCycleDayStart(Math.max(1, newLength - 1));
+              },
+              2,
+              99,
+            )}
+
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.dayRange}</ThemedText>
+            <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
+              {Copy.createReminder.dayRangeDescription}
+            </ThemedText>
+            <View style={styles.dayRangeRow}>
+              {renderMiniStepper(
+                Copy.createReminder.fromDay,
+                cycleDayStart,
+                () => setCycleDayStart(Math.max(1, cycleDayStart - 1)),
+                () => {
+                  const newStart = cycleDayStart + 1;
+                  if (newStart < cycleDayEnd) setCycleDayStart(newStart);
+                },
+                (v: number) => {
+                  const clamped = Math.max(1, Math.min(cycleDayEnd - 1, Math.min(99, v)));
+                  setCycleDayStart(clamped);
+                },
+                1,
+                99,
               )}
-
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-
-              <ThemedText type="h4" style={styles.cardTitle}>{Copy.createReminder.dayRange}</ThemedText>
-              <ThemedText type="small" style={[styles.cardDescription, { color: "#6B5744" }]}>
-                {Copy.createReminder.dayRangeDescription}
-              </ThemedText>
-              <View style={styles.dayRangeRow}>
-                <View style={styles.dayRangeItem}>
-                  <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.fromDay}</ThemedText>
-                  <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
-                    <RNTextInput
-                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.serifBold }]}
-                      keyboardType="number-pad"
-                      value={String(cycleDayStart)}
-                      onChangeText={(text) => {
-                        const num = parseInt(text, 10);
-                        if (!isNaN(num)) setCycleDayStart(Math.max(1, Math.min(cycleLength, num)));
-                        else if (text === "") setCycleDayStart(1);
-                      }}
-                      selectTextOnFocus
-                    />
-                  </View>
-                  <View style={styles.dayRangeSteppers}>
-                    <Pressable onPress={() => setCycleDayStart(Math.max(1, cycleDayStart - 1))}>
-                      <Feather name="minus" size={16} color={theme.text} />
-                    </Pressable>
-                    <Pressable onPress={() => setCycleDayStart(Math.min(cycleLength, cycleDayStart + 1))}>
-                      <Feather name="plus" size={16} color={theme.text} />
-                    </Pressable>
-                  </View>
-                </View>
-                <View style={styles.dayRangeItem}>
-                  <ThemedText type="caption" style={[styles.dayRangeLabel, { color: "#6B5744" }]}>{Copy.createReminder.toDay}</ThemedText>
-                  <View style={[styles.dayRangeInput, { borderColor: theme.border }]}>
-                    <RNTextInput
-                      style={[styles.dayRangeInputText, { color: theme.text, fontFamily: FontFamily.serifBold }]}
-                      keyboardType="number-pad"
-                      value={String(cycleDayEnd)}
-                      onChangeText={(text) => {
-                        const num = parseInt(text, 10);
-                        if (!isNaN(num)) setCycleDayEnd(Math.max(cycleDayStart, Math.min(cycleLength, num)));
-                        else if (text === "") setCycleDayEnd(cycleDayStart);
-                      }}
-                      selectTextOnFocus
-                    />
-                  </View>
-                  <View style={styles.dayRangeSteppers}>
-                    <Pressable onPress={() => setCycleDayEnd(Math.max(cycleDayStart, cycleDayEnd - 1))}>
-                      <Feather name="minus" size={16} color={theme.text} />
-                    </Pressable>
-                    <Pressable onPress={() => setCycleDayEnd(Math.min(cycleLength, cycleDayEnd + 1))}>
-                      <Feather name="plus" size={16} color={theme.text} />
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
-
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-
-              <Pressable style={styles.dateRow} onPress={() => handleOpenDatePicker("cycleStart")}>
-                <Feather name="calendar" size={20} color={iconColor(!!cycleStartDate)} />
-                <View style={styles.dateRowText}>
-                  <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.cycleStart}</ThemedText>
-                  <ThemedText type="small" style={{ color: "#6B5744" }}>
-                    {cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate}
-                  </ThemedText>
-                </View>
-                <Feather name="chevron-right" size={20} color="#6B5744" />
-              </Pressable>
-
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-
-              {renderTimeRows()}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("calendar", Copy.createReminder.endDate, endDate ? formatDate(endDate) : Copy.common.never, !!endDate, () => handleOpenDatePicker("end"))}
+              {renderMiniStepper(
+                Copy.createReminder.toDay,
+                cycleDayEnd,
+                () => {
+                  const newEnd = cycleDayEnd - 1;
+                  if (newEnd > cycleDayStart) setCycleDayEnd(newEnd);
+                },
+                () => {
+                  const newEnd = cycleDayEnd + 1;
+                  if (newEnd > cycleLength) setCycleLength(Math.min(99, newEnd));
+                  if (newEnd <= 99) setCycleDayEnd(newEnd);
+                },
+                (v: number) => {
+                  const clamped = Math.max(cycleDayStart + 1, Math.min(99, v));
+                  setCycleDayEnd(clamped);
+                  if (clamped > cycleLength) setCycleLength(clamped);
+                },
+                1,
+                99,
+              )}
             </View>
-          </>
+
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.startDate}</ThemedText>
+            <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
+              {Copy.createReminder.startDateDescription}
+            </ThemedText>
+            {renderDetailRow("calendar", Copy.createReminder.cycleStart, cycleStartDate ? formatDate(cycleStartDate) : Copy.createReminder.selectDate, !!cycleStartDate, () => handleOpenDatePicker("cycleStart"))}
+
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.details}</ThemedText>
+            {renderTimeRows()}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderEndDateRow()}
+          </View>
         ) : null}
 
         {frequency === "interval" ? (
-          <>
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>{Copy.createReminder.repeatsEvery}</ThemedText>
-              {renderStepper(
-                intervalDays,
-                () => setIntervalDays(Math.max(1, intervalDays - 1)),
-                () => setIntervalDays(intervalDays + 1),
-                Copy.createReminder.daysUnit,
-                setIntervalDays,
-              )}
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.repeatsEvery}</ThemedText>
+            {renderStepper(
+              intervalDays,
+              () => setIntervalDays(Math.max(1, intervalDays - 1)),
+              () => setIntervalDays(Math.min(99, intervalDays + 1)),
+              intervalUnitLabel,
+              (v: number) => setIntervalDays(Math.max(1, Math.min(99, v))),
+              1,
+              99,
+            )}
 
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
-              {renderDetailRow("calendar", Copy.createReminder.start, startDate ? formatDate(startDate) : Copy.createReminder.selectDate, !!startDate, () => handleOpenDatePicker("start"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderTimeRows()}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
-              <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-              {renderDetailRow("calendar", Copy.createReminder.endDate, endDate ? formatDate(endDate) : Copy.common.never, !!endDate, () => handleOpenDatePicker("end"))}
-            </View>
-          </>
+            {renderDetailRow("calendar", Copy.createReminder.start, startDate ? formatDate(startDate) : Copy.createReminder.selectDate, !!startDate, () => handleOpenDatePicker("start"))}
+
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
+            {renderTimeRows()}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
+            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+            {renderEndDateRow()}
+          </View>
         ) : null}
 
         {frequency === "weekdays" ? (
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>{Copy.createReminder.repeatOn}</ThemedText>
+            <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.repeatOn}</ThemedText>
             <View style={styles.weekdayRow}>
               {WEEKDAY_LABELS.map((label, index) => {
                 const key = WEEKDAY_KEYS[index];
@@ -626,14 +702,14 @@ export default function CreateReminderScreen() {
                   <Pressable
                     key={key}
                     style={[
-                      styles.weekdayCircle,
-                      isSelected && { backgroundColor: "#F9E8E4" },
-                      !isSelected && { backgroundColor: theme.backgroundDefault, borderWidth: 1, borderColor: theme.border },
+                      styles.weekdayButton,
+                      isSelected && { backgroundColor: theme.pillActiveBg, borderColor: theme.pillActiveBorder, borderWidth: 1 },
+                      !isSelected && { backgroundColor: theme.backgroundSecondary },
                     ]}
                     onPress={() => toggleWeekday(key)}
                     testID={`weekday-${key}`}
                   >
-                    <ThemedText type="small" style={[styles.weekdayText, isSelected && { color: "#E8614F" }]}>{label}</ThemedText>
+                    <ThemedText type="small" style={[styles.weekdayText, isSelected && { color: theme.pillActiveBorder }]}>{label}</ThemedText>
                   </Pressable>
                 );
               })}
@@ -642,16 +718,16 @@ export default function CreateReminderScreen() {
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
 
             {renderDetailRow("calendar", Copy.createReminder.start, startDate ? formatDate(startDate) : Copy.createReminder.selectDate, !!startDate, () => handleOpenDatePicker("start"))}
+
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
+
             {renderTimeRows()}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("edit-3", Copy.createReminder.doseNotes, notes || Copy.createReminder.doseNotesPlaceholder, !!notes, () => setShowNotesInput(true))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-            {renderDetailRow("volume-2", Copy.createReminder.notificationSound, soundName, true, () => navigation.navigate("AlarmSounds"))}
-            <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             {renderDetailRow("clock", Copy.createReminder.snoozeDuration, snoozeDuration, true, () => navigation.navigate("SnoozeSettings"))}
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
-            {renderDetailRow("calendar", Copy.createReminder.endDate, endDate ? formatDate(endDate) : Copy.common.never, !!endDate, () => handleOpenDatePicker("end"))}
+            {renderEndDateRow()}
           </View>
         ) : null}
 
@@ -666,31 +742,42 @@ export default function CreateReminderScreen() {
         <Pressable
           style={[
             styles.saveButton,
-            { backgroundColor: canSave ? "#E8614F" : "#E8C4B8" },
+            { backgroundColor: canSave ? theme.saveButtonActive : theme.saveButtonDisabled },
           ]}
           onPress={handleSave}
           disabled={!canSave || isSaving}
           testID="button-save"
         >
-          <ThemedText type="button" style={styles.saveButtonText}>{Copy.createReminder.saveButton}</ThemedText>
+          <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>{Copy.createReminder.saveButton}</ThemedText>
         </Pressable>
       </View>
 
       {showTimePicker && Platform.OS === "android" ? (
-        <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} />
+        <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} accentColor={theme.saveButtonActive} />
       ) : null}
 
       <Modal
         visible={showTimePicker && Platform.OS !== "android"}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowTimePicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.remindMeAt}</ThemedText>
+        <View style={[styles.fullModal, { backgroundColor: theme.backgroundRoot }]}>
+          <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+            <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
+              <Feather name="arrow-left" size={20} color={theme.text} />
+            </Pressable>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>Select time</ThemedText>
+          </View>
+          <View style={[styles.helpCard, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="info" size={18} color={theme.warning} style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+            <ThemedText type="body" style={{ flex: 1, color: theme.text, fontFamily: FontFamily.sansRegular }}>
+              Choose a time that works with your daily routine.
+            </ThemedText>
+          </View>
+          <View style={[styles.pickerCard, { backgroundColor: theme.backgroundDefault }]}>
             {Platform.OS === "web" ? (
-              <View style={{ alignItems: "center" }}>
+              <View style={{ alignItems: "center", padding: Spacing.xl }}>
                 <RNTextInput
                   style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
                   value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
@@ -703,96 +790,115 @@ export default function CreateReminderScreen() {
                     }
                   }}
                   placeholder="HH:MM"
-                  placeholderTextColor="#6B5744"
+                  placeholderTextColor={theme.textSecondary}
                   keyboardType="numbers-and-punctuation"
                   maxLength={5}
                 />
               </View>
             ) : (
-              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} />
+              <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} accentColor={theme.saveButtonActive} textColor={theme.text} />
             )}
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
-                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveTime}>
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-              </Pressable>
-            </View>
+          </View>
+          <View style={{ flex: 1 }} />
+          <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <Pressable style={[styles.fullModalSaveButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleSaveTime}>
+              <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>Save</ThemedText>
+            </Pressable>
           </View>
         </View>
       </Modal>
 
       {showDatePicker && Platform.OS === "android" ? (
-        <DateTimePicker value={tempDate} mode="date" display="default" onChange={handleDateChange} />
+        <DateTimePicker value={tempDate} mode="date" display="default" onChange={handleDateChange} accentColor={theme.saveButtonActive} />
       ) : null}
 
       <Modal
         visible={showDatePicker !== null && Platform.OS !== "android"}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowDatePicker(null)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>
-              {showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
+        <View style={[styles.fullModal, { backgroundColor: theme.backgroundRoot }]}>
+          <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+            <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
+              <Feather name="chevron-left" size={20} color={theme.text} />
+            </Pressable>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>
+              {showDatePicker === "cycleStart" ? "Cycle start date" : showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
             </ThemedText>
+          </View>
+          <View style={[styles.helpCard, { backgroundColor: theme.backgroundSecondary }]}>
+            <Feather name="info" size={18} color={theme.warning} style={{ marginRight: Spacing.sm, marginTop: 2 }} />
+            <ThemedText type="body" style={{ flex: 1, color: theme.text, fontFamily: FontFamily.sansRegular }}>
+              {showDatePicker === "cycleStart"
+                ? "Select the start date of your therapeutic cycle or day 1 of your last bleed."
+                : "Select a date for your reminder."}
+            </ThemedText>
+          </View>
+          <View style={[styles.pickerCard, { backgroundColor: theme.backgroundDefault }]}>
             {Platform.OS === "web" ? (
-              <RNTextInput
-                style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
-                value={tempDate.toISOString().split("T")[0]}
-                onChangeText={(text) => {
-                  const d = new Date(text);
-                  if (!isNaN(d.getTime())) setTempDate(d);
-                }}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#6B5744"
-                maxLength={10}
-              />
+              <View style={{ alignItems: "center", padding: Spacing.xl }}>
+                <RNTextInput
+                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                  value={tempDate.toISOString().split("T")[0]}
+                  onChangeText={(text) => {
+                    const d = new Date(text);
+                    if (!isNaN(d.getTime())) setTempDate(d);
+                  }}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={theme.textSecondary}
+                  maxLength={10}
+                />
+              </View>
             ) : (
-              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} />
+              <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} accentColor={theme.saveButtonActive} textColor={theme.text} />
             )}
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
-                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={handleSaveDate}>
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-              </Pressable>
-            </View>
+          </View>
+          <View style={{ flex: 1 }} />
+          <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <Pressable style={[styles.fullModalSaveButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleSaveDate}>
+              <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>
+                {showDatePicker === "cycleStart" ? "Save Reminder" : "Save"}
+              </ThemedText>
+            </Pressable>
           </View>
         </View>
       </Modal>
 
       <Modal
         visible={showNotesInput}
-        transparent
-        animationType="fade"
+        animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setShowNotesInput(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText type="h3" style={{ marginBottom: Spacing.lg }}>{Copy.createReminder.doseNotes}</ThemedText>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.backgroundRoot }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}>
+          <View style={[styles.fullModalHeader, { paddingTop: insets.top + Spacing.sm }]}>
+            <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
+              <Feather name="arrow-left" size={20} color={theme.text} />
+            </Pressable>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>Add notes</ThemedText>
+          </View>
+          <ThemedText type="body" style={[styles.notesSubtitle, { color: theme.textSecondary }]}>
+            Add any specific instructions for this reminder.
+          </ThemedText>
+          <View style={[styles.notesCard, { flexGrow: 1, flexShrink: 1, backgroundColor: theme.backgroundDefault }]}>
             <RNTextInput
-              style={[styles.notesModalInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+              style={[styles.notesCardInput, { fontFamily: FontFamily.sansRegular, color: theme.text }]}
               value={notes}
               onChangeText={setNotes}
-              placeholder={Copy.createReminder.doseNotesPlaceholder}
-              placeholderTextColor="#6B5744"
+              placeholder="e.g., Take with water, before breakfast..."
+              placeholderTextColor={theme.textTertiary}
               multiline
               autoFocus
+              textAlignVertical="top"
             />
-            <View style={styles.modalButtons}>
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
-                <ThemedText type="body">{Copy.common.cancel}</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.modalButton, { backgroundColor: "#E8614F" }]} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                <ThemedText type="body" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.common.done}</ThemedText>
-              </Pressable>
-            </View>
           </View>
-        </View>
+          <View style={[styles.fullModalFooter, { paddingBottom: insets.bottom + Spacing.lg }]}>
+            <Pressable style={[styles.fullModalSaveButton, { backgroundColor: theme.saveButtonActive }]} onPress={() => { setShowNotesInput(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+              <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>Save</ThemedText>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -803,19 +909,19 @@ export default function CreateReminderScreen() {
         {reminderTimes.map((time, index) => (
           <View key={index}>
             <View style={styles.detailRow}>
-              <View style={[styles.detailIconContainer, { backgroundColor: "#FDEEE9" }]}>
-                <Feather name="bell" size={18} color="#E8614F" />
+              <View style={[styles.detailIconContainer, { backgroundColor: theme.pillActiveBg }]}>
+                <Feather name="bell" size={18} color={theme.iconFilled} />
               </View>
               <Pressable style={styles.detailContent} onPress={() => handleOpenTimePicker(index)}>
                 <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.remindMeAt}</ThemedText>
-                <ThemedText type="small" style={{ color: "#6B5744" }}>{formatTime(time)}</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>{formatTime(time)}</ThemedText>
               </Pressable>
               {reminderTimes.length > 1 ? (
                 <Pressable onPress={() => handleRemoveTime(index)} hitSlop={8} testID={`remove-time-${index}`}>
-                  <Feather name="x" size={18} color="#6B5744" />
+                  <Feather name="x" size={18} color={theme.textSecondary} />
                 </Pressable>
               ) : (
-                <Feather name="chevron-right" size={20} color="#6B5744" />
+                <Feather name="chevron-right" size={20} color={theme.textSecondary} />
               )}
             </View>
             {index < reminderTimes.length - 1 ? <View style={[styles.divider, { backgroundColor: theme.borderLight }]} /> : null}
@@ -830,10 +936,10 @@ export default function CreateReminderScreen() {
           <>
             <View style={[styles.divider, { backgroundColor: theme.borderLight }]} />
             <Pressable style={styles.addTimeRow} onPress={() => handleOpenTimePicker(null)} testID="button-add-time">
-              <View style={[styles.addTimeIcon, { borderColor: "#E8614F" }]}>
-                <Feather name="plus" size={14} color="#E8614F" />
+              <View style={[styles.addTimeIcon, { borderColor: theme.pillActiveBorder }]}>
+                <Feather name="plus" size={14} color={theme.pillActiveBorder} />
               </View>
-              <ThemedText type="small" style={{ color: "#E8614F", fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.addAnotherTime}</ThemedText>
+              <ThemedText type="small" style={{ color: theme.pillActiveBorder, fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.addAnotherTime}</ThemedText>
             </Pressable>
           </>
         ) : null}
@@ -896,13 +1002,14 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   pill: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    backgroundColor: "#FFFFFF",
   },
   pillText: {
     fontFamily: FontFamily.sansSemiBold,
@@ -915,39 +1022,47 @@ const styles = StyleSheet.create({
   cardTitle: {
     marginBottom: Spacing.xs,
   },
+  inCardHeading: {
+    fontFamily: FontFamily.sansBold,
+    fontSize: 16,
+    marginBottom: Spacing.xs,
+  },
   cardDescription: {
     marginBottom: Spacing.lg,
+  },
+  stepperOuterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
   },
   stepperContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
+    alignSelf: "flex-start",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 6,
+    gap: 6,
   },
   stepperValueBox: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-    minWidth: 90,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   stepperValueInput: {
-    fontSize: 22,
-    minWidth: 30,
-    textAlign: "center",
+    fontSize: 24,
+    minWidth: 36,
     padding: 0,
+    textAlign: "center",
   },
-  stepperUnit: {
-    textTransform: "uppercase",
-    letterSpacing: 1,
+  stepperUnitLabel: {
+    fontSize: 16,
   },
   stepperButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -957,34 +1072,43 @@ const styles = StyleSheet.create({
   },
   dayRangeRow: {
     flexDirection: "row",
-    gap: Spacing.xl,
+    gap: Spacing.lg,
   },
   dayRangeItem: {
     flex: 1,
   },
   dayRangeLabel: {
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: Spacing.xs,
-    fontFamily: FontFamily.sansSemiBold,
+    marginBottom: Spacing.sm,
+    fontFamily: FontFamily.sansBold,
+    fontSize: 15,
+    lineHeight: 22,
   },
-  dayRangeInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    alignItems: "center",
-  },
-  dayRangeInputText: {
-    fontSize: 22,
-    textAlign: "center",
-    padding: 0,
-    minWidth: 30,
-  },
-  dayRangeSteppers: {
+  miniStepperContainer: {
     flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 6,
+    gap: 6,
+  },
+  miniStepperButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.xl,
-    marginTop: Spacing.sm,
+  },
+  miniStepperValueBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing.xs,
+  },
+  miniStepperValueInput: {
+    fontSize: 24,
+    padding: 0,
+    textAlign: "center",
+    minWidth: 30,
   },
   dateRow: {
     flexDirection: "row",
@@ -994,14 +1118,6 @@ const styles = StyleSheet.create({
   },
   dateRowText: {
     flex: 1,
-  },
-  standaloneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.sm,
-    marginBottom: Spacing.md,
   },
   detailRow: {
     flexDirection: "row",
@@ -1023,12 +1139,13 @@ const styles = StyleSheet.create({
   weekdayRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
-  weekdayCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  weekdayButton: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: BorderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1064,7 +1181,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonText: {
-    color: "#FFFFFF",
     fontSize: 18,
     fontFamily: FontFamily.sansSemiBold,
   },
@@ -1073,28 +1189,66 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     marginTop: Spacing.md,
   },
-  modalOverlay: {
+  fullModal: {
     flex: 1,
-    backgroundColor: "rgba(44, 33, 24, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
   },
-  modalContent: {
-    width: "85%",
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-  },
-  modalButtons: {
+  fullModalHeader: {
     flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
     gap: Spacing.md,
-    marginTop: Spacing.xl,
   },
-  modalButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: BorderRadius.md,
+  backCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  fullModalTitle: {
+    fontFamily: FontFamily.serifBold,
+    fontSize: 24,
+  },
+  helpCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginHorizontal: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+  },
+  pickerCard: {
+    marginHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    overflow: "hidden",
+  },
+  fullModalFooter: {
+    paddingHorizontal: Spacing.lg,
+  },
+  fullModalSaveButton: {
+    height: 56,
+    borderRadius: BorderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notesSubtitle: {
+    fontFamily: FontFamily.sansRegular,
+    fontSize: 14,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  notesCard: {
+    marginHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    minHeight: 250,
+  },
+  notesCardInput: {
+    fontSize: 16,
+    flex: 1,
+    textAlignVertical: "top",
+    padding: 0,
   },
   webTimeInput: {
     fontSize: 24,
@@ -1103,13 +1257,5 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
     width: 150,
-  },
-  notesModalInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    minHeight: 100,
-    textAlignVertical: "top",
-    fontSize: 16,
   },
 });

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "189250274532",
+    "project_id": "cycleaware-14ab8",
+    "storage_bucket": "cycleaware-14ab8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189250274532:android:0966493746aa80130a98f1",
+        "android_client_info": {
+          "package_name": "com.goflo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBeFBFOe8npLbKEafC5Wnz5xoPCqDO3XsQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

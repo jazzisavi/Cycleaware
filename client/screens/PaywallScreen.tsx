@@ -291,7 +291,7 @@ function PlanCard({
           {period}
         </ThemedText>
       </View>
-      <View style={styles.radioOuter}>
+      <View style={[styles.radioOuter, { borderColor: selected ? theme.primary : theme.border }]}>
         {selected ? (
           <View style={[styles.radioInner, { backgroundColor: theme.primary }]} />
         ) : null}
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#D9D0C3",
+    borderColor: undefined,
     justifyContent: "center",
     alignItems: "center",
   },

@@ -2,7 +2,7 @@
   "expo": {
     "name": "GoFlo",
     "slug": "goflo",
-    "version": "1.0.10",
+    "version": "1.0.13",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "goflo",
@@ -14,8 +14,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#6B9BD1",
-        "foregroundImage": "./assets/images/icon.png"
+        "backgroundColor": "#E8614F",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -33,9 +33,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FAFBFC",
+          "backgroundColor": "#E8614F",
           "dark": {
-            "backgroundColor": "#1F2123"
+            "backgroundColor": "#E8614F"
           }
         }
       ],
@@ -48,7 +48,10 @@
           "color": "#6B9BD1",
           "defaultChannel": "reminders"
         }
-      ]
+      ],
+      "./plugins/withAndroidPickerTheme",
+      "@react-native-firebase/app",
+      "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js"
     ],
     "experiments": {
       "reactCompiler": true

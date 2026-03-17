@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -18,6 +18,7 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
+import AnimatedSplashScreen from "@/screens/AnimatedSplashScreen";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { ActionConfirmationProvider, useActionConfirmation } from "@/contexts/ActionConfirmationContext";
@@ -31,8 +32,8 @@ import {
   checkLastNotificationResponse,
   syncAllNotifications,
 } from "@/services/notifications";
-import { registerBackgroundNotificationTask } from "@/services/backgroundNotificationTask";
 import { onAppLaunchSync } from "@/services/pushSync";
+import { initFirebase } from "@/services/firebase";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,14 +43,16 @@ function AppContent() {
   useEffect(() => {
     LocalDatabase.initDatabase();
     setupNotificationCategories();
-    registerBackgroundNotificationTask();
-    
+
     let responseCleanup: (() => void) | null = null;
     let receivedCleanup: (() => void) | null = null;
 
     const actionHandler = async (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string) => {
       const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId);
-      if (result.success && result.message) {
+      if (!result.success) {
+        throw new Error(result.message || "Action failed");
+      }
+      if (result.message) {
         if (result.message === "taken") {
           showConfirmation("taken");
         } else if (result.message === "skipped") {
@@ -68,6 +71,7 @@ function AppContent() {
       await checkLastNotificationResponse(actionHandler);
       await syncAllNotifications();
       onAppLaunchSync();
+      initFirebase();
     };
     
     setupListeners();
@@ -101,6 +105,7 @@ export default function App() {
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
   });
+  const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -109,6 +114,14 @@ export default function App() {
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
+
+  if (showAnimatedSplash) {
+    return (
+      <ErrorBoundary>
+        <AnimatedSplashScreen onFinish={() => setShowAnimatedSplash(false)} />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>

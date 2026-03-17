@@ -43,7 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Expo Go** loads pre-built static JS bundles from `static-build/` folder, NOT the live Metro dev server
 - **After ANY code change**, you MUST run `node scripts/build.js` to rebuild the static bundles, then restart the backend (`Start Backend` workflow) so mobile devices pick up the changes
 - The Metro dev server (`Start Frontend`) only serves the web version; mobile gets served from the backend's static files
-- Build version: v1.0.10
+- Build version: v1.0.13
 
 ### Local-First Data Flow
 - **Reminders**: Created, read, updated, deleted via `LocalDatabase` (SQLite) — no server API calls
@@ -75,7 +75,14 @@ shared/           # Code shared between client and server
   schema.ts       # Drizzle schema (users, push_tokens, cycle_reminder_configs)
 ```
 
+### Onboarding & User Personalization
+- **Onboarding**: 2-page flow shown on first launch (stored via AsyncStorage `@goflo/onboarding_complete`)
+- **User Name**: Captured on onboarding page 2, stored in AsyncStorage `@goflo/user_name`
+- **Greeting**: HomeScreen shows "Good morning/afternoon/evening, [Name]" based on time of day
+- **Hook**: `client/hooks/useUserName.ts` provides `{ name, setName, isLoading }`
+
 ### Key Design Decisions
+- **High-Priority Notifications**: All reminder notifications use iOS Time-Sensitive interruption level and Android IMPORTANCE_HIGH channel ("reminders") for immediate visibility; buffer warnings remain default priority
 - **Hybrid Notification Architecture**: Cycle reminders use server-side Expo Push API (via pushScheduler) for indefinite delivery without app interaction; calendar reminders remain 100% local
 - **Local-First Architecture**: All reminder data stored on-device via expo-sqlite for instant access and offline support
 - **5-Day Local Buffer**: Cycle reminders also schedule 5 days of local notifications as an offline safety net, with a warning notification 1 day before the buffer runs out
@@ -86,7 +93,9 @@ shared/           # Code shared between client and server
 - **Form Design Colors**: `#E8614F` coral (active pill border, filled icons, save button), `#F9E8E4` pill active bg, `#E8C4B8` save disabled, `#6B5744` empty icon/tertiary text color
 - **Component Pattern**: Themed components (`ThemedText`, `ThemedView`) that automatically adapt to color scheme
 - **Centralized Copy**: All user-facing text is managed through `client/constants/copy.ts` for easy maintenance and future i18n support
-- **Sound System**: Excluded from current sprint; `soundEnabled` defaults to `false`
+- **Sound System**: Excluded from current sprint; `soundEnabled` defaults to `false`; notification sound row hidden from reminder creation form
+- **Dark Mode**: Full dark mode support across all screens — all colors use `theme.*` references from `useTheme()` hook; no hardcoded light-mode colors remain (except AnimatedSplashScreen which uses intentional coral branding colors)
+- **Interval Unit**: Interval frequency only supports "Day" unit (no "Week" option); unit label is non-interactive
 
 ### Copy File Guidelines
 - **Location**: `client/constants/copy.ts`
@@ -105,6 +114,13 @@ shared/           # Code shared between client and server
 - **Expo Notifications**: Push notification scheduling for reminders
 - **Expo Haptics**: Tactile feedback on interactions
 - **RevenueCat (react-native-purchases)**: In-app subscription management for iOS App Store and Google Play
+- **Firebase Analytics** (`@react-native-firebase/analytics`): Event tracking and screen view logging
+- **Firebase Crashlytics** (`@react-native-firebase/crashlytics`): Automatic crash reporting and custom error logging
+  - Firebase config: `google-services.json` (Android) at project root
+  - Firebase project: `cycleaware-14ab8`
+  - Service file: `client/services/firebase.ts` — provides `initFirebase()`, `logAnalyticsEvent()`, `logScreenView()`, `recordError()`, `logCrashlyticsMessage()`
+  - Initialized in `client/App.tsx` on app launch
+  - Only active in EAS builds (native), skipped on web platform
 
 ### Subscriptions & Payments
 - **Provider**: RevenueCat via `react-native-purchases` SDK

@@ -1,11 +1,11 @@
 {
-  "id": "a25e25d3-a35c-4743-8881-65c6e04908ee",
-  "createdAt": "2026-03-03T22:51:38.713Z",
+  "id": "ef13ab2b-ad21-4fdc-bc9c-ad5ecdc38c91",
+  "createdAt": "2026-03-16T17:22:39.632Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1772578298713-7388",
+    "key": "bundle-1773681759632-2345",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1772578298713-7388/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1773681759632-2345/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -16,7 +16,7 @@
     "expoClient": {
       "name": "GoFlo",
       "slug": "goflo",
-      "version": "1.0.10",
+      "version": "1.0.13",
       "orientation": "portrait",
       "icon": "./assets/images/icon.png",
       "scheme": "goflo",
@@ -28,13 +28,14 @@
       },
       "android": {
         "adaptiveIcon": {
-          "backgroundColor": "#6B9BD1",
-          "foregroundImage": "./assets/images/icon.png",
-          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png"
+          "backgroundColor": "#E8614F",
+          "foregroundImage": "./assets/images/android-icon-foreground.png",
+          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
-        "package": "com.goflo.app"
+        "package": "com.goflo.app",
+        "googleServicesFile": "{\n  \"project_info\": {\n    \"project_number\": \"189250274532\",\n    \"project_id\": \"cycleaware-14ab8\",\n    \"storage_bucket\": \"cycleaware-14ab8.firebasestorage.app\"\n  },\n  \"client\": [\n    {\n      \"client_info\": {\n        \"mobilesdk_app_id\": \"1:189250274532:android:0966493746aa80130a98f1\",\n        \"android_client_info\": {\n          \"package_name\": \"com.goflo.app\"\n        }\n      },\n      \"oauth_client\": [],\n      \"api_key\": [\n        {\n          \"current_key\": \"AIzaSyBeFBFOe8npLbKEafC5Wnz5xoPCqDO3XsQ\"\n        }\n      ],\n      \"services\": {\n        \"appinvite_service\": {\n          \"other_platform_oauth_client\": []\n        }\n      }\n    }\n  ],\n  \"configuration_version\": \"1\"\n}"
       },
       "web": {
         "output": "single",
@@ -47,9 +48,9 @@
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 200,
             "resizeMode": "contain",
-            "backgroundColor": "#FAFBFC",
+            "backgroundColor": "#E8614F",
             "dark": {
-              "backgroundColor": "#1F2123"
+              "backgroundColor": "#E8614F"
             }
           }
         ],
@@ -62,7 +63,10 @@
             "color": "#6B9BD1",
             "defaultChannel": "reminders"
           }
-        ]
+        ],
+        "./plugins/withAndroidPickerTheme",
+        "@react-native-firebase/app",
+        "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js"
       ],
       "experiments": {
         "reactCompiler": true
@@ -95,6 +99,14 @@
           "expo-notifications": {
             "name": "expo-notifications",
             "version": "0.32.16"
+          },
+          "@react-native-firebase/app": {
+            "name": "@react-native-firebase/app",
+            "version": "23.8.6"
+          },
+          "@react-native-firebase/crashlytics": {
+            "name": "@react-native-firebase/crashlytics",
+            "version": "23.8.6"
           }
         }
       },
@@ -105,7 +117,7 @@
         "web"
       ],
       "androidStatusBar": {
-        "backgroundColor": "#FAFBFC"
+        "backgroundColor": "#E8614F"
       },
       "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
       "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android"
@@ -121,6 +133,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-bf544dd7-cff0-4e7b-9719-6765fc00dca9"
+    "scopeKey": "@anonymous/goflo-57de759e-ebdc-43e4-be71-93d646f5e7f1"
   }
 }

@@ -6,11 +6,10 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
-import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 
 const SNOOZE_OPTIONS = [10, 20, 30, 40, 50, 60, 90, 120];
@@ -23,7 +22,6 @@ export default function SnoozeSettingsScreen() {
   const navigation = useNavigation();
   const [selectedDuration, setSelectedDuration] = useState(DEFAULT_SNOOZE_DURATION);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     const loadSavedDuration = async () => {
@@ -45,7 +43,6 @@ export default function SnoozeSettingsScreen() {
   const handleSelect = (duration: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedDuration(duration);
-    setIsSaved(false);
   };
 
   const handleSave = async () => {
@@ -53,7 +50,6 @@ export default function SnoozeSettingsScreen() {
     try {
       await AsyncStorage.setItem(SNOOZE_DURATION_KEY, selectedDuration.toString());
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setIsSaved(true);
       navigation.goBack();
     } catch (error) {
       console.error("Error saving snooze duration:", error);
@@ -75,84 +71,116 @@ export default function SnoozeSettingsScreen() {
     return `${minutes} minutes`;
   };
 
+  const formatCardValue = (minutes: number) => {
+    if (minutes >= 60) {
+      return `${minutes / 60}h`;
+    }
+    return `${minutes}`;
+  };
+
+  const formatCardLabel = (minutes: number) => {
+    if (minutes >= 60) {
+      return minutes === 60 ? Copy.snoozeSettings.hour : Copy.snoozeSettings.hours;
+    }
+    return Copy.snoozeSettings.min;
+  };
+
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: Spacing.lg,
-            paddingBottom: insets.bottom + Spacing["2xl"],
+            paddingTop: insets.top + Spacing.xl,
+            paddingBottom: insets.bottom + Spacing["4xl"],
           },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <ThemedText type="h2" style={styles.title}>
-          {Copy.snoozeSettings.title}
-        </ThemedText>
-        <ThemedText type="body" style={[styles.description, { color: theme.textSecondary }]}>
-          {Copy.snoozeSettings.description}
-        </ThemedText>
-
-        <View style={styles.optionsGrid}>
-          {SNOOZE_OPTIONS.map((duration) => (
-            <Pressable
-              key={duration}
-              onPress={() => handleSelect(duration)}
-              style={[
-                styles.option,
-                {
-                  backgroundColor:
-                    selectedDuration === duration
-                      ? theme.primary + "15"
-                      : theme.backgroundDefault,
-                  borderColor:
-                    selectedDuration === duration ? theme.primary : theme.borderLight,
-                },
-              ]}
-              testID={`snooze-option-${duration}`}
-            >
-              <ThemedText
-                type="h4"
-                style={{
-                  color: selectedDuration === duration ? theme.primary : theme.text,
-                }}
-              >
-                {duration >= 60 ? `${duration / 60}h` : duration}
-              </ThemedText>
-              <ThemedText
-                type="caption"
-                style={{
-                  color: selectedDuration === duration ? theme.primary : theme.textSecondary,
-                }}
-              >
-                {duration >= 60 ? (duration === 60 ? "hour" : "hours") : "min"}
-              </ThemedText>
-              {selectedDuration === duration ? (
-                <View style={[styles.checkmark, { backgroundColor: theme.primary }]}>
-                  <Feather name="check" size={12} color={theme.buttonText} />
-                </View>
-              ) : null}
-            </Pressable>
-          ))}
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={[styles.backButton, { backgroundColor: theme.backgroundDefault }]}
+            testID="button-back-snooze"
+          >
+            <Feather name="arrow-left" size={20} color={theme.text} />
+          </Pressable>
+          <ThemedText style={styles.headerTitle}>
+            {Copy.snoozeSettings.title}
+          </ThemedText>
         </View>
 
         <View style={[styles.infoCard, { backgroundColor: theme.backgroundSecondary }]}>
-          <Feather name="info" size={20} color={theme.info} style={{ marginRight: Spacing.sm }} />
-          <ThemedText type="small" style={{ color: theme.textSecondary, flex: 1 }}>
-            When you snooze a notification, it will remind you again after{" "}
-            <ThemedText type="small" style={{ fontWeight: "600" }}>
+          <Feather name="info" size={18} color={theme.textSecondary} style={styles.infoIcon} />
+          <ThemedText type="small" style={[styles.infoText, { color: theme.textSecondary }]}>
+            {Copy.snoozeSettings.infoText}
+            <ThemedText type="small" style={{ fontWeight: "700", color: theme.text }}>
               {formatDuration(selectedDuration)}
             </ThemedText>
             .
           </ThemedText>
         </View>
 
-        <Button onPress={handleSave} loading={isLoading} style={styles.saveButton} testID="button-save-snooze">
+        <View style={styles.optionsGrid}>
+          {SNOOZE_OPTIONS.map((duration) => {
+            const isSelected = selectedDuration === duration;
+            return (
+              <Pressable
+                key={duration}
+                onPress={() => handleSelect(duration)}
+                style={[
+                  styles.option,
+                  {
+                    backgroundColor: isSelected
+                      ? theme.pillActiveBg
+                      : theme.backgroundDefault,
+                    borderColor: isSelected
+                      ? theme.pillActiveBorder
+                      : theme.borderLight,
+                    borderWidth: isSelected ? 2 : 1,
+                  },
+                ]}
+                testID={`snooze-option-${duration}`}
+              >
+                <ThemedText
+                  type="h4"
+                  style={{
+                    color: isSelected ? theme.pillActiveBorder : theme.text,
+                  }}
+                >
+                  {formatCardValue(duration)}
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: isSelected ? theme.pillActiveBorder : theme.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
+                  {formatCardLabel(duration)}
+                </ThemedText>
+                {isSelected ? (
+                  <View style={[styles.checkmark, { backgroundColor: theme.pillActiveBorder }]}>
+                    <Feather name="check" size={10} color={theme.buttonText} />
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
+
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.lg }]}>
+        <Button
+          onPress={handleSave}
+          loading={isLoading}
+          style={[styles.saveButton, { backgroundColor: theme.saveButtonActive, borderRadius: BorderRadius.full }]}
+          testID="button-save-snooze"
+        >
           {Copy.snoozeSettings.saveButton}
         </Button>
-      </ScrollView>
-    </ThemedView>
+      </View>
+    </View>
   );
 }
 
@@ -177,24 +205,49 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
+    flexGrow: 1,
   },
-  title: {
-    marginBottom: Spacing.sm,
-  },
-  description: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: Spacing["2xl"],
+    gap: Spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: FontFamily.serifBold,
+    fontWeight: "700",
+  },
+  infoCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.xl,
+  },
+  infoIcon: {
+    marginRight: Spacing.sm,
+    marginTop: 2,
+  },
+  infoText: {
+    flex: 1,
   },
   optionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
-    marginBottom: Spacing["2xl"],
   },
   option: {
     width: "23%",
     aspectRatio: 1,
     borderRadius: BorderRadius.lg,
-    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -203,20 +256,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 6,
     right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",
   },
-  infoCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing["2xl"],
+  bottomBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
   },
   saveButton: {
-    marginTop: Spacing.lg,
+    width: "100%",
   },
 });

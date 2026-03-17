@@ -42,15 +42,9 @@ export async function registerPushToken(): Promise<string | null> {
   try {
     const Notifications = await import("expo-notifications");
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    const { status } = await Notifications.getPermissionsAsync();
 
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== "granted") {
+    if (status !== "granted") {
       console.log("[PushSync] Push permission not granted");
       return null;
     }
