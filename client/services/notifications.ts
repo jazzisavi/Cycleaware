@@ -428,22 +428,17 @@ export async function checkLastNotificationResponse(
       return;
     }
 
-    // Dismiss using live presented IDs before dedup check — stale notificationId
-    // from getLastNotificationResponseAsync cannot be reliably dismissed on cold
-    // start because Expo's internal UUID→Android-ID mapping is lost when the
-    // app process is killed. getPresentedNotificationsAsync() returns IDs that
-    // are sourced live from Android's StatusBarNotification, so they always work.
-    // Running this before dedup ensures dismiss happens even on repeat launches.
+    // Dismiss before dedup: stale notificationId may fail on cold start (Expo's
+    // UUID→Android-ID map is cleared on process death), but the presented sweep
+    // uses live StatusBarNotification IDs which always resolve correctly.
+    // Both run before the dedup check so dismiss fires even on repeat launches.
+    try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
     try {
       const presented = await Notifications.getPresentedNotificationsAsync();
       for (const p of presented) {
         const pd = p.request?.content?.data;
-        const sameReminder = pd?.reminderId === reminderId;
-        const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
-        if (sameReminder && sameSlot) {
-          try {
-            await Notifications.dismissNotificationAsync(p.request.identifier);
-          } catch (_e) {}
+        if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
+          try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
         }
       }
     } catch (_e) {}
@@ -515,6 +510,17 @@ export async function setupNotificationResponseListener(
           const scheduledTime = (data?.scheduledTime as string) || undefined;
 
           if (reminderId) {
+            try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
+            try {
+              const presented = await Notifications.getPresentedNotificationsAsync();
+              for (const p of presented) {
+                const pd = p.request?.content?.data;
+                if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
+                  try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
+                }
+              }
+            } catch (_e) {}
+
             const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
             if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
               return;
@@ -527,27 +533,6 @@ export async function setupNotificationResponseListener(
             } finally {
               processingNotificationIds.delete(notificationId);
             }
-
-            if (notificationId) {
-              try {
-                await Notifications.dismissNotificationAsync(notificationId);
-              } catch (_e) {}
-            }
-
-            try {
-              const presented = await Notifications.getPresentedNotificationsAsync();
-              for (const p of presented) {
-                const pd = p.request?.content?.data;
-                const sameReminder = pd?.reminderId === reminderId;
-                const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
-                if (sameReminder && sameSlot) {
-                  try {
-                    await Notifications.dismissNotificationAsync(p.request.identifier);
-                  } catch (_e) {}
-                }
-              }
-            } catch (_e) {}
-
           }
         } catch (error) {
           console.error("Error handling notification response:", error);
