@@ -428,6 +428,21 @@ export async function checkLastNotificationResponse(
       return;
     }
 
+    // If the reminder was deleted since the notification fired, dismiss the
+    // notification (sweep below) and return silently — nothing left to process.
+    if (!LocalDatabase.getReminder(reminderId)) {
+      try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
+      try {
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        for (const p of presented) {
+          if (p.request?.content?.data?.reminderId === reminderId) {
+            try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
+          }
+        }
+      } catch (_e) {}
+      return;
+    }
+
     // Dismiss before dedup: stale notificationId may fail on cold start (Expo's
     // UUID→Android-ID map is cleared on process death), but the presented sweep
     // uses live StatusBarNotification IDs which always resolve correctly.
