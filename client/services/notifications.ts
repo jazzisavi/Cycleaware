@@ -527,6 +527,27 @@ export async function setupNotificationResponseListener(
             } finally {
               processingNotificationIds.delete(notificationId);
             }
+
+            if (notificationId) {
+              try {
+                await Notifications.dismissNotificationAsync(notificationId);
+              } catch (_e) {}
+            }
+
+            try {
+              const presented = await Notifications.getPresentedNotificationsAsync();
+              for (const p of presented) {
+                const pd = p.request?.content?.data;
+                const sameReminder = pd?.reminderId === reminderId;
+                const sameSlot = scheduledTime ? pd?.scheduledTime === scheduledTime : true;
+                if (sameReminder && sameSlot) {
+                  try {
+                    await Notifications.dismissNotificationAsync(p.request.identifier);
+                  } catch (_e) {}
+                }
+              }
+            } catch (_e) {}
+
           }
         } catch (error) {
           console.error("Error handling notification response:", error);
