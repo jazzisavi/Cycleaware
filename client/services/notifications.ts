@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AlarmService } from "./AlarmService";
 import { LocalDatabase } from "./LocalDatabase";
 import { Copy } from "@/constants/copy";
+import { NOTIFICATION_BG_TASK_NAME } from "./notificationBackgroundTask";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -306,6 +307,21 @@ export async function setupNotificationCategories(): Promise<void> {
     ]);
 
     console.log("Notification categories set up successfully");
+
+    try {
+      const isRegistered = await Notifications.getRegisteredTasksAsync();
+      const alreadyRegistered = isRegistered.some(
+        (t) => t.taskName === NOTIFICATION_BG_TASK_NAME
+      );
+      if (!alreadyRegistered) {
+        await Notifications.registerTaskAsync(NOTIFICATION_BG_TASK_NAME);
+        console.log("Background notification task registered:", NOTIFICATION_BG_TASK_NAME);
+      } else {
+        console.log("Background notification task already registered:", NOTIFICATION_BG_TASK_NAME);
+      }
+    } catch (bgTaskError) {
+      console.log("Background task registration error (may not be supported in Expo Go):", bgTaskError);
+    }
   } catch (error) {
     console.log("Error setting up notification categories:", error);
   }
