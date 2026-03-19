@@ -8,18 +8,13 @@
     "scheme": "goflo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#EDE8E2"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.goflo.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#EDE8E2",
+        "backgroundColor": "#E8614F",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
@@ -38,9 +33,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#EDE8E2",
+          "backgroundColor": "#E8614F",
           "dark": {
-            "backgroundColor": "#EDE8E2"
+            "backgroundColor": "#E8614F"
           }
         }
       ],
