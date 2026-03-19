@@ -51,8 +51,7 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#6B9BD1",
-          "defaultChannel": "reminders",
-          "backgroundTaskName": "GOFLO_NOTIFICATION_BG_TASK"
+          "defaultChannel": "reminders"
         }
       ],
       "./plugins/withAndroidPickerTheme",
