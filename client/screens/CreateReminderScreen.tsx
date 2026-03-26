@@ -1219,9 +1219,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   pickerCard: {
+    marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     overflow: "hidden",
-    alignSelf: "center",
   },
   fullModalFooter: {
     paddingHorizontal: Spacing.lg,
