@@ -58,8 +58,8 @@ args = "Start Backend"
 
 [[workflows.workflow]]
 name = "Start App"
-author = "agent"
 mode = "parallel"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
@@ -71,8 +71,8 @@ args = "Start Frontend"
 
 [[workflows.workflow]]
 name = "Start Backend"
-author = "agent"
 mode = "sequential"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
@@ -86,13 +86,12 @@ outputType = "webview"
 name = "Start Frontend"
 author = "agent"
 
-[workflows.workflow.metadata]
-outputType = "console"
-
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "tail -f /dev/null | EXPO_NO_DOCTOR=1 npm run expo:dev -- --port 8080"
-waitForPort = 8080
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [userenv]
 
