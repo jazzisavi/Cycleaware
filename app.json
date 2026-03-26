@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.goflo.app"
+      "bundleIdentifier": "com.swopzshop.goflo.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.goflo.app",
+      "package": "com.swopzshop.goflo.app",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
