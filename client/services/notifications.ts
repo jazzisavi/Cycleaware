@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AlarmService } from "./AlarmService";
 import { LocalDatabase } from "./LocalDatabase";
 import { Copy } from "@/constants/copy";
+import { NOTIFICATION_BG_TASK_NAME } from "./notificationBackgroundTask";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
@@ -306,6 +307,21 @@ export async function setupNotificationCategories(): Promise<void> {
     ]);
 
     console.log("Notification categories set up successfully");
+
+    try {
+      const isRegistered = await Notifications.getRegisteredTasksAsync();
+      const alreadyRegistered = isRegistered.some(
+        (t) => t.taskName === NOTIFICATION_BG_TASK_NAME
+      );
+      if (!alreadyRegistered) {
+        await Notifications.registerTaskAsync(NOTIFICATION_BG_TASK_NAME);
+        console.log("Background notification task registered:", NOTIFICATION_BG_TASK_NAME);
+      } else {
+        console.log("Background notification task already registered:", NOTIFICATION_BG_TASK_NAME);
+      }
+    } catch (bgTaskError) {
+      console.log("Background task registration error (may not be supported in Expo Go):", bgTaskError);
+    }
   } catch (error) {
     console.log("Error setting up notification categories:", error);
   }
@@ -428,25 +444,20 @@ export async function checkLastNotificationResponse(
       return;
     }
 
-    // Dismiss before dedup. Two attempts:
-    // 1. Immediate — covers the case where the notification system is ready.
-    // 2. Delayed (1500 ms) — on Android cold start, getPresentedNotificationsAsync
-    //    can return an empty array before the notification subsystem has fully
-    //    re-initialised. The retry runs after the app has settled.
-    const dismissMatchingNotifications = async () => {
-      try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
-      try {
-        const presented = await Notifications.getPresentedNotificationsAsync();
-        for (const p of presented) {
-          const pd = p.request?.content?.data;
-          if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
-            try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
-          }
+    // Dismiss before dedup: stale notificationId may fail on cold start (Expo's
+    // UUID→Android-ID map is cleared on process death), but the presented sweep
+    // uses live StatusBarNotification IDs which always resolve correctly.
+    // Both run before the dedup check so dismiss fires even on repeat launches.
+    try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
+    try {
+      const presented = await Notifications.getPresentedNotificationsAsync();
+      for (const p of presented) {
+        const pd = p.request?.content?.data;
+        if (pd?.reminderId === reminderId && (scheduledTime ? pd?.scheduledTime === scheduledTime : true)) {
+          try { await Notifications.dismissNotificationAsync(p.request.identifier); } catch (_e) {}
         }
-      } catch (_e) {}
-    };
-    await dismissMatchingNotifications();
-    setTimeout(() => { dismissMatchingNotifications(); }, 1500);
+      }
+    } catch (_e) {}
 
     // If the reminder was deleted since the notification fired, dismiss already
     // ran above — nothing left to process, return silently.
@@ -664,7 +675,7 @@ function checkCycleDayLocal(
   cycleStartDate: Date,
   cycleEndDate: Date | null,
   checkDate: Date
-): { isActiveDay: boolean; currentCycleDay: number; nextActiveDate: Date | null } {
+): { isActiveDay: boolean; nextActiveDate: Date | null } {
   const cycleLength = cycleDayEnd;
   const startDateOnly = new Date(cycleStartDate);
   startDateOnly.setHours(0, 0, 0, 0);
@@ -675,14 +686,16 @@ function checkCycleDayLocal(
     const endDateOnly = new Date(cycleEndDate);
     endDateOnly.setHours(0, 0, 0, 0);
     if (checkDateOnly > endDateOnly) {
-      return { isActiveDay: false, currentCycleDay: 0, nextActiveDate: null };
+      return { isActiveDay: false, nextActiveDate: null };
     }
   }
 
   if (checkDateOnly < startDateOnly) {
+    const daysUntilStart = Math.floor((startDateOnly.getTime() - checkDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilActive = daysUntilStart + (cycleDayStart - 1);
     const nextActiveDate = new Date(startDateOnly);
     nextActiveDate.setDate(nextActiveDate.getDate() + (cycleDayStart - 1));
-    return { isActiveDay: false, currentCycleDay: 0, nextActiveDate };
+    return { isActiveDay: false, nextActiveDate };
   }
 
   const daysSinceStart = Math.floor((checkDateOnly.getTime() - startDateOnly.getTime()) / (1000 * 60 * 60 * 24));
@@ -690,18 +703,18 @@ function checkCycleDayLocal(
   const isActiveDay = dayInCurrentCycle >= cycleDayStart && dayInCurrentCycle <= cycleDayEnd;
 
   if (isActiveDay) {
-    return { isActiveDay: true, currentCycleDay: dayInCurrentCycle, nextActiveDate: new Date(checkDateOnly) };
+    return { isActiveDay: true, nextActiveDate: new Date(checkDateOnly) };
   } else if (dayInCurrentCycle < cycleDayStart) {
     const daysUntil = cycleDayStart - dayInCurrentCycle;
     const nextActive = new Date(checkDateOnly);
     nextActive.setDate(nextActive.getDate() + daysUntil);
-    return { isActiveDay: false, currentCycleDay: dayInCurrentCycle, nextActiveDate: nextActive };
+    return { isActiveDay: false, nextActiveDate: nextActive };
   } else {
     const daysLeft = cycleLength - dayInCurrentCycle;
     const daysUntil = daysLeft + cycleDayStart;
     const nextActive = new Date(checkDateOnly);
     nextActive.setDate(nextActive.getDate() + daysUntil);
-    return { isActiveDay: false, currentCycleDay: dayInCurrentCycle, nextActiveDate: nextActive };
+    return { isActiveDay: false, nextActiveDate: nextActive };
   }
 }
 
@@ -712,21 +725,23 @@ function getCycleBufferDates(reminder: {
   cycleEndDate: string | null;
   reminderTime: string;
   reminderTimes: string[] | null;
-}): { date: Date; cycleDay: number }[] {
+}): Date[] {
   if (!reminder.cycleDayStart || !reminder.cycleDayEnd || !reminder.cycleStartDate) return [];
 
   const times = reminder.reminderTimes && reminder.reminderTimes.length > 0
     ? reminder.reminderTimes
     : [reminder.reminderTime];
   const now = new Date();
-  const entries: { date: Date; cycleDay: number }[] = [];
+  const bufferEnd = new Date(now);
+  bufferEnd.setDate(bufferEnd.getDate() + BUFFER_DAYS);
+  const dates: Date[] = [];
 
   for (let dayOffset = 0; dayOffset <= BUFFER_DAYS; dayOffset++) {
     const checkDate = new Date(now);
     checkDate.setDate(checkDate.getDate() + dayOffset);
     checkDate.setHours(0, 0, 0, 0);
 
-    const { isActiveDay, currentCycleDay } = checkCycleDayLocal(
+    const { isActiveDay } = checkCycleDayLocal(
       reminder.cycleDayStart,
       reminder.cycleDayEnd,
       new Date(reminder.cycleStartDate),
@@ -741,12 +756,12 @@ function getCycleBufferDates(reminder: {
       const scheduleDate = new Date(checkDate);
       scheduleDate.setHours(hours, minutes, 0, 0);
       if (scheduleDate > now) {
-        entries.push({ date: scheduleDate, cycleDay: currentCycleDay });
+        dates.push(scheduleDate);
       }
     }
   }
 
-  return entries;
+  return dates;
 }
 
 async function scheduleBufferWarning(reminder: {
@@ -840,10 +855,10 @@ export async function syncAllNotifications(): Promise<void> {
         await cancelPendingNotificationsForReminder(reminder.id);
 
         const bufferDates = getCycleBufferDates(reminder);
-        for (const { date, cycleDay } of bufferDates) {
+        for (const date of bufferDates) {
           await scheduleReminderNotification(
             reminder.id,
-            `Day ${cycleDay} - ${reminder.title}`,
+            reminder.title,
             reminder.notes,
             date,
             reminder.soundEnabled

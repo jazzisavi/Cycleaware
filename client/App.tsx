@@ -32,6 +32,7 @@ import {
   checkLastNotificationResponse,
   syncAllNotifications,
 } from "@/services/notifications";
+import { readBackgroundTaskLog } from "@/services/notificationBackgroundTask";
 import { onAppLaunchSync } from "@/services/pushSync";
 import { initFirebase } from "@/services/firebase";
 
@@ -72,6 +73,14 @@ function AppContent() {
       await syncAllNotifications();
       onAppLaunchSync();
       initFirebase();
+
+      const bgTaskLog = await readBackgroundTaskLog();
+      if (bgTaskLog.length > 0) {
+        console.log("[BG_TASK_DIAGNOSTIC] Background task log entries found on launch:");
+        bgTaskLog.forEach((entry) => console.log("[BG_TASK_DIAGNOSTIC]", entry));
+      } else {
+        console.log("[BG_TASK_DIAGNOSTIC] No background task log entries found on launch.");
+      }
     };
     
     setupListeners();
