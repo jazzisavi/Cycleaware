@@ -86,7 +86,7 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EDE8E2",
+    backgroundColor: "#E8614F",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -102,6 +102,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 120,
     height: 120,
+    borderRadius: 24,
   },
   textContainer: {
     alignItems: "center",
