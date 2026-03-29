@@ -1,0 +1,96 @@
+# Crashlytics - Tombstone Stack Trace
+# Application: com.goflo.app
+# Platform: android
+# Version: 1.0.14 (1)
+# Issue: 85c581edcdb39b941df627e7b1324a71
+# Session: 69c162d303e10001421ca7eb609687a9_DNE_0_v2
+# Date: Mon Mar 23 2026 15:57:08 GMT+0000 (Greenwich Mean Time)
+
+terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: ReferenceError: Property 'theme' doesn't exist, stack:
+anonymous@1:1634343
+loadModuleImplementation@1:56168
+guardedLoadModule@1:55691
+metroRequire@1:55201
+anonymous@1:1531441
+loadModuleImplementation@1:56168
+guardedLoadModule@1:55691
+metroRequire@1:55201
+anonymous@1:1514121
+loadModuleImplementation@1:56168
+guardedLoadModule@1:55691
+metroRequire@1:55201
+anonymous@1:1405659
+loadModuleImplementation@1:56168
+guardedLoadModule@1:55691
+metroRequire@1:55201
+anonymous@1:810992
+loadModuleImplementation@1:56168
+guardedLoadModule@1:55691
+metroRequire@1:55201
+anonymous@1:108759
+loadModuleImplementation@1:56168
+guardedLoadModule@1:55647
+metroRequire@1:55201
+global@1:54657
+
+	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(ExceptionsManagerModule.kt:52)
+	at com.facebook.react.runtime.ReactInstance$ReactJsExceptionHandlerImpl.reportJsException(ReactInstance.kt:281)
+	at com.facebook.jni.NativeRunnable.run(Native Method)
+	at android.os.Handler.handleCallback(Handler.java:1095)
+	at android.os.Handler.dispatchMessageImpl(Handler.java:135)
+	at android.os.Handler.dispatchMessage(Handler.java:125)
+	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.kt:21)
+	at android.os.Looper.loopOnce(Looper.java:269)
+	at android.os.Looper.loop(Looper.java:367)
+	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(MessageQueueThreadImpl.kt:175)
+	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4(Unknown Source:0)
+	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at java.lang.Thread.run(Thread.java:1564):
+#00 pc 0x754ec (abort [/apex/com.android.runtime/lib64/bionic/libc.so]) (BuildId: 55eea1626770ab1b58504f8f9f205d43)
+#01 pc 0xa0210 (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+#02 pc 0x9eeb0 (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+#03 pc 0x9f374 (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+#04 pc 0x9f314 (std::terminate() [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libc++_shared.so]) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+#05 pc 0x25d584 (BuildId: daceecb3f8ffe4c2)
+#06 pc 0x489594 (BuildId: daceecb3f8ffe4c2)
+#07 pc 0x2b90c4 (facebook::react::JsErrorHandler::handleErrorWithCppPipeline(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libreactnative.so]) (BuildId: daceecb3f8ffe4c2)
+#08 pc 0x2b7068 (facebook::react::JsErrorHandler::handleError(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libreactnative.so]) (BuildId: daceecb3f8ffe4c2)
+#09 pc 0x26c630 (BuildId: daceecb3f8ffe4c2)
+#10 pc 0xaaa24 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#11 pc 0xaa760 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#12 pc 0xb2cd8 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#13 pc 0xc50c8 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#14 pc 0xc4a28 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#15 pc 0xf4554 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#16 pc 0xa0260 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#17 pc 0xa5e40 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#18 pc 0xa0060 (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+#19 pc 0x268024 (BuildId: daceecb3f8ffe4c2)
+#20 pc 0x41d4c0 (facebook::react::Task::execute(facebook::jsi::Runtime&, bool) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libreactnative.so]) (BuildId: daceecb3f8ffe4c2)
+#21 pc 0x41b654 (facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libreactnative.so]) (BuildId: daceecb3f8ffe4c2)
+#22 pc 0x41bf64 (facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libreactnative.so]) (BuildId: daceecb3f8ffe4c2)
+#23 pc 0x41bc74 (facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libreactnative.so]) (BuildId: daceecb3f8ffe4c2)
+#24 pc 0x265d80 (BuildId: daceecb3f8ffe4c2)
+#25 pc 0x45e930 (BuildId: daceecb3f8ffe4c2)
+#26 pc 0x17dd0 (facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libfbjni.so]) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+#27 pc 0x17d10 (facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)) [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/base.apk!libfbjni.so]) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+#28 pc 0xd520f0 (art_jni_trampoline [/data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat])
+#29 pc 0x8dbe04 (android.os.Handler.dispatchMessageImpl [/data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat])
+#30 pc 0x53e7cc ([DEDUPED] [/data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat])
+#31 pc 0x669300 (nterp_helper [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#32 pc 0xa44346 (com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/oat/arm64/base.vdex])
+#33 pc 0x91cdb0 (android.os.Looper.loopOnce [/data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat])
+#34 pc 0x91c614 (android.os.Looper.loop [/data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat])
+#35 pc 0x6683e8 (nterp_helper [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#36 pc 0xa446b6 (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1 [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/oat/arm64/base.vdex])
+#37 pc 0x668384 (nterp_helper [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#38 pc 0xa445ec (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4 [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/oat/arm64/base.vdex])
+#39 pc 0x668384 (nterp_helper [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#40 pc 0xa44414 (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run [/data/app/~~XSP_pYkZlcmm0lCczgNgsw==/com.goflo.app-a5kbzLAQGCxfsNpyDttYVw==/oat/arm64/base.vdex])
+#41 pc 0x3215f0 (java.lang.Thread.run [/data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat])
+#42 pc 0x2aaf94 (art_quick_invoke_stub [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#43 pc 0x2709b0 (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*) [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#44 pc 0x4bdfc8 (art::Thread::CreateCallback(void*) [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#45 pc 0x4bdb18 (art::Thread::CreateCallbackWithUffdGc(void*) [/apex/com.android.art/lib64/libart.so]) (BuildId: 61c7a211c01ef3c0068b4fbe31051050)
+#46 pc 0x87d9c (__pthread_start(void*) (.__uniq.67847048707805468364044055584648682506) [/apex/com.android.runtime/lib64/bionic/libc.so]) (BuildId: 55eea1626770ab1b58504f8f9f205d43)
+#47 pc 0x78950 (__start_thread [/apex/com.android.runtime/lib64/bionic/libc.so]) (BuildId: 55eea1626770ab1b58504f8f9f205d43)
