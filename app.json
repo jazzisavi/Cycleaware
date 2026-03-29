@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.swopzshop.goflo.app"
+      "bundleIdentifier": "com.swopzshop.goflo.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +28,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.swopzshop.goflo.app",
+      "package": "com.goflo.app",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -55,7 +59,21 @@
       ],
       "./plugins/withAndroidPickerTheme",
       "@react-native-firebase/app",
-      "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js"
+      "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "buildReactNativeFromSource": true,
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAnalytics",
+              "RNFBCrashlytics"
+            ]
+          }
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true
