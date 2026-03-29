@@ -373,7 +373,7 @@ export default function HomeScreen() {
             {upcomingReminders.map((reminder) => (
               <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault }]}>
                 <View style={styles.upcomingCardContent}>
-                  <View style={[styles.upcomingBellCircle, { backgroundColor: theme.backgroundSecondary }]}>
+                  <View style={[styles.upcomingBellCircle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
                     <Feather name="bell" size={18} color={theme.textTertiary} />
                   </View>
                   <View style={styles.upcomingInfo}>
@@ -585,7 +585,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: Spacing.md,
     borderWidth: 1,
-    borderColor: theme.border,
   },
   upcomingInfo: {
     flex: 1,
