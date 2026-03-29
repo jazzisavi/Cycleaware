@@ -36,6 +36,7 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-splash-screen",
         {
