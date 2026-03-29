@@ -61,7 +61,7 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
           onPress={() => navigation.navigate("More")}
           testID="button-profile"
         >
-          <View style={[styles.profileIconContainer, { borderColor: theme.text }]}>
+          <View style={[styles.profileIconContainer, { borderColor: theme.text, backgroundColor: theme.backgroundSecondary }]}>
             <Feather name="user" size={18} color={theme.text} />
           </View>
         </Pressable>
@@ -79,7 +79,7 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
         onPress={() => navigation.navigate("More")}
         testID="button-more"
       >
-        <View style={[styles.profileIconContainer, { borderColor: theme.text }]}>
+        <View style={[styles.profileIconContainer, { borderColor: theme.text, backgroundColor: theme.backgroundSecondary }]}>
           <Feather name="user" size={18} color={theme.text} />
         </View>
       </Pressable>
@@ -136,7 +136,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.backgroundSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
