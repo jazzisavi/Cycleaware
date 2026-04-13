@@ -22,9 +22,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useState, useCallback } from 'react';
 import { Feather } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 import { BorderRadius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
+
+type FeatherIconName = ComponentProps<typeof Feather>['name'];
 
 const MODULE_RELATIVE = '../../modules/GoFloAlarmModule/src';
 
@@ -193,7 +196,7 @@ function PocButton({
   onPress,
 }: {
   label: string;
-  icon: string;
+  icon: FeatherIconName;
   accent: string;
   bg: string;
   onPress: () => void;
@@ -204,7 +207,7 @@ function PocButton({
       onPress={onPress}
       testID={`button-poc-${label.toLowerCase().replace(/\s/g, '-')}`}
     >
-      <Feather name={icon as any} size={18} color={accent} />
+      <Feather name={icon} size={18} color={accent} />
       <ThemedText style={[styles.buttonLabel, { color: accent }]}>{label}</ThemedText>
     </Pressable>
   );

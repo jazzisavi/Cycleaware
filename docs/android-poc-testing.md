@@ -2,6 +2,13 @@
 
 **Task #30 proof deliverable.** Follow these steps on a physical Android device.
 
+> **Replit environment note:** The Replit container has no Android SDK, emulator, or ADB
+> access. On-device verification must be performed by the developer after pulling the branch,
+> running `expo prebuild`, and installing a development build on a physical device.
+> The logcat sequences below are *design-time expected output* derived directly from the
+> log statements in the Kotlin source. Replace them with your captured output when you
+> complete the on-device run and commit the updated proof section at the bottom of this file.
+
 ---
 
 ## What this proves
@@ -157,3 +164,39 @@ Expected: one row with `status = taken` and a non-null `actioned_at`.
 - Full error handling and edge cases
 - Integration with the main RN reminder flow (Task #31)
 - Schema migration from `notification_history` to `occurrences` (Task #34)
+
+---
+
+## On-device proof log
+
+**Instructions:** After completing the test procedure above, paste your captured logcat and
+SQLite verification output here and commit the file. This section replaces the design-time
+expected sequences with real evidence.
+
+### Build context
+```
+Device:
+Android version:
+Build profile: development
+EAS build ID (or local):
+Date:
+```
+
+### Captured logcat (adb logcat -s GoFloAlarm)
+```
+# Paste here after: eas build → install APK → AlarmTestScreen → "Alarm in 30s" → kill app → Take
+```
+
+### SQLite verification
+```sql
+-- paste output of:
+-- SELECT id, status, actioned_at FROM occurrences ORDER BY created_at DESC LIMIT 5;
+```
+
+### Result
+- [ ] scheduleTestAlarm() returned true
+- [ ] Notification appeared with Take / Snooze / Skip buttons ~30s after scheduling
+- [ ] Notification dismissed after tapping Take with app killed
+- [ ] AlarmActionReceiver logcat shows `status=taken`
+- [ ] AlarmScheduler logcat shows next alarm scheduled
+- [ ] SQLite `occurrences` row shows `status = taken` with non-null `actioned_at`
