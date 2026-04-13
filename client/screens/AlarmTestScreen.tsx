@@ -29,20 +29,19 @@ import { useTheme } from '@/hooks/useTheme';
 
 type FeatherIconName = ComponentProps<typeof Feather>['name'];
 
-const MODULE_RELATIVE = '../../modules/GoFloAlarmModule/src';
-
 type AlarmModule = typeof import('../../modules/GoFloAlarmModule/src');
 
-function requireAlarmModule(): AlarmModule | null {
-  if (Platform.OS !== 'android') return null;
+// Static string literal so Metro can resolve the path at bundle time.
+// The try/catch handles the case where the native module is not compiled
+// into the running build (Expo Go, iOS, or web).
+let alarmModule: AlarmModule | null = null;
+if (Platform.OS === 'android') {
   try {
-    return require(MODULE_RELATIVE);
+    alarmModule = require('../../modules/GoFloAlarmModule/src');
   } catch {
-    return null;
+    alarmModule = null;
   }
 }
-
-const alarmModule = requireAlarmModule();
 const TEST_REMINDER_ID = 'poc-test-reminder-001';
 
 type LogEntry = { time: string; msg: string; ok: boolean };
