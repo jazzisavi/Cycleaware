@@ -1,13 +1,6 @@
-/**
- * Pure next-occurrence calculation module.
- *
- * All functions are side-effect-free: plain TypeScript, no React Native
- * imports, no database calls, no notification calls. Input a reminder rule,
- * get back the next Date (or null if the reminder has expired / no next date).
- *
- * This is the reference implementation for the JS layer and the behavioural
- * spec that the native engine (Kotlin / Swift) mirrors.
- */
+// Pure next-occurrence calculation.
+// Side-effect-free: no React Native, no DB, no notification imports.
+// Reference implementation for the JS layer; native engine mirrors this logic.
 
 const DAY_NAME_TO_NUMBER: Record<string, number> = {
   sun: 0,
@@ -52,11 +45,8 @@ export interface WeekdayRule {
   reminderTime: string;            // HH:MM
 }
 
-/**
- * Dispatcher input — mirrors the relevant fields of LocalReminder.
- * reminderType is optional so that Partial<LocalReminder> is assignable
- * without a cast. The dispatcher returns null if reminderType is absent.
- */
+// Dispatcher input — mirrors LocalReminder fields. reminderType is optional
+// so Partial<LocalReminder> is directly assignable without a cast.
 export interface ReminderRule {
   reminderType?: 'cycle' | 'calendar';
   cycleDayStart?: number | null;
@@ -75,15 +65,8 @@ export interface ReminderRule {
   reminderTimes?: string[] | null;
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Returns true if `date` is after the end of the given end-date string.
- * Always compares against 23:59:59.999 of that day so that reminders
- * scheduled at any time on the end date are correctly included.
- */
+// true if date is after 23:59:59.999 of endDateStr (so reminders on the end
+// date itself are always included, regardless of their time).
 function isAfterEndDate(date: Date, endDateStr: string): boolean {
   const end = new Date(endDateStr);
   end.setHours(23, 59, 59, 999);
@@ -169,13 +152,6 @@ function checkCycleDay(
 // Exported pure functions
 // ---------------------------------------------------------------------------
 
-/**
- * Next occurrence for a cycle-based reminder.
- *
- * A cycle reminder fires on every day between cycleDayStart and cycleDayEnd
- * within a repeating cycle of cycleDayEnd total days, anchored to
- * cycleStartDate. Multiple reminder times per day are supported.
- */
 export function calculateNextCycleOccurrence(rule: CycleRule, from: Date = new Date()): Date | null {
   const { cycleDayStart, cycleDayEnd, cycleStartDate, cycleEndDate, reminderTimes } = rule;
   if (reminderTimes.length === 0) return null;
@@ -240,12 +216,6 @@ export function calculateNextCycleOccurrence(rule: CycleRule, from: Date = new D
     .reduce((a, b) => (a < b ? a : b));
 }
 
-/**
- * Next occurrence for a fixed-interval (day-based) calendar reminder.
- *
- * Fires every N days starting from calendarStartDate, at the given
- * reminderTime.
- */
 export function calculateNextIntervalOccurrence(rule: IntervalRule, from: Date = new Date()): Date | null {
   const {
     repeatInterval,
@@ -303,12 +273,6 @@ export function calculateNextIntervalOccurrence(rule: IntervalRule, from: Date =
   return searchDate;
 }
 
-/**
- * Next occurrence for a weekday-based (weekly repeat) calendar reminder.
- *
- * Fires on specified days of the week, every N weeks, starting from
- * calendarStartDate.
- */
 export function calculateNextWeekdayOccurrence(rule: WeekdayRule, from: Date = new Date()): Date | null {
   const {
     weeklyRepeatDays,
@@ -385,12 +349,8 @@ export function calculateNextWeekdayOccurrence(rule: WeekdayRule, from: Date = n
 // Dispatcher
 // ---------------------------------------------------------------------------
 
-/**
- * Calculate the next occurrence for any reminder rule.
- *
- * Accepts a ReminderRule (compatible with Partial<LocalReminder>).
- * Returns the next Date, or null if there is no upcoming occurrence.
- */
+// Dispatcher — routes to the correct function based on reminderType.
+// Compatible with Partial<LocalReminder> (no cast required).
 export function calculateNextOccurrence(rule: ReminderRule, from: Date = new Date()): Date | null {
   if (rule.reminderType === 'cycle') {
     const { cycleDayStart, cycleDayEnd, cycleStartDate, cycleEndDate, reminderTimes, reminderTime } = rule;
