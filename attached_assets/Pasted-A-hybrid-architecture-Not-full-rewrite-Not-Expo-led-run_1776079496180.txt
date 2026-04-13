@@ -1,0 +1,187 @@
+A **hybrid architecture**.
+
+Not full rewrite. Not Expo-led runtime. Not server-led reminders.
+
+## Recommended architecture
+
+### 1. React Native stays for product/UI
+
+Keep RN for:
+
+* onboarding
+* reminder setup and editing
+* history screen
+* settings
+* status / troubleshooting UI
+
+This keeps most of what you’ve already built.
+
+### 2. Native reminder engine owns runtime
+
+Build a **native on-device reminder engine** for each platform.
+
+It owns:
+
+* next-occurrence calculation
+* local scheduling
+* notification categories/actions
+* handling Take / Skip / Snooze
+* writing reminder events locally
+* rescheduling the next occurrence
+* reboot / timezone / app relaunch recovery where relevant
+
+This is the part that must not depend on the app being open.
+
+### 3. Local database is the source of truth
+
+Keep a **local-first database** as the core source of truth for:
+
+* reminder rules
+* occurrence state
+* action history
+* engine status
+
+Do not make scheduled notifications themselves the source of truth.
+
+### 4. Rule-based model, not batch-led model
+
+Model reminders as **rules**, not as a pile of future scheduled notifications.
+
+For each reminder, store something like:
+
+* cycle start date
+* cycle length
+* active day start
+* active day end
+* one or more times
+* active/inactive
+* optional end date
+
+Then the engine calculates the next valid occurrence from the rule.
+
+### 5. Occurrence-level actions
+
+Treat each delivered reminder as an **occurrence**, separate from the reminder rule.
+
+So:
+
+* reminder rule = repeating logic
+* occurrence = this specific 8:00 AM reminder on this date
+
+Actions like Taken, Skipped, Snooze apply to the occurrence first, then the engine decides what comes next.
+
+That prevents messy behaviour with multiple times per day.
+
+---
+
+## Platform approach
+
+### Android
+
+Use:
+
+* AlarmManager
+* BroadcastReceiver
+* local persistence
+* native notification actions
+
+Android should use a **true native runtime loop**:
+
+* compute next
+* schedule next
+* fire
+* action
+* reschedule next
+
+### iOS
+
+Use:
+
+* UNUserNotificationCenter
+* notification categories/actions
+* local persistence
+
+For iOS, I’d still use the same rule engine, but be realistic:
+
+* native local notifications
+* native action handling
+* likely a controlled future local buffer if needed
+
+iOS is stricter, so do not assume Android and iOS runtime behaviour are identical.
+
+---
+
+## Why this architecture
+
+Because your requirement is:
+
+* offline
+* no app opening required
+* actions from notifications
+* long-term continuity
+
+That means the runtime must live:
+
+* **on device**
+* **in native code**
+* **separate from the UI app lifecycle**
+
+RN is good for product and UI.
+It is the wrong place to own reminder runtime.
+
+---
+
+## What I would not recommend
+
+I would not recommend:
+
+### 1. Expo/JS as runtime owner
+
+Good for prototypes, not for your requirement.
+
+### 2. Full native rewrite
+
+Too much disruption. You do not need it.
+
+### 3. Server-driven reminder delivery
+
+Wrong fit for offline and phone-level reliability.
+
+### 4. Batch top-up as the foundation
+
+Can be a fallback tactic, but not the architecture.
+
+---
+
+## The clean split
+
+Think of it like this:
+
+### App layer
+
+“Let user create and manage reminders.”
+
+### Engine layer
+
+“Make reminders actually happen reliably.”
+
+That split is what’s missing now.
+
+---
+
+## My exact recommendation
+
+**React Native app + native reminder engine + local database + rule-based scheduling + occurrence-level action handling**
+
+That is the architecture I recommend.
+
+## Build order
+
+1. lock the reminder rule model
+2. build pure next-occurrence logic
+3. build Android native engine first
+4. connect RN to it
+5. remove JS runtime ownership
+6. build iOS native engine with the same rules
+
+If you want, I’ll turn that into a very short agent instruction next.

@@ -1,0 +1,186 @@
+The main issue looks architectural, not just a pile of bugs.
+
+Your target behaviour is:
+
+notifications fire online and offline
+3 actions show on both platforms
+actions work without opening the app
+ideally even when the app is killed
+
+That set of requirements clashes with the current architecture in at least two places.
+
+The biggest logic problem
+
+You are treating delivery and action handling as if they are the same capability.
+
+They are not.
+
+A locally scheduled notification can be delivered by the OS while offline. But processing an action from that notification when the app is killed is a different problem entirely. In Expo docs, background handling when the app is not running is tied to headless/background notification setup, and for iOS that is specifically about background remote notifications with data only and _contentAvailable: true, not ordinary local notification action handling. Expo also documents notification response listeners for when the app is backgrounded or closed and the user taps/interacts, but that still depends on the app being launched into a state where the response can be read.
+
+So the core mismatch is this:
+
+You want silent action processing in killed state, but your current implementation depends on app-side JS code receiving and handling the response.
+When the app is dead, there is no JS runtime sitting there waiting.
+
+That means Bug 4 is not really a bug in your business logic. It is a platform/runtime constraint that your current design is fighting.
+
+My take on each issue
+1) iOS action buttons not showing
+
+Your own write-up already points to the likely culprit.
+
+Expo says categories must be registered with setNotificationCategoryAsync before they are used by notifications via categoryIdentifier.
+
+So if setupNotificationCategories() is called without await, and notifications can be scheduled or delivered before that finishes, you have a race. On iOS that is exactly the kind of thing that would give you “Open” only.
+
+Also, setNotificationHandler being buried inside requestPermission() is a smell. Expo’s own example sets it at startup, not deep inside a permission flow. That handler is about foreground presentation behaviour, but the broader pattern matters: notification setup is being scattered across screens/hooks instead of done centrally at app boot.
+
+Architecture issue: startup notification bootstrap is fragmented.
+
+What it should be:
+
+app boot
+register categories
+register handler
+register listeners
+only then allow scheduling/sync logic
+2) Offline delivery inconsistency
+
+This one suggests your “local” system is not purely local in practice.
+
+If reminder A is created online, then fails offline, but creating reminder B offline triggers syncAllNotifications() and suddenly both work, that strongly suggests one of these is happening:
+
+the first reminder was never actually scheduled locally
+a later sync pass is the only place the real OS schedule gets rebuilt correctly
+local schedules are being cancelled/replaced during sync and only re-created under certain conditions
+your source of truth and OS schedule are drifting apart
+
+That is not a network issue first. It is a state reconciliation problem.
+
+Put bluntly: if a reminder is supposed to be local-first, then after creation there should be an immediately verifiable OS-level scheduled notification entry. If that is not true, then the app is still depending on sync as the real scheduler.
+
+So the architecture question is:
+
+Is creation writing directly to the OS schedule, or is it writing app state and hoping sync later makes the OS match it?
+
+For medication reminders, it needs to be the first one.
+
+3) Buttons not working in kill mode
+
+Your diagnosis is basically right.
+
+If all actions have opensAppToForeground: false, but your handling logic lives in JS launch/listener code, then in kill mode nothing is there to receive it. So the action disappears.
+
+That means you have two real options:
+
+Option A: accept app-open on action
+
+set opensAppToForeground: true
+process response on launch with checkLastNotificationResponse()
+most practical with Expo
+
+Option B: keep silent background action handling
+
+likely requires a deeper native approach and probably moving beyond the current Expo-managed assumption for this part
+much more expensive and fragile
+
+Given your product stage, Option A is the sane path.
+
+The deeper architecture flaw
+
+You seem to have three responsibilities tangled together inside one notification layer:
+
+permission/setup/bootstrap
+scheduling/reconciliation
+action processing/business outcomes
+
+That makes race conditions and state drift much more likely.
+
+A cleaner architecture would be:
+
+A. Notification bootstrap layer
+
+Runs once at app startup, always.
+Responsible for:
+
+setNotificationHandler
+setupNotificationCategories with await
+add listeners
+recover getLastNotificationResponse / checkLastNotificationResponse
+create Android channels if needed
+
+No reminder logic in here.
+
+B. Reminder scheduling engine
+
+Responsible for:
+
+taking reminder definitions from local DB
+translating them into concrete OS notification requests
+verifying what is scheduled
+diffing desired vs actual
+resyncing only when needed
+
+This engine should not care whether the user is online unless you are using remote push as backup.
+
+C. Action resolution layer
+
+Responsible for:
+
+Take / Skip / Snooze semantics
+updating SQLite
+cancelling or reissuing follow-ups
+marking missed states
+
+This should work from:
+
+live response listener when app is active/backgrounded
+launch recovery path when app was opened from an action
+
+That separation makes it much easier to see whether a failure is:
+
+category registration
+notification scheduling
+notification delivery
+action response capture
+business logic after response
+
+Right now those seem blurred.
+
+What I think is most likely true
+Bug 1
+
+Likely real cause:
+
+category registration race on iOS
+possibly categories not guaranteed ready before first scheduled/delivered notification
+Bug 2
+
+Likely real cause:
+
+“offline local notification” flow is not actually fully local-first
+sync is acting as the true scheduler or repair mechanism
+maybe reminders are being scheduled indirectly or overwritten
+Bug 4
+
+Not really a bug so much as:
+
+impossible with the current JS/runtime assumptions in Expo unless you foreground the app or switch to a more native approach
+The hard truth
+
+You probably need to relax one requirement:
+
+“3 buttons should be visible and actioned without the app opening”
+and
+“should work in kill mode”
+
+With your current stack, that combination is the problem.
+
+The more realistic product rule is:
+
+notifications must deliver offline
+actions should show on both platforms
+actions should work silently when app is alive/backgrounded where supported
+when app is killed, tapping an action opens the app and completes the action immediately
+
+That is a normal compromise, and for medication reminders it is acceptable.

@@ -25,12 +25,8 @@ import { ActionConfirmationProvider, useActionConfirmation } from "@/contexts/Ac
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ActionConfirmationToast } from "@/components/ActionConfirmationToast";
 import { 
-  setupNotificationCategories, 
-  setupNotificationResponseListener,
-  setupNotificationReceivedListener,
+  bootstrapNotifications,
   handleNotificationAction,
-  checkLastNotificationResponse,
-  syncAllNotifications,
 } from "@/services/notifications";
 import { onAppLaunchSync } from "@/services/pushSync";
 import { initFirebase } from "@/services/firebase";
@@ -42,10 +38,8 @@ function AppContent() {
 
   useEffect(() => {
     LocalDatabase.initDatabase();
-    setupNotificationCategories();
 
-    let responseCleanup: (() => void) | null = null;
-    let receivedCleanup: (() => void) | null = null;
+    let cleanups: (() => void)[] = [];
 
     const actionHandler = async (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string, scheduledTime?: string) => {
       const result = await handleNotificationAction(actionId, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
@@ -64,21 +58,17 @@ function AppContent() {
         }
       }
     };
-    
-    const setupListeners = async () => {
-      receivedCleanup = await setupNotificationReceivedListener();
-      responseCleanup = await setupNotificationResponseListener(actionHandler);
-      await checkLastNotificationResponse(actionHandler);
-      await syncAllNotifications();
+
+    const bootstrap = async () => {
+      cleanups = await bootstrapNotifications(actionHandler);
       onAppLaunchSync();
       initFirebase();
     };
-    
-    setupListeners();
-    
+
+    bootstrap();
+
     return () => {
-      if (responseCleanup) responseCleanup();
-      if (receivedCleanup) receivedCleanup();
+      cleanups.forEach((cleanup) => cleanup());
     };
   }, []);
 

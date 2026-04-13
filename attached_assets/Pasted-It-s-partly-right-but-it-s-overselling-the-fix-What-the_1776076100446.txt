@@ -1,0 +1,101 @@
+It’s **partly right**, but it’s overselling the fix.
+
+## What the agent is right about
+
+**Yes**, bad startup ordering can absolutely explain **missing iOS action buttons**.
+
+On iOS, actionable notifications require categories to be registered **at launch time**, and the notification must use a registered category identifier. Apple says categories should be registered at launch, and Expo says categories must be registered with `setNotificationCategoryAsync` before they can be used. If a notification is delivered without a registered category, it shows without your custom actions. ([Apple Developer][1])
+
+So this part is valid:
+
+* `await setupNotificationCategories()` should happen before any scheduling that depends on those categories
+* if you schedule before category registration completes, action buttons may not appear
+
+## What the agent is wrong or too confident about
+
+The leap from:
+
+> “fix startup order”
+
+to:
+
+> “buttons should appear, and killed-state taps should be catchable”
+
+is too strong.
+
+### 1. `setNotificationHandler(...)` is not the thing that fixes action buttons
+
+`setNotificationHandler` controls how notifications are presented **while the app is running in the foreground**. It is not the mechanism that registers interactive categories or makes killed-state action handling reliable. Expo documents it separately from categories and response listeners. ([Expo Documentation][2])
+
+So if the agent is treating this as a core fix for background or killed-state action processing, that is shaky.
+
+### 2. A JS response listener is not the same as reliable killed-state processing
+
+Expo’s `addNotificationResponseReceivedListener` is a JS listener that fires when a user interacts with a notification, and Expo also exposes `getLastNotificationResponseAsync()` for retrieving the most recent response after launch. That means cold-start recovery is possible, but it still depends on the app being launched and your JS boot path running correctly. ([Expo Documentation][2])
+
+That is **not the same** as:
+
+* action handled immediately by native code
+* next reminder rescheduled independently of app launch
+* months-long reliability without app opening
+
+It may fix **some** killed-state cases where the tap launches the app and your startup reads the last response. It does **not** turn the current JS-owned runtime into a true no-app-open reminder engine.
+
+### 3. “Broken startup sequence” is probably **a bug**, not **the foundation fix**
+
+If buttons are not showing, startup ordering may indeed be one bug.
+
+But your bigger requirement is:
+
+* offline
+* app not opened
+* action buttons work
+* future reminders continue correctly
+
+That needs more than startup order. It needs runtime ownership that does not depend on JS boot completing in time.
+
+## So the straight answer
+
+### For the buttons not showing:
+
+**Likely yes**, the agent’s fix is worth doing.
+Register categories first, await them, then schedule. That is a real fix. ([Apple Developer][1])
+
+### For killed-state actions:
+
+**Only partially.**
+It may improve recovery when the app is relaunched from a notification interaction and you read the last response early enough. Expo explicitly supports both a response listener and fetching the last response on launch. ([Expo Documentation][2])
+
+But it does **not** prove your current iOS architecture now satisfies:
+
+* no app opening required
+* reliable future rescheduling after actions
+* long-term offline delivery
+
+That part is still not solved by bootstrap ordering alone.
+
+## What I’d tell the agent
+
+Use this:
+
+```text
+Your proposed bootstrap fix looks valid for one specific problem: iOS action buttons may not appear if notification categories are not fully registered before notifications are scheduled or delivered.
+
+Implement that fix first, but do not present it as the full solution.
+
+Constraints:
+- Treat this as a fix for category/action button registration and possibly cold-start response recovery only.
+- Do not assume it solves long-term killed-state action processing or no-app-open reminder continuity.
+- After implementing, verify separately:
+  1. buttons now appear on iOS notifications
+  2. tapping an action from killed state is captured after cold launch
+  3. the action result is persisted correctly
+  4. future reminders are rescheduled correctly without relying on app-open sync
+
+If 3 or 4 still depend on JS startup or syncAllNotifications, say so explicitly.
+```
+
+The short version is: **good bug fix, not a full architecture fix**.
+
+[1]: https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/SupportingNotificationsinYourApp.html "Local and Remote Notification Programming Guide: Managing Your App’s Notification Support"
+[2]: https://docs.expo.dev/versions/latest/sdk/notifications/ "Notifications - Expo Documentation"
