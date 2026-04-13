@@ -1,14 +1,68 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as TaskManager from "expo-task-manager";
 import { AlarmService } from "./AlarmService";
 import { LocalDatabase } from "./LocalDatabase";
 import { Copy } from "@/constants/copy";
+
+export const NOTIFICATION_ACTION_TASK = "NOTIFICATION_ACTION_TASK";
 
 const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
 const LAST_PROCESSED_NOTIFICATION_KEY = "@goflo/last_processed_notification";
 const processingNotificationIds = new Set<string>();
+
+TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?: any; error?: any }) => {
+  if (error) {
+    console.error("[BG_TASK] NOTIFICATION_ACTION_TASK error:", error);
+    return;
+  }
+
+  try {
+    console.log("[BG_TASK] NOTIFICATION_ACTION_TASK fired with data:", JSON.stringify(data));
+
+    const response = data?.notification?.data?.notificationResponse ?? data?.notificationResponse;
+    if (!response) {
+      console.log("[BG_TASK] No notification response in task data, skipping");
+      return;
+    }
+
+    const actionIdentifier: string = response.actionIdentifier ?? "";
+    const content = response.notification?.request?.content ?? {};
+    const notificationData = content.data ?? {};
+    const reminderId: string = notificationData.reminderId ?? "";
+    const reminderTitle: string = content.title ?? "";
+    const soundEnabled: boolean = notificationData.soundEnabled ?? false;
+    const notificationId: string = response.notification?.request?.identifier ?? "";
+    const scheduledTime: string | undefined = notificationData.scheduledTime ?? undefined;
+
+    if (!reminderId || !actionIdentifier || actionIdentifier === "expo.modules.notifications.actions.DEFAULT") {
+      console.log("[BG_TASK] Skipping — no actionable reminderId or default tap:", actionIdentifier);
+      return;
+    }
+
+    const lastProcessedId = await AsyncStorage.getItem(LAST_PROCESSED_NOTIFICATION_KEY);
+    if (lastProcessedId === notificationId || processingNotificationIds.has(notificationId)) {
+      console.log("[BG_TASK] Already processed notification:", notificationId);
+      return;
+    }
+
+    console.log(`[BG_TASK] Processing action="${actionIdentifier}" reminderId="${reminderId}" notificationId="${notificationId}"`);
+    processingNotificationIds.add(notificationId);
+    try {
+      const result = await handleNotificationAction(actionIdentifier, reminderId, reminderTitle, soundEnabled, notificationId, scheduledTime);
+      console.log("[BG_TASK] Action result:", JSON.stringify(result));
+      if (result.success) {
+        await AsyncStorage.setItem(LAST_PROCESSED_NOTIFICATION_KEY, notificationId);
+      }
+    } finally {
+      processingNotificationIds.delete(notificationId);
+    }
+  } catch (err) {
+    console.error("[BG_TASK] Unexpected error in NOTIFICATION_ACTION_TASK:", err);
+  }
+});
 
 function isExpoGo(): boolean {
   return Constants.appOwnership === "expo";
@@ -306,6 +360,8 @@ export async function setupNotificationCategories(): Promise<void> {
     ]);
 
     console.log("Notification categories set up successfully");
+
+    await registerBackgroundNotificationTask();
   } catch (error) {
     console.log("Error setting up notification categories:", error);
   }
@@ -342,6 +398,17 @@ export async function bootstrapNotifications(
   await syncAllNotifications();
 
   return cleanups;
+}
+
+export async function registerBackgroundNotificationTask(): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const Notifications = await import("expo-notifications");
+    await Notifications.registerTaskAsync(NOTIFICATION_ACTION_TASK);
+    console.log("[BG_TASK] Registered NOTIFICATION_ACTION_TASK for killed-state actions");
+  } catch (error) {
+    console.error("[BG_TASK] Failed to register NOTIFICATION_ACTION_TASK:", error);
+  }
 }
 
 export async function cancelPendingNotificationsForReminder(reminderId: string): Promise<void> {
