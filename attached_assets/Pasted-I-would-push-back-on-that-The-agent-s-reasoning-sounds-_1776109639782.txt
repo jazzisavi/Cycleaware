@@ -1,0 +1,148 @@
+I would **push back on that**.
+
+The agent’s reasoning sounds tidy, but it is too rigid.
+
+## What I agree with
+
+Yes, the **future V2 schema should be decided early**.
+Yes, changing schema halfway through can create churn.
+
+## What I do **not** agree with
+
+I do **not** agree that you must do the **full migration implementation in the current codebase before #29 can start**.
+
+That is the weak part.
+
+## Why I disagree
+
+### 1. #29 does not require a live migration
+
+Extracting pure next-occurrence logic mainly depends on:
+
+* knowing the reminder rule shape
+* knowing the fields the logic uses
+
+It does **not** require:
+
+* applying a DB migration
+* rewriting all DB functions
+* proving all screens still work
+
+You can absolutely extract the logic against:
+
+* the current schema
+* or a mapped V2 rule object
+
+without migrating the app first.
+
+### 2. It creates unnecessary risk too early
+
+By doing full #28 first, the agent wants to touch:
+
+* schema
+* migration
+* database functions
+* app screens
+* history
+* reminder creation
+
+before proving the Android engine.
+
+That is a lot of breakage risk at the start of V2.
+
+### 3. “Schema stable” and “schema migrated” are not the same thing
+
+This is the key point.
+
+You can have:
+
+* a **stable agreed schema design**
+  without
+* **implementing the migration immediately**
+
+That is the cleaner move.
+
+## What I think should happen instead
+
+Split #28 into two tasks:
+
+### #28A
+
+**Lock V2 schema design**
+
+* exact columns
+* rule vs occurrence model
+* mapping from current schema
+* migration plan
+* decision on history table
+
+### #28B
+
+**Implement migration**
+
+* only when needed
+* after #29
+* ideally once Android storage/runtime path is clearer
+
+That gives you schema stability **without** taking migration risk too early.
+
+## What should happen to #29
+
+#29 can start after **#28A**, not after **#28B**.
+
+Because #29 only needs:
+
+* the agreed rule model
+* the field mapping
+* the scheduling rules
+
+That is enough to extract pure calculation logic.
+
+## What I would say to the agent
+
+Use this:
+
+```text
+I agree the V2 schema design needs to be locked early, but I do not agree that the full migration implementation must happen before #29.
+
+Please split #28 into:
+
+1. schema design/spec only
+   - exact V2 columns
+   - mapping from current schema
+   - rule vs occurrence separation
+   - migration plan and risks
+
+2. migration implementation
+   - apply schema changes
+   - update LocalDatabase.ts
+   - verify screens still work
+
+#29 should depend on the schema design/spec being locked, not on the migration being implemented.
+
+I want to reduce early breakage risk and avoid touching the live data layer before the calculation logic and native engine path are clearer.
+```
+
+## My recommendation to you
+
+Do **not** approve #28 as “full thing first” unless you are comfortable with:
+
+* destabilising the current code
+* committing to storage decisions before Android native is proven
+* potentially doing migration work twice
+
+I would approve only this order:
+
+1. **Lock V2 schema design**
+2. **Extract pure next-occurrence logic**
+3. **Build Android native prototype**
+4. **Then decide when to implement the DB migration**
+
+## Blunt answer
+
+The agent is treating **implementation stability** and **design stability** as the same thing.
+
+They are not.
+
+You need the design locked early.
+You do **not** need the migration done first.

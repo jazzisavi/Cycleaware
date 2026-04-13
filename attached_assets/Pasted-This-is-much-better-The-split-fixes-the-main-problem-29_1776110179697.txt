@@ -1,0 +1,135 @@
+This is **much better**.
+
+The split fixes the main problem.
+
+## #29
+
+### My view
+
+**Approve**, with one small tweak.
+
+### Why it now works
+
+It only depends on:
+
+* locked schema design
+* known rule fields
+
+It no longer forces:
+
+* DB migration
+* screen rewiring
+* risky live changes
+
+That makes sense.
+
+### One tweak I’d still make
+
+This line:
+
+> Both the React Native UI and the native engine will call it via the bridge.
+
+I would change that.
+
+Why:
+
+* the RN side can call the TS module directly
+* native code will not literally call the TS module “via the bridge”
+* native will likely mirror the logic, not execute this file through a bridge
+
+Better wording:
+
+**This module becomes the reference implementation for reminder calculation in the JS layer and the behavioural spec for the native engine.**
+
+That is more accurate.
+
+### Also tweak this line
+
+> Behaviour must be identical.
+
+Change to:
+
+**Behaviour must remain the same unless a known logic defect is found and documented.**
+
+That protects you from freezing in a bug.
+
+## #34
+
+### My view
+
+**Approve in principle**, but with one condition.
+
+### Why it now makes sense
+
+Placing migration after:
+
+* schema design
+* Android native proof
+* RN/native connection
+
+is much safer.
+
+That means migration is informed by reality, not theory.
+
+### The one condition
+
+This line is still too strong:
+
+> The occurrences table exists and is being written by both the RN layer and the native engine
+
+I would not hard-approve that exact ownership sentence yet.
+
+Because that still assumes the final storage ownership decision is:
+
+* shared DB
+* both sides writing directly
+
+That may be right, but it is still a decision, not a fact.
+
+Better wording:
+
+**The occurrences table exists and is being written in the agreed final storage model used by the RN layer and Android native engine.**
+
+That leaves room if the native side becomes the primary writer and RN reads through bridge methods.
+
+### Another small tweak
+
+This dependency:
+
+> Connect React Native UI to native engine
+
+That’s fine, but I would mentally read it as:
+
+* Android native is proven
+* RN is connected enough to exercise the flow
+* then migrate
+
+So the order now is sensible.
+
+## Bottom line
+
+### #29
+
+**Approve with wording tweaks**
+
+### #34
+
+**Approve with storage-ownership wording softened**
+
+## What I’d send back
+
+```text
+These are much better.
+
+Approve #29 with two wording changes:
+1. Do not say both RN and native will call the TS module via the bridge. Instead, make this the JS reference implementation and the behavioural spec for the native engine.
+2. Change “Behaviour must be identical” to “Behaviour must remain the same unless a known logic defect is found and documented.”
+
+Approve #34 with one wording change:
+- Do not assume both RN and native will directly write the occurrences table unless storage ownership has been explicitly decided.
+- Replace that line with wording that refers to the agreed final storage model.
+
+Other than that, the sequencing now makes sense.
+```
+
+So yes, this is now in much better shape.
