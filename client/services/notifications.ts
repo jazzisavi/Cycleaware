@@ -311,6 +311,39 @@ export async function setupNotificationCategories(): Promise<void> {
   }
 }
 
+export async function bootstrapNotifications(
+  onAction: (actionId: string, reminderId: string, reminderTitle: string, soundEnabled: boolean, notificationId?: string, scheduledTime?: string) => Promise<void>
+): Promise<(() => void)[]> {
+  if (!isNotificationsAvailable()) {
+    return [];
+  }
+
+  const Notifications = await import("expo-notifications");
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+
+  await setupNotificationCategories();
+
+  const cleanups: (() => void)[] = [];
+  const receivedCleanup = await setupNotificationReceivedListener();
+  if (receivedCleanup) cleanups.push(receivedCleanup);
+  const responseCleanup = await setupNotificationResponseListener(onAction);
+  if (responseCleanup) cleanups.push(responseCleanup);
+
+  await checkLastNotificationResponse(onAction);
+  await syncAllNotifications();
+
+  return cleanups;
+}
+
 export async function cancelPendingNotificationsForReminder(reminderId: string): Promise<void> {
   if (!isNotificationsAvailable()) {
     return;
