@@ -1,0 +1,143 @@
+Here’s the issue list, focused on **how the current reminder logic/runtime is built** and why that causes problems.
+
+## Core architecture issues
+
+1. **JS/Expo owns too much of the reminder runtime**
+
+   * Scheduling, response handling, resync, and recovery depend too much on the React Native / Expo layer.
+   * That is the wrong place for a system that must keep working when the app is not open.
+
+2. **The system depends on the app opening to stay healthy**
+
+   * Parts of the logic are repaired, topped up, or resynced on startup.
+   * That means the reminder engine is not truly self-sustaining.
+
+3. **Scheduling is reactive instead of deterministic**
+
+   * The system often behaves like “something happened, now fix the schedule.”
+   * A reliable reminder engine should always know the next valid occurrence and keep that alive without repair cycles.
+
+4. **Runtime ownership is split across too many places**
+
+   * Scheduling logic, notification handling, background recovery, listeners, and sync logic are spread around.
+   * That makes the system hard to reason about and easy to break.
+
+5. **There is no single source of truth for runtime behaviour**
+
+   * The database may hold reminder data, but actual runtime truth is also spread across scheduled notifications, listeners, and sync behaviour.
+   * That leads to drift between stored intent and actual scheduled state.
+
+## Delivery and scheduling issues
+
+6. **Batch / buffer scheduling is being used as a core strategy**
+
+   * Scheduling a window of future notifications is being used to keep the system alive.
+   * That can be a platform workaround, but it should not be the foundation.
+
+7. **Future delivery depends on top-up logic**
+
+   * If the top-up logic does not run, future reminders can run out.
+   * That means delivery continuity is not guaranteed.
+
+8. **Cancel-and-rebuild patterns are fragile**
+
+   * Rebuilding future notifications can create timing gaps, missed reminders, duplicates, or incorrect replacement.
+   * It is a blunt recovery tool, not a stable runtime model.
+
+9. **Rescheduling after user action is not owned by a reliable always-available layer**
+
+   * After Take, Skip, or Snooze, something needs to update local state and schedule what comes next.
+   * In the current design, that depends too much on JS startup and listeners.
+
+10. **The system can miss state transitions when the app is killed**
+
+* If the app is not alive, complex follow-up logic is not reliably available.
+* Notifications may still show, but the logic chain behind them is not guaranteed to continue correctly.
+
+## Notification action issues
+
+11. **Action handling is too dependent on app boot timing**
+
+* In killed state, the app must cold-start before JS can process anything.
+* That creates race conditions around whether the response is caught in time.
+
+12. **Cold-start recovery is being treated like runtime ownership**
+
+* Reading the last notification response after launch is a recovery path.
+* It is useful, but it is not the same as handling the action natively at the moment it happens.
+
+13. **Action buttons and action processing are too tightly tied to startup order**
+
+* If categories or handlers are not registered at the right time, actions may not show or may not be processed correctly.
+* That makes the system fragile even before deeper runtime issues.
+
+## Offline and no-app-open issues
+
+14. **Offline continuity is not truly guaranteed by the current owner**
+
+* A proper offline reminder system must keep working entirely on-device without needing app-open resync.
+* The current setup still depends too much on runtime availability in JS.
+
+15. **No-app-open behaviour is not properly supported**
+
+* Your requirement is that reminders continue for months without opening the app.
+* The current architecture is not built around that assumption.
+
+16. **The current setup treats background execution as if it were dependable**
+
+* On iOS especially, background and suspended behaviour is heavily constrained.
+* The logic is built as though the app will get enough chances to recover itself, which is not safe.
+
+## Logic/model issues
+
+17. **The reminder rule model and runtime model are too mixed together**
+
+* Product rules and delivery mechanics are not cleanly separated.
+* That makes it harder to test and replace the runtime without touching product behaviour.
+
+18. **The next-occurrence logic is not the sole engine driving delivery**
+
+* Even if next occurrence exists somewhere, it is not clearly the only thing deciding what gets scheduled next.
+* That creates inconsistency.
+
+19. **Cycle logic may be constrained by the current schema**
+
+* If the stored model does not clearly separate cycle length from active day range, the engine can make wrong assumptions.
+* That is a model clarity issue, not just a scheduling issue.
+
+20. **Multiple reminder times per day increase complexity that the current runtime is not handling cleanly enough**
+
+* Morning and evening reminders, snooze, taken, skipped, and next-cycle transitions all need precise occurrence-level logic.
+* A loosely coupled sync-based runtime struggles with that.
+
+## Engineering issues
+
+21. **Too many fallback mechanisms are doing core work**
+
+* Startup sync, response recovery, rebuild-all scheduling, and listeners are acting like primary systems.
+* Fallbacks should be backups, not the engine.
+
+22. **The architecture is hard to verify**
+
+* Because behaviour is spread across scheduling, listeners, app startup, and background recovery, it is difficult to prove that it will work long-term.
+* That is a red flag for a medication reminder product.
+
+23. **The current build makes bugs look random**
+
+* Missing buttons, missed actions, drift, duplicates, or reminders stopping can appear inconsistent.
+* But the root cause is structural, not random.
+
+## Bottom line
+
+The main issue is this:
+
+**The reminder logic is built around a UI app trying to keep a reminder engine alive, instead of a reminder engine that can run independently of the UI app.**
+
+That is why it feels flaky and why it can fail completely.
+
+If you want, I can turn this into a **shorter agent-ready issue list** with headings like:
+
+* keep
+* replace
+* risks
+* non-negotiables
