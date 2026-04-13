@@ -54,10 +54,11 @@ export interface WeekdayRule {
 
 /**
  * Dispatcher input — mirrors the relevant fields of LocalReminder.
- * Accepts Partial<LocalReminder> directly (field names are identical).
+ * reminderType is optional so that Partial<LocalReminder> is assignable
+ * without a cast. The dispatcher returns null if reminderType is absent.
  */
 export interface ReminderRule {
-  reminderType: 'cycle' | 'calendar';
+  reminderType?: 'cycle' | 'calendar';
   cycleDayStart?: number | null;
   cycleDayEnd?: number | null;
   cycleStartDate?: string | null;
@@ -75,8 +76,19 @@ export interface ReminderRule {
 }
 
 // ---------------------------------------------------------------------------
-// Internal helper
+// Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Returns true if `date` is after the end of the given end-date string.
+ * Always compares against 23:59:59.999 of that day so that reminders
+ * scheduled at any time on the end date are correctly included.
+ */
+function isAfterEndDate(date: Date, endDateStr: string): boolean {
+  const end = new Date(endDateStr);
+  end.setHours(23, 59, 59, 999);
+  return date > end;
+}
 
 interface CycleCheckResult {
   isActiveDay: boolean;
@@ -275,7 +287,7 @@ export function calculateNextIntervalOccurrence(rule: IntervalRule, from: Date =
   candidate.setHours(hours, minutes, 0, 0);
 
   if (candidate > from) {
-    if (calendarEndsType === 'on' && calendarEndDate && candidate > new Date(calendarEndDate)) {
+    if (calendarEndsType === 'on' && calendarEndDate && isAfterEndDate(candidate, calendarEndDate)) {
       return null;
     }
     return candidate;
@@ -284,7 +296,7 @@ export function calculateNextIntervalOccurrence(rule: IntervalRule, from: Date =
   searchDate.setDate(searchDate.getDate() + repeatInterval);
   searchDate.setHours(hours, minutes, 0, 0);
 
-  if (calendarEndsType === 'on' && calendarEndDate && searchDate > new Date(calendarEndDate)) {
+  if (calendarEndsType === 'on' && calendarEndDate && isAfterEndDate(searchDate, calendarEndDate)) {
     return null;
   }
 
@@ -359,7 +371,7 @@ export function calculateNextWeekdayOccurrence(rule: WeekdayRule, from: Date = n
     result.setHours(hours, minutes, 0, 0);
 
     if (result > from) {
-      if (calendarEndsType === 'on' && calendarEndDate && result > new Date(calendarEndDate)) {
+      if (calendarEndsType === 'on' && calendarEndDate && isAfterEndDate(result, calendarEndDate)) {
         return null;
       }
       return result;

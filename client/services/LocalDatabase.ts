@@ -278,7 +278,7 @@ export const LocalDatabase = {
       reminderTimes: data.reminderTimes ?? null,
     };
 
-    const nextOccurrence = calculateNextOccurrence(partial as any)?.toISOString() ?? null;
+    const nextOccurrence = calculateNextOccurrence(partial)?.toISOString() ?? null;
 
     if (isWeb) {
       const reminder: LocalReminder = {
@@ -367,7 +367,7 @@ export const LocalDatabase = {
       ...data,
     };
 
-    const nextOccurrence = calculateNextOccurrence(merged as any)?.toISOString() ?? null;
+    const nextOccurrence = calculateNextOccurrence(merged)?.toISOString() ?? null;
     const now = new Date().toISOString();
 
     if (isWeb) {
