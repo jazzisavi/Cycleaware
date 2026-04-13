@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { calculateNextOccurrence } from './reminderCalculator';
 
 const isWeb = Platform.OS === 'web';
 
@@ -132,266 +133,6 @@ export interface CreateReminderInput {
   isActive?: boolean;
 }
 
-const DAY_NAME_TO_NUMBER: Record<string, number> = {
-  sun: 0,
-  mon: 1,
-  tue: 2,
-  wed: 3,
-  thu: 4,
-  fri: 5,
-  sat: 6,
-};
-
-function checkCycleDay(
-  cycleDayStart: number,
-  cycleDayEnd: number,
-  cycleStartDate: Date,
-  cycleEndDate: Date | null,
-  checkDate: Date = new Date()
-): {
-  isActiveDay: boolean;
-  currentCycleDay: number;
-  daysUntilNextActive: number;
-  nextActiveDate: Date | null;
-} {
-  const cycleLength = cycleDayEnd;
-
-  const startDateOnly = new Date(cycleStartDate);
-  startDateOnly.setHours(0, 0, 0, 0);
-
-  const checkDateOnly = new Date(checkDate);
-  checkDateOnly.setHours(0, 0, 0, 0);
-
-  if (cycleEndDate) {
-    const endDateOnly = new Date(cycleEndDate);
-    endDateOnly.setHours(0, 0, 0, 0);
-    if (checkDateOnly > endDateOnly) {
-      return { isActiveDay: false, currentCycleDay: 0, daysUntilNextActive: -1, nextActiveDate: null };
-    }
-  }
-
-  if (checkDateOnly < startDateOnly) {
-    const daysUntilStart = Math.floor((startDateOnly.getTime() - checkDateOnly.getTime()) / (1000 * 60 * 60 * 24));
-    const daysUntilActive = daysUntilStart + (cycleDayStart - 1);
-    const nextActiveDate = new Date(startDateOnly);
-    nextActiveDate.setDate(nextActiveDate.getDate() + (cycleDayStart - 1));
-    return { isActiveDay: false, currentCycleDay: 0, daysUntilNextActive: daysUntilActive, nextActiveDate };
-  }
-
-  const daysSinceStart = Math.floor((checkDateOnly.getTime() - startDateOnly.getTime()) / (1000 * 60 * 60 * 24));
-  const dayInCurrentCycle = (daysSinceStart % cycleLength) + 1;
-  const isActiveDay = dayInCurrentCycle >= cycleDayStart && dayInCurrentCycle <= cycleDayEnd;
-
-  let daysUntilNextActive: number;
-  let nextActiveDate: Date | null;
-
-  if (isActiveDay) {
-    daysUntilNextActive = 0;
-    nextActiveDate = new Date(checkDateOnly);
-  } else if (dayInCurrentCycle < cycleDayStart) {
-    daysUntilNextActive = cycleDayStart - dayInCurrentCycle;
-    nextActiveDate = new Date(checkDateOnly);
-    nextActiveDate.setDate(nextActiveDate.getDate() + daysUntilNextActive);
-  } else {
-    const daysLeftInCycle = cycleLength - dayInCurrentCycle;
-    daysUntilNextActive = daysLeftInCycle + cycleDayStart;
-    nextActiveDate = new Date(checkDateOnly);
-    nextActiveDate.setDate(nextActiveDate.getDate() + daysUntilNextActive);
-  }
-
-  if (cycleEndDate && nextActiveDate) {
-    const endDateOnly = new Date(cycleEndDate);
-    endDateOnly.setHours(0, 0, 0, 0);
-    if (nextActiveDate > endDateOnly) {
-      nextActiveDate = null;
-      daysUntilNextActive = -1;
-    }
-  }
-
-  return { isActiveDay, currentCycleDay: dayInCurrentCycle, daysUntilNextActive, nextActiveDate };
-}
-
-function calculateNextCycleOccurrence(reminder: Partial<LocalReminder>): string | null {
-  const { cycleDayStart, cycleDayEnd, cycleStartDate, cycleEndDate, reminderTime, reminderTimes } = reminder;
-  if (!cycleDayStart || !cycleDayEnd || !cycleStartDate) return null;
-
-  const times = reminderTimes || (reminderTime ? [reminderTime] : []);
-  if (times.length === 0) return null;
-
-  const fromDate = new Date();
-  const cycleCheck = checkCycleDay(
-    cycleDayStart,
-    cycleDayEnd,
-    new Date(cycleStartDate),
-    cycleEndDate ? new Date(cycleEndDate) : null,
-    fromDate
-  );
-
-  if (!cycleCheck.nextActiveDate) return null;
-
-  if (!cycleCheck.isActiveDay) {
-    const earliest = times
-      .map((time) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        const d = new Date(cycleCheck.nextActiveDate!);
-        d.setHours(hours, minutes, 0, 0);
-        return d;
-      })
-      .reduce((a, b) => (a < b ? a : b));
-    return earliest.toISOString();
-  }
-
-  const now = new Date();
-  const futureToday = times
-    .map((time) => {
-      const [hours, minutes] = time.split(':').map(Number);
-      const d = new Date(cycleCheck.nextActiveDate!);
-      d.setHours(hours, minutes, 0, 0);
-      return d;
-    })
-    .filter((d) => d > now);
-
-  if (futureToday.length > 0) {
-    return futureToday.reduce((a, b) => (a < b ? a : b)).toISOString();
-  }
-
-  const tomorrow = new Date(fromDate);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowCheck = checkCycleDay(
-    cycleDayStart,
-    cycleDayEnd,
-    new Date(cycleStartDate),
-    cycleEndDate ? new Date(cycleEndDate) : null,
-    tomorrow
-  );
-
-  if (tomorrowCheck.isActiveDay && tomorrowCheck.nextActiveDate) {
-    const earliest = times
-      .map((time) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        const d = new Date(tomorrowCheck.nextActiveDate!);
-        d.setHours(hours, minutes, 0, 0);
-        return d;
-      })
-      .reduce((a, b) => (a < b ? a : b));
-    return earliest.toISOString();
-  }
-
-  if (tomorrowCheck.nextActiveDate) {
-    const earliest = times
-      .map((time) => {
-        const [hours, minutes] = time.split(':').map(Number);
-        const d = new Date(tomorrowCheck.nextActiveDate!);
-        d.setHours(hours, minutes, 0, 0);
-        return d;
-      })
-      .reduce((a, b) => (a < b ? a : b));
-    return earliest.toISOString();
-  }
-
-  return null;
-}
-
-function calculateNextCalendarOccurrence(reminderData: Partial<LocalReminder>): string | null {
-  const {
-    weeklyRepeatDays,
-    repeatInterval = 1,
-    repeatUnit = 'week',
-    calendarStartDate,
-    calendarEndDate,
-    calendarEndsType = 'never',
-    maxOccurrences,
-    completedOccurrences = 0,
-    reminderTime = '09:00',
-  } = reminderData;
-
-  const fromDate = new Date();
-  const [hours, minutes] = reminderTime.split(':').map(Number);
-  const startDate = calendarStartDate ? new Date(calendarStartDate) : new Date();
-  startDate.setHours(0, 0, 0, 0);
-
-  if (calendarEndsType === 'on' && calendarEndDate) {
-    const endDate = new Date(calendarEndDate);
-    endDate.setHours(23, 59, 59, 999);
-    if (fromDate > endDate) return null;
-  }
-
-  if (calendarEndsType === 'after' && maxOccurrences) {
-    if (completedOccurrences >= maxOccurrences) return null;
-  }
-
-  let searchDate = new Date(Math.max(startDate.getTime(), fromDate.getTime()));
-  searchDate.setHours(0, 0, 0, 0);
-
-  if (repeatUnit === 'day') {
-    const daysSinceStart = Math.floor((searchDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-    const daysIntoInterval = daysSinceStart % repeatInterval;
-
-    if (daysIntoInterval !== 0) {
-      searchDate.setDate(searchDate.getDate() + (repeatInterval - daysIntoInterval));
-    }
-
-    const todayWithTime = new Date(searchDate);
-    todayWithTime.setHours(hours, minutes, 0, 0);
-
-    if (todayWithTime > fromDate) {
-      return todayWithTime.toISOString();
-    }
-
-    searchDate.setDate(searchDate.getDate() + repeatInterval);
-    searchDate.setHours(hours, minutes, 0, 0);
-    return searchDate.toISOString();
-  } else {
-    const selectedDays = (weeklyRepeatDays || []) as string[];
-
-    if (selectedDays.length === 0) {
-      const result = new Date(searchDate);
-      result.setHours(hours, minutes, 0, 0);
-      if (result > fromDate) return result.toISOString();
-      result.setDate(result.getDate() + 1);
-      return result.toISOString();
-    }
-
-    const dayNumbers = selectedDays.map((d) => DAY_NAME_TO_NUMBER[d]).filter((n) => n !== undefined);
-
-    for (let weekOffset = 0; weekOffset < 8 * repeatInterval; weekOffset++) {
-      const checkDate = new Date(searchDate);
-      checkDate.setDate(checkDate.getDate() + weekOffset);
-
-      const daysSinceStart = Math.floor((checkDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-      const weeksSinceStart = Math.floor(daysSinceStart / 7);
-
-      if (weeksSinceStart % repeatInterval !== 0) {
-        continue;
-      }
-
-      const dayOfWeek = checkDate.getDay();
-      if (dayNumbers.includes(dayOfWeek)) {
-        const resultDate = new Date(checkDate);
-        resultDate.setHours(hours, minutes, 0, 0);
-
-        if (resultDate > fromDate) {
-          if (calendarEndsType === 'on' && calendarEndDate) {
-            const endDate = new Date(calendarEndDate);
-            if (resultDate > endDate) return null;
-          }
-          return resultDate.toISOString();
-        }
-      }
-    }
-
-    return null;
-  }
-}
-
-function calculateNextOccurrence(reminder: Partial<LocalReminder>): string | null {
-  if (reminder.reminderType === 'cycle') {
-    return calculateNextCycleOccurrence(reminder);
-  } else if (reminder.reminderType === 'calendar') {
-    return calculateNextCalendarOccurrence(reminder);
-  }
-  return null;
-}
 
 function rowToReminder(row: any): LocalReminder {
   return {
@@ -537,7 +278,7 @@ export const LocalDatabase = {
       reminderTimes: data.reminderTimes ?? null,
     };
 
-    const nextOccurrence = calculateNextOccurrence(partial);
+    const nextOccurrence = calculateNextOccurrence(partial as any)?.toISOString() ?? null;
 
     if (isWeb) {
       const reminder: LocalReminder = {
@@ -626,7 +367,7 @@ export const LocalDatabase = {
       ...data,
     };
 
-    const nextOccurrence = calculateNextOccurrence(merged);
+    const nextOccurrence = calculateNextOccurrence(merged as any)?.toISOString() ?? null;
     const now = new Date().toISOString();
 
     if (isWeb) {
