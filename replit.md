@@ -43,6 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Expo Go** loads pre-built static JS bundles from `static-build/` folder, NOT the live Metro dev server
 - **After ANY code change**, you MUST run `node scripts/build.js` to rebuild the static bundles, then restart the backend (`Start Backend` workflow) so mobile devices pick up the changes
 - The Metro dev server (`Start Frontend`) only serves the web version; mobile gets served from the backend's static files
+- **Dev web preview port**: Expo runs on localPort **8081** (mapped to external port 80 = the port-less primary domain `https://$REPLIT_DEV_DOMAIN`). This MUST match `EXPO_PACKAGER_PROXY_URL=https://$REPLIT_DEV_DOMAIN` (no port) set in the `expo:dev` script — otherwise the in-IDE "Mobile App" preview connects to a dead address and shows blank. The `--port 8081` flag is set in the `Start Frontend` workflow command.
 - Build version: v1.0.13
 
 ### Local-First Data Flow
