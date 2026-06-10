@@ -1,0 +1,144 @@
+{
+  "id": "9ec6a583-e01d-439a-9df5-207930abd1fd",
+  "createdAt": "2026-06-10T12:01:57.713Z",
+  "runtimeVersion": "exposdk:54.0.0",
+  "launchAsset": {
+    "key": "bundle-1781092917713-2366",
+    "contentType": "application/javascript",
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1781092917713-2366/_expo/static/js/ios/bundle.js"
+  },
+  "assets": [],
+  "metadata": {},
+  "extra": {
+    "eas": {
+      "projectId": "ab866bb4-8300-49c4-848f-a9315f9e8784"
+    },
+    "expoClient": {
+      "name": "GoFlo",
+      "slug": "goflo",
+      "version": "1.0.14",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "goflo",
+      "userInterfaceStyle": "automatic",
+      "newArchEnabled": true,
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#EDE8E2",
+        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/splash-icon.png"
+      },
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.swopzshop.goflo.app"
+      },
+      "android": {
+        "adaptiveIcon": {
+          "backgroundColor": "#EDE8E2",
+          "foregroundImage": "./assets/images/android-icon-foreground.png",
+          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
+        },
+        "edgeToEdgeEnabled": true,
+        "predictiveBackGestureEnabled": false,
+        "package": "com.swopzshop.goflo.app",
+        "googleServicesFile": "{\n  \"project_info\": {\n    \"project_number\": \"189250274532\",\n    \"project_id\": \"cycleaware-14ab8\",\n    \"storage_bucket\": \"cycleaware-14ab8.firebasestorage.app\"\n  },\n  \"client\": [\n    {\n      \"client_info\": {\n        \"mobilesdk_app_id\": \"1:189250274532:android:0966493746aa80130a98f1\",\n        \"android_client_info\": {\n          \"package_name\": \"com.goflo.app\"\n        }\n      },\n      \"oauth_client\": [],\n      \"api_key\": [\n        {\n          \"current_key\": \"AIzaSyBeFBFOe8npLbKEafC5Wnz5xoPCqDO3XsQ\"\n        }\n      ],\n      \"services\": {\n        \"appinvite_service\": {\n          \"other_platform_oauth_client\": []\n        }\n      }\n    }\n  ],\n  \"configuration_version\": \"1\"\n}"
+      },
+      "web": {
+        "output": "single",
+        "favicon": "./assets/images/icon.png"
+      },
+      "plugins": [
+        [
+          "expo-splash-screen",
+          {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#EDE8E2",
+            "dark": {
+              "backgroundColor": "#EDE8E2"
+            }
+          }
+        ],
+        "expo-task-manager",
+        "expo-web-browser",
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/images/icon.png",
+            "color": "#6B9BD1",
+            "defaultChannel": "reminders"
+          }
+        ],
+        "./plugins/withAndroidPickerTheme",
+        "@react-native-firebase/app",
+        "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js"
+      ],
+      "experiments": {
+        "reactCompiler": true
+      },
+      "extra": {
+        "eas": {
+          "projectId": "ab866bb4-8300-49c4-848f-a9315f9e8784"
+        }
+      },
+      "owner": "savidesign",
+      "_internal": {
+        "isDebug": false,
+        "projectRoot": "/home/runner/workspace",
+        "dynamicConfigPath": {},
+        "staticConfigPath": "/home/runner/workspace/app.json",
+        "packageJsonPath": "/home/runner/workspace/package.json",
+        "pluginHistory": {
+          "expo-splash-screen": {
+            "name": "expo-splash-screen",
+            "version": "31.0.13"
+          },
+          "expo-task-manager": {
+            "name": "expo-task-manager",
+            "version": "14.0.9"
+          },
+          "expo-web-browser": {
+            "name": "expo-web-browser",
+            "version": "15.0.10"
+          },
+          "expo-notifications": {
+            "name": "expo-notifications",
+            "version": "0.32.16"
+          },
+          "@react-native-firebase/app": {
+            "name": "@react-native-firebase/app",
+            "version": "23.8.6"
+          },
+          "@react-native-firebase/crashlytics": {
+            "name": "@react-native-firebase/crashlytics",
+            "version": "23.8.6"
+          }
+        }
+      },
+      "sdkVersion": "54.0.0",
+      "platforms": [
+        "ios",
+        "android",
+        "web"
+      ],
+      "androidStatusBar": {
+        "backgroundColor": "#EDE8E2"
+      },
+      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios"
+    },
+    "expoGo": {
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios",
+      "developer": {
+        "tool": "expo-cli",
+        "projectRoot": "/home/runner/workspace"
+      },
+      "packagerOpts": {
+        "dev": false
+      },
+      "mainModuleName": "client/index"
+    },
+    "scopeKey": "@anonymous/goflo-2fdd534e-653c-4107-baa3-1a9b24df942a"
+  }
+}
