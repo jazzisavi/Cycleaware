@@ -1,7 +1,0 @@
-{
-  "name": "goflo-alarm-module",
-  "version": "1.0.0",
-  "description": "GoFlo native alarm engine — Android AlarmManager + BroadcastReceiver",
-  "main": "src/index",
-  "types": "src/index.d.ts"
-}

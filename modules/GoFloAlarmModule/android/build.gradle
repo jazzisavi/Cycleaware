@@ -1,6 +1,0 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'expo-module-gradle-plugin'
-
-group = 'expo.modules.gofloalarm'
-version = '1.0.0'

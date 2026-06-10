@@ -55,7 +55,6 @@
         }
       ],
       "./plugins/withAndroidPickerTheme",
-      "./plugins/withGoFloAlarm",
       "@react-native-firebase/app",
       "./node_modules/@react-native-firebase/crashlytics/plugin/build/index.js"
     ],
