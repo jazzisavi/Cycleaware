@@ -12,6 +12,7 @@ import { TextInput } from "@/components/TextInput";
 import { Button } from "@/components/Button";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -22,6 +23,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
   const { isSubscribed, currentPlan } = useSubscription();
 
@@ -45,7 +47,7 @@ export default function ProfileScreen() {
         >
           <Feather name="arrow-left" size={20} color={theme.text} />
         </Pressable>
-        <ThemedText style={styles.headerTitle}>
+        <ThemedText style={[styles.headerTitle, { fontSize: rs(28) }]}>
           {Copy.profile.title}
         </ThemedText>
       </View>

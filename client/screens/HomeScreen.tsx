@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
@@ -29,6 +30,7 @@ const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
 
 export default function HomeScreen() {
   const { theme, isDark } = useTheme();
+  const { rs } = useResponsive();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
@@ -265,8 +267,8 @@ export default function HomeScreen() {
       >
         {reminders.length === 0 ? (
           <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
-            <View style={styles.welcomeDecorativeCircle} />
-            <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive }]}>{Copy.home.welcomeTitle}</Text>
+            <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60) }]} />
+            <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive, fontSize: rs(26) }]}>{Copy.home.welcomeTitle}</Text>
             <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.home.welcomeText}</Text>
             <Pressable
               style={[styles.ctaButton, { backgroundColor: theme.saveButtonActive }]}

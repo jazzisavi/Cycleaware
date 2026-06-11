@@ -9,6 +9,7 @@ import { useNavigation } from "@react-navigation/native";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 
@@ -19,6 +20,7 @@ const DEFAULT_SNOOZE_DURATION = 60;
 export default function SnoozeSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   const navigation = useNavigation();
   const [selectedDuration, setSelectedDuration] = useState(DEFAULT_SNOOZE_DURATION);
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +107,7 @@ export default function SnoozeSettingsScreen() {
           >
             <Feather name="arrow-left" size={20} color={theme.text} />
           </Pressable>
-          <ThemedText style={styles.headerTitle}>
+          <ThemedText style={[styles.headerTitle, { fontSize: rs(28) }]}>
             {Copy.snoozeSettings.title}
           </ThemedText>
         </View>

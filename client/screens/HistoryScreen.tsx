@@ -8,6 +8,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { EmptyState } from "@/components/EmptyState";
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useLocalHistory } from "@/hooks/useLocalReminders";
@@ -16,6 +17,7 @@ import type { LocalHistoryEntry } from "@/services/LocalDatabase";
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   const navigation = useNavigation();
 
   const { history, isLoaded, refresh } = useLocalHistory();
@@ -131,7 +133,7 @@ export default function HistoryScreen() {
         >
           <Feather name="arrow-left" size={20} color={theme.text} />
         </Pressable>
-        <ThemedText style={styles.headerTitle}>
+        <ThemedText style={[styles.headerTitle, { fontSize: rs(28) }]}>
           {Copy.history.title}
         </ThemedText>
       </View>

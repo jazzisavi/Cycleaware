@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { FontFamily, Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 const ONBOARDING_KEY = "@goflo/onboarding_complete";
 const USER_NAME_KEY = "@goflo/user_name";
@@ -27,8 +28,9 @@ interface OnboardingScreenProps {
 
 function DotIndicators({ active, total }: { active: number; total: number }) {
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   return (
-    <View style={styles.dotsWrapper}>
+    <View style={[styles.dotsWrapper, { marginBottom: rs(Spacing["2xl"]) }]}>
       <View style={styles.dotsRow}>
         {Array.from({ length: total }).map((_, i) => (
           <View
@@ -64,9 +66,10 @@ function ExampleCard({
   detail: string;
 }) {
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   return (
     <View style={[styles.exampleCardOuter, { backgroundColor: bgColor }]}>
-      <Text style={[styles.exampleCategoryLabel, { color: categoryColor }]}>
+      <Text style={[styles.exampleCategoryLabel, { color: categoryColor, fontSize: rs(22) }]}>
         {categoryLabel}
       </Text>
       <View style={[styles.exampleCardInner, { backgroundColor: theme.backgroundDefault }]}>
@@ -86,6 +89,7 @@ function ExampleCard({
 export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
+  const { rs } = useResponsive();
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
   const nameInputRef = useRef<RNTextInput>(null);
@@ -124,9 +128,9 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
         {page === 0 ? (
           <View style={styles.page}>
             <View style={styles.pageOneContent}>
-              <Text style={[styles.bigTitle, { color: theme.text }]}>{Copy.onboarding.pageOneTitle}</Text>
+              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(44), lineHeight: rs(52), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneTitle}</Text>
 
-              <View style={styles.cardsContainer}>
+              <View style={[styles.cardsContainer, { gap: rs(Spacing.lg) }]}>
                 <ExampleCard
                   categoryLabel={Copy.onboarding.cycleAligned}
                   categoryColor={theme.accentMint}
@@ -168,13 +172,13 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
           </View>
         ) : (
           <View style={styles.page}>
-            <View style={styles.pageTwoContent}>
-              <Text style={[styles.helloTitle, { color: theme.text }]}>{Copy.onboarding.pageTwoTitle}</Text>
+            <View style={[styles.pageTwoContent, { paddingTop: rs(Spacing["4xl"]) }]}>
+              <Text style={[styles.helloTitle, { color: theme.text, fontSize: rs(48), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageTwoTitle}</Text>
 
               <View style={styles.nameInputWrapper}>
                 <RNTextInput
                   ref={nameInputRef}
-                  style={[styles.nameInput, { color: theme.text }]}
+                  style={[styles.nameInput, { color: theme.text, fontSize: rs(20) }]}
                   placeholder={Copy.onboarding.namePrompt}
                   placeholderTextColor={theme.saveButtonDisabled}
                   value={name}

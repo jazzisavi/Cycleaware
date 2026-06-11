@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -44,6 +45,7 @@ const SNOOZE_KEY = "@goflo/snooze_duration";
 export default function CreateReminderScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { requestPermission } = useNotificationPermission();
@@ -402,7 +404,7 @@ export default function CreateReminderScreen() {
         </Pressable>
         <View style={styles.stepperValueBox}>
           <RNTextInput
-            style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+            style={[styles.stepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold, fontSize: rs(24) }]}
             keyboardType="number-pad"
             maxLength={2}
             value={String(value)}
@@ -441,7 +443,7 @@ export default function CreateReminderScreen() {
         </Pressable>
         <View style={styles.miniStepperValueBox}>
           <RNTextInput
-            style={[styles.miniStepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold }]}
+            style={[styles.miniStepperValueInput, { color: theme.text, fontFamily: FontFamily.sansBold, fontSize: rs(24) }]}
             keyboardType="number-pad"
             maxLength={2}
             value={String(value)}
@@ -742,7 +744,7 @@ export default function CreateReminderScreen() {
         <Pressable
           style={[
             styles.saveButton,
-            { backgroundColor: canSave ? theme.saveButtonActive : theme.saveButtonDisabled },
+            { backgroundColor: canSave ? theme.saveButtonActive : theme.saveButtonDisabled, height: rs(56) },
           ]}
           onPress={handleSave}
           disabled={!canSave || isSaving}
@@ -767,7 +769,7 @@ export default function CreateReminderScreen() {
             <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowTimePicker(false)}>
               <Feather name="arrow-left" size={20} color={theme.text} />
             </Pressable>
-            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>Select time</ThemedText>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text, fontSize: rs(24) }]}>Select time</ThemedText>
           </View>
           <View style={[styles.helpCard, { backgroundColor: theme.backgroundSecondary }]}>
             <Feather name="info" size={18} color={theme.warning} style={{ marginRight: Spacing.sm, marginTop: 2 }} />
@@ -779,7 +781,7 @@ export default function CreateReminderScreen() {
             {Platform.OS === "web" ? (
               <View style={{ alignItems: "center", padding: Spacing.xl }}>
                 <RNTextInput
-                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular, fontSize: rs(24) }]}
                   value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
                   onChangeText={(text) => {
                     const [hours, minutes] = text.split(":").map(Number);
@@ -823,7 +825,7 @@ export default function CreateReminderScreen() {
             <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowDatePicker(null)}>
               <Feather name="chevron-left" size={20} color={theme.text} />
             </Pressable>
-            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text, fontSize: rs(24) }]}>
               {showDatePicker === "cycleStart" ? "Cycle start date" : showDatePicker === "end" ? Copy.createReminder.endDate : Copy.createReminder.start}
             </ThemedText>
           </View>
@@ -839,7 +841,7 @@ export default function CreateReminderScreen() {
             {Platform.OS === "web" ? (
               <View style={{ alignItems: "center", padding: Spacing.xl }}>
                 <RNTextInput
-                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular }]}
+                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular, fontSize: rs(24) }]}
                   value={tempDate.toISOString().split("T")[0]}
                   onChangeText={(text) => {
                     const d = new Date(text);
@@ -876,7 +878,7 @@ export default function CreateReminderScreen() {
             <Pressable style={[styles.backCircle, { backgroundColor: theme.backgroundSecondary }]} onPress={() => setShowNotesInput(false)}>
               <Feather name="arrow-left" size={20} color={theme.text} />
             </Pressable>
-            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text }]}>Add notes</ThemedText>
+            <ThemedText type="h2" style={[styles.fullModalTitle, { color: theme.text, fontSize: rs(24) }]}>Add notes</ThemedText>
           </View>
           <ThemedText type="body" style={[styles.notesSubtitle, { color: theme.textSecondary }]}>
             Add any specific instructions for this reminder.

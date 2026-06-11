@@ -15,6 +15,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { SettingsRow } from "@/components/SettingsRow";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -25,6 +26,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
   const { isSubscribed, currentPlan } = useSubscription();
 
@@ -60,7 +62,7 @@ export default function MoreScreen() {
         >
           <Feather name="x" size={20} color={theme.text} />
         </Pressable>
-        <ThemedText style={styles.headerTitle}>{Copy.more.title}</ThemedText>
+        <ThemedText style={[styles.headerTitle, { fontSize: rs(20) }]}>{Copy.more.title}</ThemedText>
         <View style={styles.closeButton} />
       </View>
 

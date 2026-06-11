@@ -6,6 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/useTheme";
+import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useUserName } from "@/hooks/useUserName";
@@ -36,6 +37,7 @@ function getFormattedDate(): string {
 
 export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
   const { theme } = useTheme();
+  const { rs } = useResponsive();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { name } = useUserName();
@@ -44,11 +46,11 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
     return (
       <View style={[styles.greetingContainer, { paddingTop: insets.top + Spacing.sm }]}>
         <View style={styles.greetingContent}>
-          <Text style={[styles.greetingText, { color: theme.text }]}>
+          <Text style={[styles.greetingText, { color: theme.text, fontSize: rs(28), lineHeight: rs(36) }]}>
             {getGreeting()}
           </Text>
           {name ? (
-            <Text style={[styles.greetingName, { color: theme.text }]}>
+            <Text style={[styles.greetingName, { color: theme.text, fontSize: rs(28), lineHeight: rs(36) }]}>
               {name}
             </Text>
           ) : null}
@@ -72,7 +74,7 @@ export function AppHeader({ title, showGreeting = false }: AppHeaderProps) {
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing.sm }]}>
       <View style={styles.titleContainer}>
-        <Text style={[styles.pageTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.pageTitle, { color: theme.text, fontSize: rs(28), lineHeight: rs(36) }]}>{title}</Text>
       </View>
       <Pressable
         style={styles.profileButton}
