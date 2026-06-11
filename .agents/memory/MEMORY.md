@@ -1,0 +1,1 @@
+- [Expo dev server port 8081](expo-dev-server-port.md) — preview/Expo Go "request timed out" = Expo stuck on port-8082 prompt; restart Start Frontend. In-IDE preview ≠ Xcode simulator.
