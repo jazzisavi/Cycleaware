@@ -17,7 +17,7 @@ export const Copy = {
     now: "now",
     pageTwoTitle: "Hello,",
     namePrompt: "What should we call you?",
-    nameExplanation: "We use your name to personalize your dashboard and notifications.",
+    nameExplanation: "We use your name to personalise your dashboard and notifications.",
   },
 
   common: {
