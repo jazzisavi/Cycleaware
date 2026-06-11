@@ -779,23 +779,31 @@ export default function CreateReminderScreen() {
           </View>
           <View style={[styles.pickerCard, { backgroundColor: theme.backgroundDefault }]}>
             {Platform.OS === "web" ? (
-              <View style={{ alignItems: "center", padding: Spacing.xl }}>
-                <RNTextInput
-                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular, fontSize: rs(24) }]}
-                  value={`${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`}
-                  onChangeText={(text) => {
-                    const [hours, minutes] = text.split(":").map(Number);
+              <View style={{ alignItems: "center", padding: Spacing.xl, width: "100%" }}>
+                {React.createElement("input", {
+                  type: "time",
+                  value: `${String(tempTime.getHours()).padStart(2, "0")}:${String(tempTime.getMinutes()).padStart(2, "0")}`,
+                  onChange: (e: any) => {
+                    const [hours, minutes] = (e.target.value as string).split(":").map(Number);
                     if (!isNaN(hours) && !isNaN(minutes)) {
                       const d = new Date();
                       d.setHours(hours, minutes, 0, 0);
                       setTempTime(d);
                     }
-                  }}
-                  placeholder="HH:MM"
-                  placeholderTextColor={theme.textSecondary}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
-                />
+                  },
+                  style: {
+                    fontSize: 32,
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    border: `1.5px solid ${theme.border}`,
+                    color: theme.text,
+                    backgroundColor: "transparent",
+                    fontFamily: FontFamily.sansRegular,
+                    width: "100%",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  },
+                })}
               </View>
             ) : (
               <DateTimePicker value={tempTime} mode="time" display="spinner" onChange={handleTimeChange} accentColor={theme.saveButtonActive} textColor={theme.text} />
@@ -839,18 +847,27 @@ export default function CreateReminderScreen() {
           </View>
           <View style={[styles.pickerCard, { backgroundColor: theme.backgroundDefault }]}>
             {Platform.OS === "web" ? (
-              <View style={{ alignItems: "center", padding: Spacing.xl }}>
-                <RNTextInput
-                  style={[styles.webTimeInput, { color: theme.text, borderColor: theme.border, fontFamily: FontFamily.sansRegular, fontSize: rs(24) }]}
-                  value={tempDate.toISOString().split("T")[0]}
-                  onChangeText={(text) => {
-                    const d = new Date(text);
+              <View style={{ alignItems: "center", padding: Spacing.xl, width: "100%" }}>
+                {React.createElement("input", {
+                  type: "date",
+                  value: tempDate.toISOString().split("T")[0],
+                  onChange: (e: any) => {
+                    const d = new Date((e.target.value as string) + "T12:00:00");
                     if (!isNaN(d.getTime())) setTempDate(d);
-                  }}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={theme.textSecondary}
-                  maxLength={10}
-                />
+                  },
+                  style: {
+                    fontSize: 24,
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    border: `1.5px solid ${theme.border}`,
+                    color: theme.text,
+                    backgroundColor: "transparent",
+                    fontFamily: FontFamily.sansRegular,
+                    width: "100%",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  },
+                })}
               </View>
             ) : (
               <DateTimePicker value={tempDate} mode="date" display="spinner" onChange={handleDateChange} accentColor={theme.saveButtonActive} textColor={theme.text} />
