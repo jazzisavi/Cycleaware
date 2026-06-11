@@ -4,7 +4,7 @@ export const Copy = {
   },
 
   onboarding: {
-    pageOneTitle: "Reminders,\nYour Way!",
+    pageOneTitle: "Set reminders to your Orbia",
     cycleAligned: "Cycle-Aligned",
     cycleExample: "Day 14: Take Progestogen",
     cycleDetail: "Take 200mg at 9pm",

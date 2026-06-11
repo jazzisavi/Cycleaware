@@ -134,7 +134,7 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(44), lineHeight: rs(52), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneTitle}</Text>
+              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(30), lineHeight: rs(38), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneTitle}</Text>
 
               <View style={[styles.cardsContainer, { gap: rs(Spacing.lg) }]}>
                 <ExampleCard
