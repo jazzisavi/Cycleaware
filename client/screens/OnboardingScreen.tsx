@@ -7,6 +7,7 @@ import {
   TextInput as RNTextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -127,7 +128,12 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
 
         {page === 0 ? (
           <View style={styles.page}>
-            <View style={styles.pageOneContent}>
+            <ScrollView
+              style={styles.pageOneScroll}
+              contentContainerStyle={styles.pageOneContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(44), lineHeight: rs(52), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneTitle}</Text>
 
               <View style={[styles.cardsContainer, { gap: rs(Spacing.lg) }]}>
@@ -161,14 +167,14 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   detail={Copy.onboarding.setDaysDetail}
                 />
               </View>
-            </View>
+            </ScrollView>
 
-            <View style={styles.bottomRow}>
-              <View style={{ flex: 1 }} />
-              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleNext}>
-                <Feather name="arrow-right" size={24} color={theme.buttonText} />
-              </Pressable>
-            </View>
+            <Pressable
+              style={[styles.arrowButton, styles.arrowButtonFloating, { backgroundColor: theme.saveButtonActive }]}
+              onPress={handleNext}
+            >
+              <Feather name="arrow-right" size={24} color={theme.buttonText} />
+            </Pressable>
           </View>
         ) : (
           <View style={styles.page}>
@@ -233,8 +239,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
   },
-  pageOneContent: {
+  pageOneScroll: {
     flex: 1,
+  },
+  pageOneContent: {
+    paddingBottom: 56 + Spacing.xl,
   },
   bigTitle: {
     fontFamily: FontFamily.serifBold,
@@ -243,7 +252,6 @@ const styles = StyleSheet.create({
     lineHeight: 52,
   },
   cardsContainer: {
-    flex: 1,
     justifyContent: "flex-start",
     gap: Spacing.lg,
   },
@@ -337,5 +345,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 6,
+  },
+  arrowButtonFloating: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
   },
 });
