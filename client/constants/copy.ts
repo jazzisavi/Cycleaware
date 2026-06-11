@@ -6,7 +6,7 @@ export const Copy = {
   onboarding: {
     pageOneTitle: "Set reminders to your ",
     pageOneBrand: "Orbia",
-    pageOneSubtitle: "Tailor your alerts to your rhythm.",
+    pageOneSubtitle: "Tailor your alerts to your rhythm",
     cycleAligned: "Cycle-Aligned",
     cycleExample: "Day 14: Take Progestogen",
     cycleDetail: "Take 200mg at 9pm",
