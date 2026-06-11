@@ -3,6 +3,11 @@ export const Copy = {
     name: "GoFlo",
   },
 
+  splash: {
+    headlinePrefix: "Your ",
+    headlineBrand: "Orbia",
+  },
+
   onboarding: {
     pageOneTitle: "Set reminders to your ",
     pageOneBrand: "Orbia",

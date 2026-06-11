@@ -8,10 +8,9 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { FontFamily } from "@/constants/theme";
+import { Copy } from "@/constants/copy";
 
 import splashLogo from "../../assets/images/splash-logo.png";
-
-const TAGLINE = "Sinct to your cycle";
 
 interface AnimatedSplashScreenProps {
   onFinish: () => void;
@@ -22,7 +21,6 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
   const logoScale = useSharedValue(0.8);
   const logoOpacity = useSharedValue(0);
   const wordOpacity = useSharedValue(0);
-  const taglineOpacity = useSharedValue(0);
 
   useEffect(() => {
     logoOpacity.value = withTiming(1, { duration: 600 });
@@ -34,7 +32,6 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
     );
 
     wordOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
-    taglineOpacity.value = withDelay(900, withTiming(1, { duration: 500 }));
 
     const timeout = setTimeout(() => {
       onFinish();
@@ -57,10 +54,6 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
     opacity: wordOpacity.value,
   }));
 
-  const taglineAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: taglineOpacity.value,
-  }));
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -69,13 +62,13 @@ export default function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenP
         </Animated.View>
 
         <View style={styles.textContainer}>
-          <View style={styles.headlineRow}>
-            <Animated.Text style={[styles.boldWord, wordAnimatedStyle]}>
-              HRT.
+          <Animated.Text style={[styles.headline, wordAnimatedStyle]}>
+            <Animated.Text style={styles.headlinePrefix}>
+              {Copy.splash.headlinePrefix}
             </Animated.Text>
-          </View>
-          <Animated.Text style={[styles.tagline, taglineAnimatedStyle]}>
-            {TAGLINE}
+            <Animated.Text style={styles.headlineBrand}>
+              {Copy.splash.headlineBrand}
+            </Animated.Text>
           </Animated.Text>
         </View>
       </View>
@@ -106,21 +99,19 @@ const styles = StyleSheet.create({
   textContainer: {
     alignItems: "center",
   },
-  headlineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 40,
-  },
-  boldWord: {
+  headline: {
     fontFamily: FontFamily.serifBold,
     fontSize: 28,
-    color: "#FFFFFF",
+    textAlign: "center",
   },
-  tagline: {
+  headlinePrefix: {
     fontFamily: FontFamily.serifBold,
     fontSize: 28,
     color: "#2C2118",
-    marginTop: 2,
+  },
+  headlineBrand: {
+    fontFamily: FontFamily.serifBold,
+    fontSize: 28,
+    color: "#E8614F",
   },
 });
