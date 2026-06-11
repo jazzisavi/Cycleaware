@@ -1,11 +1,11 @@
 {
-  "id": "772ca72b-b6d2-4dde-b1dd-be53b4c6a015",
-  "createdAt": "2026-06-11T10:37:37.095Z",
+  "id": "fabc7bde-4c4f-4ffd-9214-495f5279da62",
+  "createdAt": "2026-06-11T11:08:27.443Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1781174257095-903",
+    "key": "bundle-1781176107443-7135",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-qnss7iq9.picard.replit.dev:5000/1781174257095-903/_expo/static/js/ios/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1781176107443-7135/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -26,7 +26,7 @@
         "image": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#EDE8E2",
-        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-qnss7iq9.picard.replit.dev/assets/./assets/images/splash-icon.png"
+        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/splash-icon.png"
       },
       "ios": {
         "supportsTablet": true,
@@ -36,7 +36,7 @@
         "adaptiveIcon": {
           "backgroundColor": "#EDE8E2",
           "foregroundImage": "./assets/images/android-icon-foreground.png",
-          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-qnss7iq9.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
+          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -125,11 +125,11 @@
       "androidStatusBar": {
         "backgroundColor": "#EDE8E2"
       },
-      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-qnss7iq9.picard.replit.dev/assets/./assets/images/icon.png",
-      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-qnss7iq9.picard.replit.dev:5000/ios"
+      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios"
     },
     "expoGo": {
-      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-qnss7iq9.picard.replit.dev:5000/ios",
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios",
       "developer": {
         "tool": "expo-cli",
         "projectRoot": "/home/runner/workspace"
@@ -139,6 +139,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-8a120538-6b5d-4ef5-b002-320c1c77c46c"
+    "scopeKey": "@anonymous/goflo-f4a5ac0c-49ac-4f47-86d2-a2a3abe3385c"
   }
 }

@@ -60,7 +60,7 @@ export const Copy = {
     welcomeText: "Create your first reminder to get started.",
     createReminderButton: "Create a reminder",
     todaysReminders: "TODAYS ACTIVE REMINDERS",
-    upcoming: "UP COMING",
+    upcoming: "UPCOMING",
     unresolved: "PAST UNRESOLVED REMINDERS",
     statusActive: "Status: Active",
     takeButton: "TAKE",

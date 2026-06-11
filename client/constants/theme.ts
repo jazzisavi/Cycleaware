@@ -45,6 +45,7 @@ export const Colors = {
     warning: saffron,
     error: firedTerracotta,
     info: warmOcean,
+    ctaTeal: "#3FA0B0",
 
     border: "#D9D0C3",
     borderLight: "#E8E1D6",
@@ -83,6 +84,7 @@ export const Colors = {
     warning: "#F6AD55",
     error: "#FC8181",
     info: "#63B3ED",
+    ctaTeal: "#3FA0B0",
 
     border: "#4E4236",
     borderLight: "#3D3228",

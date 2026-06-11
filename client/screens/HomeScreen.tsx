@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
@@ -294,8 +294,8 @@ export default function HomeScreen() {
               return (
                 <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
                   <View style={styles.activeCardTop}>
-                    <View style={[styles.bellIconCircle, { backgroundColor: theme.info + "25" }]}>
-                      <Feather name="bell" size={18} color={theme.info} />
+                    <View style={[styles.bellIconCircle, { backgroundColor: theme.ctaTeal + "25" }]}>
+                      <MaterialCommunityIcons name="bell-ring" size={18} color={theme.ctaTeal} />
                     </View>
                     <View style={styles.activeCardInfo}>
                       <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
@@ -315,14 +315,14 @@ export default function HomeScreen() {
                         onPress={snoozed ? undefined : () => handleSnooze(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
                         disabled={snoozed}
                       >
-                        <Text style={[styles.textActionButton, { color: snoozed ? theme.textTertiary : theme.info, opacity: snoozed ? 0.4 : 1 }]}>{Copy.home.snoozeButton}</Text>
+                        <Text style={[styles.textActionButton, { color: snoozed ? theme.textTertiary : theme.ctaTeal, opacity: snoozed ? 0.4 : 1 }]}>{Copy.home.snoozeButton}</Text>
                       </Pressable>
                     ) : null}
                     <Pressable onPress={() => handleSkip(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}>
-                      <Text style={[styles.textActionButton, { color: theme.info }]}>{Copy.home.skipButton}</Text>
+                      <Text style={[styles.textActionButton, { color: theme.ctaTeal }]}>{Copy.home.skipButton}</Text>
                     </Pressable>
                     <Pressable
-                      style={[styles.takeButton, { backgroundColor: theme.info }]}
+                      style={[styles.takeButton, { backgroundColor: theme.ctaTeal }]}
                       onPress={() => handleComplete(reminder.expandedKey, reminder.id, reminder.title, reminder.displayTime)}
                       testID={`button-complete-${reminder.expandedKey}`}
                     >
@@ -375,8 +375,8 @@ export default function HomeScreen() {
             {upcomingReminders.map((reminder) => (
               <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
                 <View style={styles.upcomingCardContent}>
-                  <View style={[styles.upcomingBellCircle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
-                    <Feather name="bell" size={18} color={theme.textTertiary} />
+                  <View style={[styles.upcomingBellCircle, { backgroundColor: "#FFFFFF", borderColor: "#A8947E" }]}>
+                    <Feather name="bell" size={18} color="#A8947E" />
                   </View>
                   <View style={styles.upcomingInfo}>
                     <Text style={[styles.upcomingTitle, { color: theme.text }]}>{reminder.title}</Text>
@@ -464,9 +464,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   activeCard: {
-    borderRadius: BorderRadius.lg,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
     borderWidth: 1,
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     marginBottom: Spacing.sm,
   },
   activeCardTop: {
@@ -476,7 +479,7 @@ const styles = StyleSheet.create({
   bellIconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
@@ -515,7 +518,7 @@ const styles = StyleSheet.create({
   takeButton: {
     paddingHorizontal: Spacing["2xl"],
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    borderRadius: 16,
   },
   takeButtonText: {
     fontSize: 13,
@@ -572,9 +575,9 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.sansSemiBold,
   },
   upcomingCard: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: 32,
     borderWidth: 1,
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     marginBottom: Spacing.sm,
   },
   upcomingCardContent: {
@@ -584,7 +587,7 @@ const styles = StyleSheet.create({
   upcomingBellCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.md,
