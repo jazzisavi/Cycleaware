@@ -134,7 +134,11 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(30), lineHeight: rs(38), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneTitle}</Text>
+              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(26), lineHeight: rs(34), marginBottom: rs(Spacing.sm) }]}>
+                {Copy.onboarding.pageOneTitle}
+                <Text style={styles.brandHighlight}>{Copy.onboarding.pageOneBrand}</Text>
+              </Text>
+              <Text style={[styles.pageOneSubtitle, { color: theme.textSecondary, fontSize: rs(16), lineHeight: rs(22), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneSubtitle}</Text>
 
               <View style={[styles.cardsContainer, { gap: rs(Spacing.lg) }]}>
                 <ExampleCard
@@ -250,6 +254,16 @@ const styles = StyleSheet.create({
     fontSize: 44,
     marginBottom: Spacing["3xl"],
     lineHeight: 52,
+  },
+  brandHighlight: {
+    fontFamily: FontFamily.serifBold,
+    color: "#E8614F",
+  },
+  pageOneSubtitle: {
+    fontFamily: FontFamily.sansRegular,
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: Spacing["3xl"],
   },
   cardsContainer: {
     justifyContent: "flex-start",
