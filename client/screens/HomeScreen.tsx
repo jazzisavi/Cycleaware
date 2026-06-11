@@ -242,6 +242,18 @@ export default function HomeScreen() {
     return `${hour12}:${minuteStr} ${ampm}`;
   };
 
+  const getCycleDayForDate = (reminder: ExpandedReminder, date: Date): number | null => {
+    if (reminder.reminderType !== "cycle" || !reminder.cycleStartDate || !reminder.cycleDayEnd) return null;
+    const cycleLength = reminder.cycleDayEnd;
+    const start = new Date(reminder.cycleStartDate);
+    start.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    const daysSinceStart = Math.floor((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSinceStart < 0) return null;
+    return (daysSinceStart % cycleLength) + 1;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <AppHeader title={Copy.navigation.today} showGreeting />
@@ -291,6 +303,8 @@ export default function HomeScreen() {
               const [slotH, slotM] = (reminder.displayTime || "00:00").split(":").map(Number);
               slotDatetime.setHours(slotH, slotM, 0, 0);
               const isDue = slotDatetime <= now;
+              const activeCycleDay = getCycleDayForDate(reminder, now);
+              const activeDisplayTitle = activeCycleDay != null ? `Day ${activeCycleDay} - ${reminder.title}` : reminder.title;
               return (
                 <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
                   <View style={styles.activeCardTop}>
@@ -298,7 +312,7 @@ export default function HomeScreen() {
                       <MaterialCommunityIcons name="bell-ring" size={18} color={theme.ctaTeal} />
                     </View>
                     <View style={styles.activeCardInfo}>
-                      <Text style={[styles.activeTitle, { color: theme.text }]}>{reminder.title}</Text>
+                      <Text style={[styles.activeTitle, { color: theme.text }]}>{activeDisplayTitle}</Text>
                       {reminder.notes ? (
                         <Text style={[styles.activeNotes, { color: theme.textSecondary }]} numberOfLines={2}>
                           {reminder.notes}
@@ -372,14 +386,17 @@ export default function HomeScreen() {
         {upcomingReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.upcoming}</Text>
-            {upcomingReminders.map((reminder) => (
+            {upcomingReminders.map((reminder) => {
+              const upcomingCycleDay = getCycleDayForDate(reminder, new Date(reminder.nextOccurrence || ""));
+              const upcomingDisplayTitle = upcomingCycleDay != null ? `Day ${upcomingCycleDay} - ${reminder.title}` : reminder.title;
+              return (
               <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
                 <View style={styles.upcomingCardContent}>
                   <View style={[styles.upcomingBellCircle, { backgroundColor: "#FFFFFF", borderColor: "#A8947E" }]}>
                     <Feather name="bell" size={18} color="#A8947E" />
                   </View>
                   <View style={styles.upcomingInfo}>
-                    <Text style={[styles.upcomingTitle, { color: theme.text }]}>{reminder.title}</Text>
+                    <Text style={[styles.upcomingTitle, { color: theme.text }]}>{upcomingDisplayTitle}</Text>
                     {reminder.notes ? (
                       <Text style={[styles.upcomingNotes, { color: theme.textSecondary }]} numberOfLines={2}>
                         {reminder.notes}
@@ -396,7 +413,8 @@ export default function HomeScreen() {
                   </View>
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
         ) : null}
 
