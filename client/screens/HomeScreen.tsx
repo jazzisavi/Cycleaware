@@ -292,7 +292,7 @@ export default function HomeScreen() {
               slotDatetime.setHours(slotH, slotM, 0, 0);
               const isDue = slotDatetime <= now;
               return (
-                <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View key={reminder.expandedKey} style={[styles.activeCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
                   <View style={styles.activeCardTop}>
                     <View style={[styles.bellIconCircle, { backgroundColor: theme.info + "25" }]}>
                       <Feather name="bell" size={18} color={theme.info} />
@@ -373,7 +373,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.upcoming}</Text>
             {upcomingReminders.map((reminder) => (
-              <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault }]}>
+              <View key={reminder.expandedKey} style={[styles.upcomingCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
                 <View style={styles.upcomingCardContent}>
                   <View style={[styles.upcomingBellCircle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
                     <Feather name="bell" size={18} color={theme.textTertiary} />
@@ -465,6 +465,7 @@ const styles = StyleSheet.create({
   },
   activeCard: {
     borderRadius: BorderRadius.lg,
+    borderWidth: 1,
     padding: Spacing.lg,
     marginBottom: Spacing.sm,
   },
@@ -572,6 +573,7 @@ const styles = StyleSheet.create({
   },
   upcomingCard: {
     borderRadius: BorderRadius.lg,
+    borderWidth: 1,
     padding: Spacing.lg,
     marginBottom: Spacing.sm,
   },
