@@ -534,8 +534,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   takeButton: {
-    paddingHorizontal: Spacing["2xl"],
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing["3xl"],
+    paddingVertical: Spacing.lg,
     borderRadius: 16,
   },
   takeButtonText: {
