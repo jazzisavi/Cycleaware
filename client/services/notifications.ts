@@ -963,9 +963,13 @@ export async function syncAllNotifications(): Promise<void> {
 
   try {
     const Notifications = await import("expo-notifications");
+    const trialIdsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+    const hadActiveTrialNotifs = trialIdsStr !== null;
     await Notifications.cancelAllScheduledNotificationsAsync();
-    await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
-    await scheduleTrialNotifications();
+    if (hadActiveTrialNotifs) {
+      await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
+      await scheduleTrialNotifications();
+    }
 
     LocalDatabase.initDatabase();
     const reminders = LocalDatabase.getAllReminders();

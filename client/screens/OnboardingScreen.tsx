@@ -170,11 +170,6 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   if (!reviewMode) {
                     const trimmed = name.trim();
                     if (trimmed) await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
-                    const alreadyStarted = await AsyncStorage.getItem(TRIAL_START_KEY);
-                    if (!alreadyStarted) {
-                      await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString());
-                      try { await scheduleTrialNotifications(); } catch {}
-                    }
                   }
                   navigation.navigate("Paywall");
                 }}
