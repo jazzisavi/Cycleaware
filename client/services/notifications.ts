@@ -12,6 +12,8 @@ const SNOOZE_DURATION_KEY = "@goflo/snooze_duration";
 const DEFAULT_SNOOZE_DURATION = 60;
 const LAST_PROCESSED_NOTIFICATION_KEY = "@goflo/last_processed_notification";
 const processingNotificationIds = new Set<string>();
+const TRIAL_NOTIF_ACTIVE_DAY_KEY = "@orbia/trial_notif_active_day";
+export const PENDING_NAV_KEY = "@orbia/pending_nav_target";
 
 TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?: any; error?: any }) => {
   if (error) {
@@ -36,6 +38,18 @@ TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?
     const soundEnabled: boolean = notificationData.soundEnabled ?? false;
     const notificationId: string = response.notification?.request?.identifier ?? "";
     const scheduledTime: string | undefined = notificationData.scheduledTime ?? undefined;
+
+    if (notificationData.type === "trial_reminder") {
+      if (actionIdentifier === "trial_remind_later") {
+        const daysRemaining = notificationData.daysRemaining ?? null;
+        if (daysRemaining !== null) {
+          await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(daysRemaining));
+        }
+      } else if (actionIdentifier === "trial_upgrade") {
+        await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall");
+      }
+      return;
+    }
 
     if (!reminderId || !actionIdentifier || actionIdentifier === "expo.modules.notifications.actions.DEFAULT") {
       console.log("[BG_TASK] Skipping — no actionable reminderId or default tap:", actionIdentifier);
@@ -359,6 +373,27 @@ export async function setupNotificationCategories(): Promise<void> {
       },
     ]);
 
+    await Notifications.setNotificationCategoryAsync("trial", [
+      {
+        identifier: "trial_remind_later",
+        buttonTitle: Copy.subscription.trialNotifRemindLater,
+        options: {
+          isDestructive: false,
+          isAuthenticationRequired: false,
+          opensAppToForeground: false,
+        },
+      },
+      {
+        identifier: "trial_upgrade",
+        buttonTitle: Copy.subscription.trialNotifUpgrade,
+        options: {
+          isDestructive: false,
+          isAuthenticationRequired: false,
+          opensAppToForeground: true,
+        },
+      },
+    ]);
+
     console.log("Notification categories set up successfully");
 
     await registerBackgroundNotificationTask();
@@ -524,6 +559,19 @@ export async function checkLastNotificationResponse(
       return;
     }
 
+    const lastResponseNotifType = data?.type as string;
+    if (lastResponseNotifType === "trial_reminder") {
+      if (actionIdentifier === "trial_remind_later") {
+        const daysRemaining = data?.daysRemaining ?? null;
+        if (daysRemaining !== null) {
+          try { await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(daysRemaining)); } catch {}
+        }
+      } else if (actionIdentifier === "trial_upgrade") {
+        try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
+      }
+      return;
+    }
+
     if (!reminderId) {
       return;
     }
@@ -619,6 +667,19 @@ export async function setupNotificationResponseListener(
           const soundEnabled = data?.soundEnabled as boolean || false;
           const notificationId = response.notification.request.identifier;
           const scheduledTime = (data?.scheduledTime as string) || undefined;
+
+          const notifType = data?.type as string;
+          if (notifType === "trial_reminder") {
+            if (actionIdentifier === "trial_remind_later") {
+              const daysRemaining = data?.daysRemaining ?? null;
+              if (daysRemaining !== null) {
+                try { await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(daysRemaining)); } catch {}
+              }
+            } else if (actionIdentifier === "trial_upgrade") {
+              try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
+            }
+            return;
+          }
 
           if (reminderId) {
             try { await Notifications.dismissNotificationAsync(notificationId); } catch (_e) {}
@@ -981,6 +1042,7 @@ export async function syncAllNotifications(): Promise<void> {
     }
 
     console.log(`Synced notifications for ${reminders.filter(r => r.isActive).length} active reminders`);
+    await syncTrialNotificationState();
   } catch (error) {
     console.error("Error syncing notifications:", error);
   }
@@ -1004,11 +1066,11 @@ export async function scheduleTrialNotifications(): Promise<void> {
     const scheduledIds: string[] = [];
 
     const reminderDays = [
-      { day: 24, titleKey: "trialNotifDay6Title" as const, bodyKey: "trialNotifDay6Body" as const },
-      { day: 26, titleKey: "trialNotifDay4Title" as const, bodyKey: "trialNotifDay4Body" as const },
-      { day: 28, titleKey: "trialNotifDay2Title" as const, bodyKey: "trialNotifDay2Body" as const },
-      { day: 29, titleKey: "trialNotifDay1Title" as const, bodyKey: "trialNotifDay1Body" as const },
-      { day: 30, titleKey: "trialNotifDay0Title" as const, bodyKey: "trialNotifDay0Body" as const },
+      { day: 24, daysRemaining: 6, titleKey: "trialNotifDay6Title" as const, bodyKey: "trialNotifDay6Body" as const },
+      { day: 26, daysRemaining: 4, titleKey: "trialNotifDay4Title" as const, bodyKey: "trialNotifDay4Body" as const },
+      { day: 28, daysRemaining: 2, titleKey: "trialNotifDay2Title" as const, bodyKey: "trialNotifDay2Body" as const },
+      { day: 29, daysRemaining: 1, titleKey: "trialNotifDay1Title" as const, bodyKey: "trialNotifDay1Body" as const },
+      { day: 30, daysRemaining: 0, titleKey: "trialNotifDay0Title" as const, bodyKey: "trialNotifDay0Body" as const },
     ];
 
     for (const item of reminderDays) {
@@ -1022,7 +1084,8 @@ export async function scheduleTrialNotifications(): Promise<void> {
           content: {
             title: Copy.subscription[item.titleKey],
             body: Copy.subscription[item.bodyKey],
-            data: { type: "trial_reminder", day: item.day },
+            data: { type: "trial_reminder", day: item.day, daysRemaining: item.daysRemaining },
+            categoryIdentifier: "trial",
           },
           trigger: { type: "date", date: fireDate } as any,
         });
@@ -1046,8 +1109,51 @@ export async function cancelTrialNotifications(): Promise<void> {
       try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
     }
     await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
-    await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, "true");
   } catch (err) {
     console.error("Error cancelling trial notifications:", err);
+  }
+}
+
+function getTrialActiveMilestone(daysLeft: number): number | null {
+  if (daysLeft <= 0) return 0;
+  if (daysLeft <= 1) return 1;
+  if (daysLeft <= 2) return 2;
+  if (daysLeft <= 4) return 4;
+  if (daysLeft <= 6) return 6;
+  return null;
+}
+
+export async function syncTrialNotificationState(): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const startStr = await AsyncStorage.getItem(TRIAL_START_KEY);
+    if (!startStr) return;
+    const start = new Date(startStr);
+    start.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const daysSince = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.max(0, 30 - daysSince);
+
+    const activeMilestone = getTrialActiveMilestone(daysLeft);
+    if (activeMilestone === null) return;
+
+    const storedDay = await AsyncStorage.getItem(TRIAL_NOTIF_ACTIVE_DAY_KEY);
+    const storedMilestone = storedDay !== null ? parseInt(storedDay, 10) : null;
+
+    if (storedMilestone !== activeMilestone) {
+      try {
+        const Notifications = await import("expo-notifications");
+        const presented = await Notifications.getPresentedNotificationsAsync();
+        for (const n of presented) {
+          if (n.request.content.data?.type === "trial_reminder") {
+            try { await Notifications.dismissNotificationAsync(n.request.identifier); } catch {}
+          }
+        }
+      } catch {}
+      await AsyncStorage.setItem(TRIAL_NOTIF_ACTIVE_DAY_KEY, String(activeMilestone));
+    }
+  } catch (err) {
+    console.error("Error syncing trial notification state:", err);
   }
 }

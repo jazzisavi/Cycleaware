@@ -20,7 +20,7 @@ import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { AppHeader } from "@/components/AppHeader";
-import { stopAlarm, getSnoozeDuration } from "@/services/notifications";
+import { stopAlarm, getSnoozeDuration, PENDING_NAV_KEY } from "@/services/notifications";
 import { useLocalReminders, useLocalHistory } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
@@ -28,6 +28,16 @@ import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
+const TRIAL_NOTIF_DISMISSED_KEY = "@orbia/trial_notif_dismissed";
+
+function getActiveMilestone(days: number): number | null {
+  if (days <= 0) return 0;
+  if (days <= 1) return 1;
+  if (days <= 2) return 2;
+  if (days <= 4) return 4;
+  if (days <= 6) return 6;
+  return null;
+}
 
 export default function HomeScreen() {
   const { theme, isDark } = useTheme();
@@ -51,7 +61,7 @@ export default function HomeScreen() {
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
   const { isInTrial, daysLeft, trialExpired, isPro } = useSubscription();
-  const [trialWarningDismissed, setTrialWarningDismissed] = useState(false);
+  const [dismissedMilestone, setDismissedMilestone] = useState<number | null>(null);
   const [trialExpiredDismissed, setTrialExpiredDismissed] = useState(false);
 
   const hasReminders = reminders.length > 0;
@@ -68,6 +78,15 @@ export default function HomeScreen() {
       checkPermissionStatus();
       AsyncStorage.getItem(MISSED_DISMISSED_AT_KEY).then((val) => {
         setMissedDismissedAt(val ? new Date(val) : null);
+      });
+      AsyncStorage.getItem(TRIAL_NOTIF_DISMISSED_KEY).then((val) => {
+        setDismissedMilestone(val !== null ? parseInt(val, 10) : null);
+      });
+      AsyncStorage.getItem(PENDING_NAV_KEY).then((val) => {
+        if (val === "Paywall") {
+          AsyncStorage.removeItem(PENDING_NAV_KEY).catch(() => {});
+          navigation.navigate("Paywall");
+        }
       });
     }, [])
   );
@@ -293,17 +312,25 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {isInTrial && !trialExpired && daysLeft <= 6 && !trialWarningDismissed ? (
+        {isInTrial && !trialExpired && getActiveMilestone(daysLeft) !== null && getActiveMilestone(daysLeft) !== dismissedMilestone ? (
           <View style={[styles.trialWarningCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
             <View style={styles.trialWarningTop}>
               <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialWarningTitle(daysLeft)}</Text>
-              <Pressable onPress={() => setTrialWarningDismissed(true)} hitSlop={8}>
+              <Pressable onPress={async () => {
+                const m = getActiveMilestone(daysLeft);
+                if (m !== null) await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(m));
+                setDismissedMilestone(m);
+              }} hitSlop={8}>
                 <Feather name="x" size={16} color={theme.textTertiary} />
               </Pressable>
             </View>
             <Text style={[styles.trialWarningBody, { color: theme.textSecondary }]}>{Copy.subscription.trialWarningBody}</Text>
             <View style={styles.trialWarningActions}>
-              <Pressable onPress={() => setTrialWarningDismissed(true)}>
+              <Pressable onPress={async () => {
+                const m = getActiveMilestone(daysLeft);
+                if (m !== null) await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(m));
+                setDismissedMilestone(m);
+              }}>
                 <Text style={[styles.trialWarningRemind, { color: theme.textSecondary }]}>{Copy.subscription.trialWarningRemind}</Text>
               </Pressable>
               <Pressable
