@@ -18,9 +18,11 @@ import { FontFamily, Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useTheme } from "@/hooks/useTheme";
 import { useResponsive } from "@/hooks/useResponsive";
+import { scheduleTrialNotifications } from "@/services/notifications";
 
 const ONBOARDING_KEY = "@goflo/onboarding_complete";
 const USER_NAME_KEY = "@goflo/user_name";
+const TRIAL_START_KEY = "@orbia/trial_start_date";
 
 interface OnboardingScreenProps {
   onComplete?: () => void;
@@ -101,13 +103,25 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
     setTimeout(() => nameInputRef.current?.focus(), 400);
   };
 
-  const handleComplete = async () => {
+  const handleToTrialPage = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPage(2);
+  };
+
+  const handleComplete = async (navigateToPaywall?: boolean) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (!onComplete) return;
     if (!reviewMode) {
       const trimmed = name.trim();
       if (trimmed) {
         await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
+      }
+      const alreadyStarted = await AsyncStorage.getItem(TRIAL_START_KEY);
+      if (!alreadyStarted) {
+        await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString());
+        try {
+          await scheduleTrialNotifications();
+        } catch {}
       }
       await AsyncStorage.setItem(ONBOARDING_KEY, "true");
     }
@@ -124,9 +138,42 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing["2xl"] }]}>
-        <DotIndicators active={page} total={2} />
+        <DotIndicators active={Math.min(page, 2)} total={3} />
 
-        {page === 0 ? (
+        {page === 2 ? (
+          <View style={styles.page}>
+            <View style={[styles.pageTwoContent, { paddingTop: rs(Spacing["3xl"]) }]}>
+              <Text style={[styles.trialLabel, { color: theme.saveButtonActive, fontSize: rs(11) }]}>
+                {Copy.subscription.trialPageLabel}
+              </Text>
+              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(28), lineHeight: rs(38), marginBottom: rs(Spacing.lg) }]}>
+                {Copy.subscription.trialPageTitle}
+              </Text>
+              <Text style={[styles.nameExplanation, { color: theme.textSecondary, fontSize: rs(15), lineHeight: rs(22), marginBottom: rs(Spacing["3xl"]) }]}>
+                {Copy.subscription.trialPageBody}
+              </Text>
+              <View style={[styles.trialFeatureList, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8", borderRadius: BorderRadius.lg, padding: Spacing.lg }]}>
+                {[...Copy.subscription.orbiaProFeatures, ...Copy.subscription.orbiaLiteFeatures].map((f, i) => (
+                  <View key={i} style={[styles.trialFeatureRow, i > 0 && { marginTop: Spacing.sm }]}>
+                    <Feather name="check" size={14} color={theme.saveButtonActive} style={{ marginRight: Spacing.sm }} />
+                    <Text style={[{ fontFamily: FontFamily.sansRegular, fontSize: rs(14), color: theme.text }]}>{f}</Text>
+                  </View>
+                ))}
+              </View>
+              <Pressable onPress={() => handleComplete(true)} style={{ marginTop: Spacing["2xl"] }}>
+                <Text style={[{ color: theme.saveButtonActive, fontFamily: FontFamily.sansSemiBold, fontSize: rs(14), textDecorationLine: "underline" }]}>
+                  {Copy.subscription.trialPageSubscribeLink}
+                </Text>
+              </Pressable>
+            </View>
+            <View style={styles.bottomRow}>
+              <View style={{ flex: 1 }} />
+              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={() => handleComplete()}>
+                <Feather name="arrow-right" size={24} color={theme.buttonText} />
+              </Pressable>
+            </View>
+          </View>
+        ) : page === 0 ? (
           <View style={styles.page}>
             <ScrollView
               style={styles.pageOneScroll}
@@ -206,7 +253,7 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
 
             <View style={styles.bottomRow}>
               <View style={{ flex: 1 }} />
-              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleComplete}>
+              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={handleToTrialPage}>
                 <Feather name="arrow-right" size={24} color={theme.buttonText} />
               </Pressable>
             </View>
@@ -228,6 +275,16 @@ const styles = StyleSheet.create({
   dotsWrapper: {
     alignItems: "center",
     marginBottom: Spacing["2xl"],
+  },
+  trialLabel: {
+    fontFamily: FontFamily.sansBold,
+    letterSpacing: 1.2,
+    marginBottom: Spacing.md,
+  },
+  trialFeatureList: {},
+  trialFeatureRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   dotsRow: {
     flexDirection: "row",

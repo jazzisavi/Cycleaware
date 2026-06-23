@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { StyleSheet, View, Image, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedView } from "@/components/ThemedView";
@@ -18,6 +20,9 @@ import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
+const DEV_OVERRIDE_KEY = "@orbia/dev_trial_override";
+const TRIAL_START_KEY = "@orbia/trial_start_date";
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
@@ -25,11 +30,45 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
-  const { isSubscribed, currentPlan } = useSubscription();
+  const { isSubscribed, currentPlan, daysLeft, isInTrial, trialExpired, refreshStatus } = useSubscription();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [devPanelVisible, setDevPanelVisible] = useState(false);
+  const [devDaysLeft, setDevDaysLeft] = useState(daysLeft);
+  const versionPressCount = useRef(0);
+  const versionPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const appVersion = Constants.expoConfig?.version ?? "1.0.0";
+
+  const handleVersionPress = () => {
+    if (!__DEV__) return;
+    versionPressCount.current += 1;
+    if (versionPressTimer.current) clearTimeout(versionPressTimer.current);
+    versionPressTimer.current = setTimeout(() => { versionPressCount.current = 0; }, 2000);
+    if (versionPressCount.current >= 5) {
+      versionPressCount.current = 0;
+      setDevPanelVisible(true);
+    }
+  };
+
+  const handleSetDevDays = async (days: number) => {
+    const clamped = Math.max(0, Math.min(30, days));
+    setDevDaysLeft(clamped);
+    await AsyncStorage.setItem(DEV_OVERRIDE_KEY, String(clamped));
+  };
+
+  const handleClearDevOverride = async () => {
+    await AsyncStorage.removeItem(DEV_OVERRIDE_KEY);
+    setDevPanelVisible(false);
+  };
+
+  const handleResetTrial = async () => {
+    await AsyncStorage.removeItem(TRIAL_START_KEY);
+    await AsyncStorage.removeItem(DEV_OVERRIDE_KEY);
+    setDevPanelVisible(false);
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -132,6 +171,57 @@ export default function ProfileScreen() {
             {Copy.profile.saveChanges}
           </Button>
         </View>
+
+        <Pressable onPress={handleVersionPress} style={styles.versionRow} testID="text-version-dev">
+          <ThemedText type="small" style={{ color: theme.textTertiary, textAlign: "center" }}>
+            v{appVersion}
+          </ThemedText>
+        </Pressable>
+
+        {devPanelVisible && __DEV__ ? (
+          <View style={[styles.devPanel, { backgroundColor: theme.backgroundDefault, borderColor: "#E8614F" }]}>
+            <ThemedText type="h4" style={{ color: "#E8614F", marginBottom: Spacing.md }}>Dev Trial Panel</ThemedText>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
+              Trial active: {isInTrial ? "yes" : "no"} | Expired: {trialExpired ? "yes" : "no"} | Days left: {daysLeft}
+            </ThemedText>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
+              Override days left: {devDaysLeft}
+            </ThemedText>
+            <View style={styles.devStepperRow}>
+              <Pressable
+                style={[styles.devStepBtn, { backgroundColor: theme.backgroundSecondary }]}
+                onPress={() => handleSetDevDays(devDaysLeft - 1)}
+              >
+                <ThemedText type="body">-</ThemedText>
+              </Pressable>
+              <ThemedText type="body" style={{ marginHorizontal: Spacing.lg }}>{devDaysLeft}</ThemedText>
+              <Pressable
+                style={[styles.devStepBtn, { backgroundColor: theme.backgroundSecondary }]}
+                onPress={() => handleSetDevDays(devDaysLeft + 1)}
+              >
+                <ThemedText type="body">+</ThemedText>
+              </Pressable>
+            </View>
+            <Pressable
+              style={[styles.devActionBtn, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.md }]}
+              onPress={handleClearDevOverride}
+            >
+              <ThemedText type="small" style={{ color: theme.text }}>Clear override</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.devActionBtn, { backgroundColor: "#E8614F" + "20", marginTop: Spacing.sm }]}
+              onPress={handleResetTrial}
+            >
+              <ThemedText type="small" style={{ color: "#E8614F" }}>Reset trial start</ThemedText>
+            </Pressable>
+            <Pressable
+              style={[styles.devActionBtn, { marginTop: Spacing.sm }]}
+              onPress={() => setDevPanelVisible(false)}
+            >
+              <ThemedText type="small" style={{ color: theme.textSecondary }}>Close</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
       </KeyboardAwareScrollViewCompat>
     </ThemedView>
   );
@@ -209,5 +299,34 @@ const styles = StyleSheet.create({
   },
   saveSection: {
     marginTop: Spacing["3xl"],
+  },
+  versionRow: {
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+  },
+  devPanel: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    padding: Spacing.lg,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  devStepperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  devStepBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  devActionBtn: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
   },
 });

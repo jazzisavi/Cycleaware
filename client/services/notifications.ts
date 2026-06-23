@@ -989,3 +989,65 @@ export async function syncAllNotifications(): Promise<void> {
 export async function stopAlarm(): Promise<void> {
   await AlarmService.stopAlarm();
 }
+
+const TRIAL_NOTIF_IDS_KEY = "@orbia/trial_notif_ids";
+const TRIAL_NOTIF_DISMISSED_KEY = "@orbia/trial_notif_dismissed";
+const TRIAL_START_KEY = "@orbia/trial_start_date";
+
+export async function scheduleTrialNotifications(): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const Notifications = await import("expo-notifications");
+    const startStr = await AsyncStorage.getItem(TRIAL_START_KEY);
+    if (!startStr) return;
+    const start = new Date(startStr);
+    const scheduledIds: string[] = [];
+
+    const reminderDays = [
+      { day: 24, titleKey: "trialNotifDay6Title" as const, bodyKey: "trialNotifDay6Body" as const },
+      { day: 26, titleKey: "trialNotifDay4Title" as const, bodyKey: "trialNotifDay4Body" as const },
+      { day: 28, titleKey: "trialNotifDay2Title" as const, bodyKey: "trialNotifDay2Body" as const },
+      { day: 29, titleKey: "trialNotifDay1Title" as const, bodyKey: "trialNotifDay1Body" as const },
+      { day: 30, titleKey: "trialNotifDay0Title" as const, bodyKey: "trialNotifDay0Body" as const },
+    ];
+
+    for (const item of reminderDays) {
+      const fireDate = new Date(start);
+      fireDate.setDate(fireDate.getDate() + item.day - 1);
+      fireDate.setHours(9, 0, 0, 0);
+      if (fireDate <= new Date()) continue;
+
+      try {
+        const id = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: Copy.subscription[item.titleKey],
+            body: Copy.subscription[item.bodyKey],
+            data: { type: "trial_reminder", day: item.day },
+          },
+          trigger: { type: "date", date: fireDate } as any,
+        });
+        scheduledIds.push(id);
+      } catch {}
+    }
+    await AsyncStorage.setItem(TRIAL_NOTIF_IDS_KEY, JSON.stringify(scheduledIds));
+  } catch (err) {
+    console.error("Error scheduling trial notifications:", err);
+  }
+}
+
+export async function cancelTrialNotifications(): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+    if (!idsStr) return;
+    const ids: string[] = JSON.parse(idsStr);
+    const Notifications = await import("expo-notifications");
+    for (const id of ids) {
+      try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+    }
+    await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
+    await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, "true");
+  } catch (err) {
+    console.error("Error cancelling trial notifications:", err);
+  }
+}

@@ -13,6 +13,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { syncAllNotifications, cancelPendingNotificationsForReminder } from "@/services/notifications";
@@ -42,6 +43,8 @@ const SOUND_LABELS: Record<string, string> = {
 
 const SNOOZE_KEY = "@goflo/snooze_duration";
 
+const CORAL = "#E8614F";
+
 export default function CreateReminderScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -50,6 +53,8 @@ export default function CreateReminderScreen() {
   const route = useRoute<RouteProps>();
   const { requestPermission } = useNotificationPermission();
   const titleInputRef = useRef<RNTextInput>(null);
+  const { isPro, trialExpired } = useSubscription();
+  const cycleGated = trialExpired && !isPro;
 
   const reminderId = route.params?.reminderId;
   const isEditMode = !!reminderId;
@@ -573,7 +578,24 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
-        {frequency === "cycle" ? (
+        {frequency === "cycle" && cycleGated ? (
+          <View style={[styles.card, { backgroundColor: "#EBF6F8" }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: Spacing.sm }}>
+              <Feather name="lock" size={16} color={CORAL} style={{ marginRight: Spacing.sm }} />
+              <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, color: CORAL }}>{Copy.subscription.unlockProTitle}</ThemedText>
+            </View>
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>{Copy.subscription.unlockProBody}</ThemedText>
+            <Pressable
+              style={{ backgroundColor: CORAL, borderRadius: BorderRadius.md, paddingVertical: Spacing.md, alignItems: "center" }}
+              onPress={() => navigation.navigate("Paywall")}
+              testID="button-cycle-upgrade"
+            >
+              <ThemedText type="button" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.subscription.unlockProCta}</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {frequency === "cycle" && !cycleGated ? (
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText type="body" style={styles.inCardHeading}>{Copy.createReminder.cycleLength}</ThemedText>
             <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>

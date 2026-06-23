@@ -25,6 +25,7 @@ import { useLocalReminders, useLocalHistory } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
 
@@ -49,6 +50,9 @@ export default function HomeScreen() {
 
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
+  const { isInTrial, daysLeft, trialExpired, isPro } = useSubscription();
+  const [trialWarningDismissed, setTrialWarningDismissed] = useState(false);
+  const [trialExpiredDismissed, setTrialExpiredDismissed] = useState(false);
 
   const hasReminders = reminders.length > 0;
   const showNotificationWarning = notificationsAvailable &&
@@ -277,7 +281,58 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        {reminders.length === 0 ? (
+        {isInTrial && !trialExpired ? (
+          <View style={[styles.trialBar, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.trialBarLeft}>
+              <Text style={[styles.trialBarLabel, { color: theme.textSecondary }]}>{Copy.subscription.trialBarLabel}</Text>
+              <Text style={[styles.trialBarDays, { color: theme.text }]}>{Copy.subscription.trialDaysLeft(daysLeft)}</Text>
+            </View>
+            <View style={styles.trialProgressTrack}>
+              <View style={[styles.trialProgressFill, { backgroundColor: theme.saveButtonActive, width: `${Math.round((daysLeft / 30) * 100)}%` }]} />
+            </View>
+          </View>
+        ) : null}
+
+        {isInTrial && !trialExpired && daysLeft <= 6 && !trialWarningDismissed ? (
+          <View style={[styles.trialWarningCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
+            <View style={styles.trialWarningTop}>
+              <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialWarningTitle(daysLeft)}</Text>
+              <Pressable onPress={() => setTrialWarningDismissed(true)} hitSlop={8}>
+                <Feather name="x" size={16} color={theme.textTertiary} />
+              </Pressable>
+            </View>
+            <Text style={[styles.trialWarningBody, { color: theme.textSecondary }]}>{Copy.subscription.trialWarningBody}</Text>
+            <View style={styles.trialWarningActions}>
+              <Pressable onPress={() => setTrialWarningDismissed(true)}>
+                <Text style={[styles.trialWarningRemind, { color: theme.textSecondary }]}>{Copy.subscription.trialWarningRemind}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.trialWarningUpgrade, { backgroundColor: "#E8614F" }]}
+                onPress={() => navigation.navigate("Paywall")}
+                testID="button-trial-upgrade"
+              >
+                <Text style={styles.trialWarningUpgradeText}>{Copy.subscription.trialWarningUpgrade}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
+        {trialExpired && !isPro && hasReminders && !trialExpiredDismissed ? (
+          <View style={[styles.trialExpiredCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
+            <View style={styles.trialWarningTop}>
+              <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialEndedTitle}</Text>
+              <Pressable onPress={() => setTrialExpiredDismissed(true)} hitSlop={8}>
+                <Feather name="x" size={16} color={theme.textTertiary} />
+              </Pressable>
+            </View>
+            <Text style={[styles.trialWarningBody, { color: theme.textSecondary }]}>{Copy.subscription.trialEndedBody}</Text>
+            <Pressable onPress={() => navigation.navigate("Paywall")} testID="button-trial-expired-upgrade">
+              <Text style={[styles.trialWarningRemind, { color: "#E8614F", textDecorationLine: "underline" }]}>{Copy.subscription.trialEndedLink}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {reminders.length === 0 && (!trialExpired || isPro) ? (
           <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
             <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60) }]} />
             <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive, fontSize: rs(26) }]}>{Copy.home.welcomeTitle}</Text>
@@ -291,6 +346,17 @@ export default function HomeScreen() {
               <Text style={[styles.ctaButtonText, { color: theme.buttonText }]}>{Copy.home.createReminderButton}</Text>
             </Pressable>
           </View>
+        ) : null}
+
+        {reminders.length === 0 && trialExpired && !isPro ? (
+          <Pressable style={[styles.welcomeCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]} onPress={() => navigation.navigate("Paywall")} testID="button-expired-empty-upgrade">
+            <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60), backgroundColor: "#B8E4EC", opacity: 0.5 }]} />
+            <Text style={[styles.welcomeTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A", fontSize: rs(22) }]}>{Copy.subscription.unlockProTitle}</Text>
+            <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.subscription.unlockProBody}</Text>
+            <View style={[styles.ctaButton, { backgroundColor: "#E8614F" }]}>
+              <Text style={[styles.ctaButtonText, { color: "#FFFFFF" }]}>{Copy.subscription.unlockProCta}</Text>
+            </View>
+          </Pressable>
         ) : null}
 
         {todaysReminders.length > 0 ? (
@@ -672,5 +738,86 @@ const styles = StyleSheet.create({
   notificationBannerButtonText: {
     fontSize: 14,
     fontFamily: FontFamily.sansSemiBold,
+  },
+  trialBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: Spacing.md,
+  },
+  trialBarLeft: {
+    minWidth: 80,
+  },
+  trialBarLabel: {
+    fontFamily: FontFamily.sansSemiBold,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  trialBarDays: {
+    fontFamily: FontFamily.sansSemiBold,
+    fontSize: 13,
+  },
+  trialProgressTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#E0E0E0",
+    overflow: "hidden",
+  },
+  trialProgressFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  trialWarningCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  trialExpiredCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  trialWarningTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+  },
+  trialWarningTitle: {
+    fontFamily: FontFamily.sansSemiBold,
+    fontSize: 14,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  trialWarningBody: {
+    fontFamily: FontFamily.sansRegular,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: Spacing.md,
+  },
+  trialWarningActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  trialWarningRemind: {
+    fontFamily: FontFamily.sansSemiBold,
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+  trialWarningUpgrade: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  trialWarningUpgradeText: {
+    fontFamily: FontFamily.sansBold,
+    fontSize: 11,
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
   },
 });

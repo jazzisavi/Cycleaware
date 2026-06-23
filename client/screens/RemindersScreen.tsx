@@ -32,15 +32,20 @@ import { cancelPendingNotificationsForReminder, scheduleAllTimesForReminder } fr
 import { syncCycleConfigsToServer } from "@/services/pushSync";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { Text } from "react-native";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const CORAL = "#E8614F";
 
 export default function RemindersScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
+  const { isPro, trialExpired } = useSubscription();
+  const cycleGated = trialExpired && !isPro;
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelecting, setIsSelecting] = useState(false);
@@ -220,61 +225,82 @@ export default function RemindersScreen() {
     </View>
   );
 
-  const renderItem = ({ item }: { item: LocalReminder }) => (
-    <Pressable
-      style={[
-        styles.card,
-        { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight },
-      ]}
-      onPress={() => !isSelecting && handleEditPress(item)}
-      testID={`card-reminder-${item.id}`}
-    >
-      {isSelecting ? (
-        <Pressable
-          style={styles.selectCheckbox}
-          onPress={() => handleToggleSelect(item.id)}
-        >
-          <View
-            style={[
-              styles.checkbox,
-              {
-                borderColor: selectedIds.has(item.id) ? theme.saveButtonActive : theme.border,
-                backgroundColor: selectedIds.has(item.id) ? theme.saveButtonActive : "transparent",
-              },
-            ]}
+  const isCycleLocked = (item: LocalReminder) => cycleGated && item.reminderType === "cycle";
+
+  const renderItem = ({ item }: { item: LocalReminder }) => {
+    const locked = isCycleLocked(item);
+    return (
+      <Pressable
+        style={[
+          styles.card,
+          { backgroundColor: locked ? (isDark ? "#1A3D44" : "#EBF6F8") : theme.backgroundDefault, borderColor: locked ? CORAL + "40" : theme.borderLight },
+        ]}
+        onPress={() => {
+          if (locked) {
+            navigation.navigate("Paywall");
+          } else if (!isSelecting) {
+            handleEditPress(item);
+          }
+        }}
+        testID={`card-reminder-${item.id}`}
+      >
+        {isSelecting && !locked ? (
+          <Pressable
+            style={styles.selectCheckbox}
+            onPress={() => handleToggleSelect(item.id)}
           >
-            {selectedIds.has(item.id) ? (
-              <Feather name="check" size={14} color={theme.buttonText} />
-            ) : null}
-          </View>
-        </Pressable>
-      ) : null}
-
-      <View style={styles.cardContent}>
-        <ThemedText type="h4" style={styles.cardTitle}>
-          {item.title}
-        </ThemedText>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          {formatReminderDescription(item)}
-        </ThemedText>
-        {showNotificationWarning ? (
-          <Text style={[styles.notificationsDisabledText, { color: theme.error }]}>
-            {Copy.home.notificationsDisabled}
-          </Text>
+            <View
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: selectedIds.has(item.id) ? theme.saveButtonActive : theme.border,
+                  backgroundColor: selectedIds.has(item.id) ? theme.saveButtonActive : "transparent",
+                },
+              ]}
+            >
+              {selectedIds.has(item.id) ? (
+                <Feather name="check" size={14} color={theme.buttonText} />
+              ) : null}
+            </View>
+          </Pressable>
         ) : null}
-      </View>
 
-      <View style={styles.cardActions}>
-        <Switch
-          value={item.isActive}
-          onValueChange={() => handleToggle(item)}
-          trackColor={{ false: theme.borderLight, true: theme.saveButtonActive + "60" }}
-          thumbColor={item.isActive ? theme.saveButtonActive : theme.textTertiary}
-          style={styles.switch}
-        />
-      </View>
-    </Pressable>
-  );
+        <View style={styles.cardContent}>
+          <ThemedText type="h4" style={[styles.cardTitle, locked && { color: theme.textSecondary }]}>
+            {item.title}
+          </ThemedText>
+          {locked ? (
+            <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold }}>
+              {Copy.subscription.upgradeReactivate}
+            </ThemedText>
+          ) : (
+            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+              {formatReminderDescription(item)}
+            </ThemedText>
+          )}
+          {showNotificationWarning && !locked ? (
+            <Text style={[styles.notificationsDisabledText, { color: theme.error }]}>
+              {Copy.home.notificationsDisabled}
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={styles.cardActions}>
+          {locked ? (
+            <Feather name="lock" size={18} color={CORAL} />
+          ) : (
+            <Switch
+              value={item.isActive}
+              onValueChange={() => handleToggle(item)}
+              trackColor={{ false: theme.borderLight, true: theme.saveButtonActive + "60" }}
+              thumbColor={item.isActive ? theme.saveButtonActive : theme.textTertiary}
+              style={styles.switch}
+            />
+          )}
+        </View>
+      </Pressable>
+    );
+  };
 
   const allSelected = reminders.length > 0 && selectedIds.size === reminders.length;
 

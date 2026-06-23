@@ -12,6 +12,8 @@ import {
   getCustomerInfo,
   checkEntitlement,
 } from "@/services/subscriptionService";
+import { useTrialStatus, TrialStatus } from "@/hooks/useTrialStatus";
+import { cancelTrialNotifications } from "@/services/notifications";
 
 type PlanType = "trial" | "monthly" | "yearly" | "none";
 
@@ -22,7 +24,8 @@ interface SubscriptionState {
   offering: PurchasesOffering | null;
 }
 
-interface SubscriptionContextType extends SubscriptionState {
+interface SubscriptionContextType extends SubscriptionState, Omit<TrialStatus, "refreshTrial"> {
+  isPro: boolean;
   purchasePackage: (pkg: PurchasesPackage) => Promise<{ success: boolean; error?: string }>;
   restorePurchases: () => Promise<{ success: boolean; error?: string }>;
   refreshStatus: () => Promise<void>;
@@ -37,6 +40,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     isLoading: true,
     offering: null,
   });
+
+  const { isInTrial, daysLeft, trialExpired, trialStartDate, refreshTrial } = useTrialStatus();
+
+  const isPro = state.isSubscribed || isInTrial;
 
   const refreshStatus = useCallback(async () => {
     if (Platform.OS === "web") {
@@ -88,12 +95,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const result = await purchasePackageFn(pkg);
       if (result.success) {
         await refreshStatus();
+        await refreshTrial();
+        try { await cancelTrialNotifications(); } catch {}
       } else {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
       return { success: result.success, error: result.error };
     },
-    [refreshStatus]
+    [refreshStatus, refreshTrial]
   );
 
   const restorePurchases = useCallback(async () => {
@@ -101,16 +110,23 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     const result = await restorePurchasesFn();
     if (result.success) {
       await refreshStatus();
+      await refreshTrial();
+      try { await cancelTrialNotifications(); } catch {}
     } else {
       setState((prev) => ({ ...prev, isLoading: false }));
     }
     return { success: result.success, error: result.error };
-  }, [refreshStatus]);
+  }, [refreshStatus, refreshTrial]);
 
   return (
     <SubscriptionContext.Provider
       value={{
         ...state,
+        isInTrial,
+        daysLeft,
+        trialExpired,
+        trialStartDate,
+        isPro,
         purchasePackage,
         restorePurchases,
         refreshStatus,
