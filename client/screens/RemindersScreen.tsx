@@ -242,13 +242,16 @@ export default function RemindersScreen() {
         <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
           {Copy.subscription.unlockProBody}
         </ThemedText>
+        <ThemedText type="caption" style={[{ color: isDark ? "#7BC9D5" : "#3A8A9A", fontFamily: FontFamily.sansBold, letterSpacing: 1, fontSize: 10, marginBottom: Spacing.sm }]}>
+          {Copy.subscription.orbiaProSubtitle}
+        </ThemedText>
         <Pressable
           style={[styles.upsellButton, { backgroundColor: CORAL }]}
           onPress={() => navigation.navigate("Paywall")}
           testID="button-reminders-upsell"
         >
           <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 0.5 }}>
-            {Copy.subscription.upgradeButton}
+            {Copy.subscription.unlockProCta}
           </ThemedText>
         </Pressable>
       </View>
@@ -314,17 +317,14 @@ export default function RemindersScreen() {
         </View>
 
         <View style={styles.cardActions}>
-          {locked ? (
-            <Feather name="lock" size={18} color={CORAL} />
-          ) : (
-            <Switch
-              value={item.isActive}
-              onValueChange={() => handleToggle(item)}
-              trackColor={{ false: theme.borderLight, true: theme.saveButtonActive + "60" }}
-              thumbColor={item.isActive ? theme.saveButtonActive : theme.textTertiary}
-              style={styles.switch}
-            />
-          )}
+          <Switch
+            value={locked ? false : item.isActive}
+            onValueChange={locked ? undefined : () => handleToggle(item)}
+            disabled={locked}
+            trackColor={{ false: locked ? theme.borderLight + "60" : theme.borderLight, true: theme.saveButtonActive + "60" }}
+            thumbColor={locked ? theme.textTertiary + "60" : (item.isActive ? theme.saveButtonActive : theme.textTertiary)}
+            style={[styles.switch, locked && { opacity: 0.4 }]}
+          />
         </View>
       </Pressable>
     );

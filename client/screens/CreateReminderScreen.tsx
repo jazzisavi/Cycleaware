@@ -1300,11 +1300,36 @@ function InlinePaywall({
   isDark: boolean;
   theme: ReturnType<typeof useTheme>["theme"];
 }) {
+  const { offering } = useSubscription();
+  const { PACKAGE_TYPE } = require("react-native-purchases");
+
+  const monthlyPackage = offering?.availablePackages.find(
+    (p: { packageType: string }) => p.packageType === PACKAGE_TYPE.MONTHLY
+  );
+  const yearlyPackage = offering?.availablePackages.find(
+    (p: { packageType: string }) => p.packageType === PACKAGE_TYPE.ANNUAL
+  );
+
   const cardBg = isDark ? TEAL_BG_DARK : TEAL_BG;
+  const innerBg = isDark ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.45)";
+
+  const plans = [
+    {
+      title: Copy.subscription.orbiaProTitle,
+      subtitle: Copy.subscription.orbiaProSubtitle,
+      features: Copy.subscription.orbiaProFeatures,
+    },
+    {
+      title: Copy.subscription.orbiaSupporterTitle,
+      subtitle: Copy.subscription.orbiaSupporterSubtitle,
+      features: Copy.subscription.orbiaSupporterFeatures,
+    },
+  ];
+
   return (
     <View style={inlinePaywallStyles.wrapper}>
-      <View style={inlinePaywallStyles.header}>
-        <Feather name="lock" size={16} color={CORAL} />
+      <View style={inlinePaywallStyles.headerRow}>
+        <Feather name="lock" size={14} color={CORAL} />
         <ThemedText type="caption" style={[inlinePaywallStyles.headerLabel, { color: theme.textSecondary }]}>
           {Copy.subscription.choosePlanLabel}
         </ThemedText>
@@ -1313,42 +1338,50 @@ function InlinePaywall({
         {Copy.subscription.trialEndedBody}
       </ThemedText>
 
-      {[
-        {
-          title: Copy.subscription.orbiaProTitle,
-          subtitle: Copy.subscription.orbiaProSubtitle,
-          features: Copy.subscription.orbiaProFeatures,
-        },
-        {
-          title: Copy.subscription.orbiaSupporterTitle,
-          subtitle: Copy.subscription.orbiaSupporterSubtitle,
-          features: Copy.subscription.orbiaSupporterFeatures,
-        },
-      ].map((plan) => (
+      {plans.map((plan) => (
         <View key={plan.title} style={[inlinePaywallStyles.planCard, { backgroundColor: cardBg }]}>
-          <View style={inlinePaywallStyles.planHeader}>
-            <ThemedText type="body" style={[inlinePaywallStyles.planTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A" }]}>
-              {plan.title}
-            </ThemedText>
-            <ThemedText type="caption" style={[inlinePaywallStyles.planSubtitle, { color: isDark ? "#7BC9D5" : "#3A8A9A" }]}>
-              {plan.subtitle}
-            </ThemedText>
-          </View>
+          <ThemedText type="body" style={[inlinePaywallStyles.planTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A" }]}>
+            {plan.title}
+          </ThemedText>
+          <ThemedText type="caption" style={[inlinePaywallStyles.planSubtitle, { color: isDark ? "#7BC9D5" : "#3A8A9A" }]}>
+            {plan.subtitle}
+          </ThemedText>
           {plan.features.map((f: string) => (
             <View key={f} style={inlinePaywallStyles.featureRow}>
               <Feather name="check" size={12} color={CORAL} style={{ marginRight: Spacing.xs }} />
               <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
             </View>
           ))}
-          <Pressable
-            style={[inlinePaywallStyles.upgradeBtn, { backgroundColor: CORAL }]}
-            onPress={onUpgrade}
-            testID={`button-inline-upgrade-${plan.title.toLowerCase().replace(" ", "-")}`}
-          >
-            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 0.5 }}>
-              {Copy.subscription.upgradeButton}
-            </ThemedText>
-          </Pressable>
+          <View style={[inlinePaywallStyles.pricingRows, { backgroundColor: innerBg }]}>
+            <View style={inlinePaywallStyles.pricingRow}>
+              <View style={inlinePaywallStyles.pricingInfo}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <ThemedText type="small" style={{ fontFamily: FontFamily.sansSemiBold, color: theme.text }}>Yearly</ThemedText>
+                  <View style={inlinePaywallStyles.bestValueBadge}>
+                    <ThemedText type="caption" style={{ color: CORAL, fontFamily: FontFamily.sansBold, fontSize: 9 }}>{Copy.subscription.bestValue}</ThemedText>
+                  </View>
+                </View>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  {yearlyPackage ? Copy.subscription.yearlyPrice(yearlyPackage.product.priceString) : "12 Months @ £12"}
+                </ThemedText>
+              </View>
+              <Pressable style={[inlinePaywallStyles.upgradeBtn, { backgroundColor: CORAL }]} onPress={onUpgrade} testID={`button-inline-${plan.title.replace(" ", "-").toLowerCase()}-yearly`}>
+                <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, fontSize: 10 }}>{Copy.subscription.upgradeButton}</ThemedText>
+              </Pressable>
+            </View>
+            <View style={[inlinePaywallStyles.divider, { backgroundColor: isDark ? "#2A5560" : "#C8E8EC" }]} />
+            <View style={inlinePaywallStyles.pricingRow}>
+              <View style={inlinePaywallStyles.pricingInfo}>
+                <ThemedText type="small" style={{ fontFamily: FontFamily.sansSemiBold, color: theme.text }}>Monthly</ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  {monthlyPackage ? Copy.subscription.monthlyPrice(monthlyPackage.product.priceString) : "£2/month"}
+                </ThemedText>
+              </View>
+              <Pressable style={[inlinePaywallStyles.upgradeBtn, { backgroundColor: CORAL }]} onPress={onUpgrade} testID={`button-inline-${plan.title.replace(" ", "-").toLowerCase()}-monthly`}>
+                <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, fontSize: 10 }}>{Copy.subscription.upgradeButton}</ThemedText>
+              </Pressable>
+            </View>
+          </View>
         </View>
       ))}
     </View>
@@ -1359,7 +1392,7 @@ const inlinePaywallStyles = StyleSheet.create({
   wrapper: {
     marginBottom: Spacing.xl,
   },
-  header: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
@@ -1375,9 +1408,6 @@ const inlinePaywallStyles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  planHeader: {
-    marginBottom: Spacing.sm,
-  },
   planTitle: {
     fontFamily: FontFamily.serifBold,
     fontSize: 16,
@@ -1387,16 +1417,42 @@ const inlinePaywallStyles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1,
     marginTop: 2,
+    marginBottom: Spacing.sm,
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
   },
-  upgradeBtn: {
-    marginTop: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: Spacing.sm,
+  pricingRows: {
+    borderRadius: BorderRadius.md,
+    overflow: "hidden",
+    marginTop: Spacing.sm,
+  },
+  pricingRow: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.sm,
+  },
+  pricingInfo: {
+    flex: 1,
+  },
+  bestValueBadge: {
+    backgroundColor: CORAL + "20",
+    borderRadius: BorderRadius.xs,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  divider: {
+    height: 1,
+  },
+  upgradeBtn: {
+    borderRadius: BorderRadius.sm,
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 72,
   },
 });
