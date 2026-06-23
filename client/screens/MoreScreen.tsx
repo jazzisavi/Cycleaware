@@ -82,7 +82,7 @@ export default function MoreScreen() {
         >
           <View style={styles.subscriptionHeader}>
             <ThemedText type="h3">
-              {isSubscribed ? "GoFlo Pro" : Copy.more.freeTrialTitle}
+              {isSubscribed ? Copy.subscription.orbiaProTitle : Copy.more.freeTrialTitle}
             </ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
               <ThemedText type="caption" style={[styles.badgeText, { color: theme.success }]}>
@@ -91,7 +91,7 @@ export default function MoreScreen() {
             </View>
           </View>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {isSubscribed ? Copy.paywall.subscribedMessage : Copy.more.freeTrialSubtitle}
+            {isSubscribed ? Copy.subscription.subscribedMessage : Copy.more.freeTrialSubtitle}
           </ThemedText>
         </Pressable>
 

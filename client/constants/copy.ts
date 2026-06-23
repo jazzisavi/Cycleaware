@@ -354,6 +354,7 @@ export const Copy = {
     trialNotifDay0Body: "Upgrade now to continue using cycle reminders.",
     trialNotifRemindLater: "Remind me later",
     trialNotifUpgrade: "Upgrade",
+    subscribedMessage: "Thank you for supporting Orbia. You have access to all features.",
   },
 
   errors: {

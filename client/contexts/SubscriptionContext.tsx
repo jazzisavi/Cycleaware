@@ -89,6 +89,23 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     init();
   }, []);
 
+  useEffect(() => {
+    if (!trialExpired || state.isSubscribed) return;
+    const enforceExpiry = async () => {
+      try {
+        const { LocalDatabase } = require("@/services/LocalDatabase");
+        const { cancelPendingNotificationsForReminder } = require("@/services/notifications");
+        const allReminders = LocalDatabase.getAllReminders();
+        for (const reminder of allReminders) {
+          if (reminder.reminderType === "cycle" && reminder.isActive) {
+            await cancelPendingNotificationsForReminder(reminder.id);
+          }
+        }
+      } catch {}
+    };
+    enforceExpiry();
+  }, [trialExpired, state.isSubscribed]);
+
   const purchasePackage = useCallback(
     async (pkg: PurchasesPackage) => {
       setState((prev) => ({ ...prev, isLoading: true }));

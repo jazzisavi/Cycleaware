@@ -128,7 +128,7 @@ export default function ProfileScreen() {
         <View style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault, borderColor: isSubscribed ? theme.success : theme.primary }]}>
           <View style={styles.subscriptionRow}>
             <ThemedText type="h3">
-              {isSubscribed ? `GoFlo Pro (${currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel})` : Copy.profile.freeTrialTitle}
+              {isSubscribed ? `Orbia Pro (${currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel})` : Copy.profile.freeTrialTitle}
             </ThemedText>
             <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
               <ThemedText type="caption" style={{ color: theme.success }}>
@@ -137,7 +137,7 @@ export default function ProfileScreen() {
             </View>
           </View>
           <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
-            {isSubscribed ? Copy.paywall.subscribedMessage : Copy.profile.trialEndsMessage}
+            {isSubscribed ? Copy.subscription.subscribedMessage : Copy.profile.trialEndsMessage}
           </ThemedText>
           <Button
             variant="outline"

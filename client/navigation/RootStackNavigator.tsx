@@ -128,11 +128,7 @@ export default function RootStackNavigator() {
         options={({ navigation }) => ({
           ...opaqueScreenOptions,
           headerTitle: "Upgrade",
-          headerLeft: () => (
-            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
-              <Feather name="arrow-left" size={24} color={theme.text} />
-            </Pressable>
-          ),
+          headerLeft: () => null,
           headerRight: () => (
             <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
               <Feather name="x" size={24} color={theme.text} />
