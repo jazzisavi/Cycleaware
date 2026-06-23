@@ -24,7 +24,7 @@ interface SubscriptionState {
   offering: PurchasesOffering | null;
 }
 
-interface SubscriptionContextType extends SubscriptionState, Omit<TrialStatus, "refreshTrial"> {
+interface SubscriptionContextType extends SubscriptionState, TrialStatus {
   isPro: boolean;
   purchasePackage: (pkg: PurchasesPackage) => Promise<{ success: boolean; error?: string }>;
   restorePurchases: () => Promise<{ success: boolean; error?: string }>;
@@ -126,6 +126,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         daysLeft,
         trialExpired,
         trialStartDate,
+        refreshTrial,
         isPro,
         purchasePackage,
         restorePurchases,

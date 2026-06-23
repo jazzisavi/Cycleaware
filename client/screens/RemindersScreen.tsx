@@ -300,15 +300,14 @@ export default function RemindersScreen() {
           <ThemedText type="h4" style={[styles.cardTitle, locked && { color: theme.textSecondary }]}>
             {item.title}
           </ThemedText>
+          <ThemedText type="small" style={{ color: locked ? theme.textTertiary : theme.textSecondary }}>
+            {formatReminderDescription(item)}
+          </ThemedText>
           {locked ? (
-            <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold }}>
+            <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold, marginTop: 2 }}>
               {Copy.subscription.upgradeReactivate}
             </ThemedText>
-          ) : (
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              {formatReminderDescription(item)}
-            </ThemedText>
-          )}
+          ) : null}
           {showNotificationWarning && !locked ? (
             <Text style={[styles.notificationsDisabledText, { color: theme.error }]}>
               {Copy.home.notificationsDisabled}

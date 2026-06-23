@@ -30,7 +30,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
-  const { isSubscribed, currentPlan, daysLeft, isInTrial, trialExpired, refreshStatus } = useSubscription();
+  const { isSubscribed, currentPlan, daysLeft, isInTrial, trialExpired, refreshStatus, refreshTrial } = useSubscription();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -50,16 +50,19 @@ export default function ProfileScreen() {
     const clamped = Math.max(0, Math.min(30, days));
     setDevDaysLeft(clamped);
     await AsyncStorage.setItem(DEV_OVERRIDE_KEY, String(clamped));
+    await refreshTrial();
   };
 
   const handleClearDevOverride = async () => {
     await AsyncStorage.removeItem(DEV_OVERRIDE_KEY);
+    await refreshTrial();
     setDevPanelVisible(false);
   };
 
   const handleResetTrial = async () => {
     await AsyncStorage.removeItem(TRIAL_START_KEY);
     await AsyncStorage.removeItem(DEV_OVERRIDE_KEY);
+    await refreshTrial();
     setDevPanelVisible(false);
   };
 
