@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { StyleSheet, View, Image, Pressable } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, View, Image, Pressable, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -37,20 +37,13 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [devPanelVisible, setDevPanelVisible] = useState(false);
   const [devDaysLeft, setDevDaysLeft] = useState(daysLeft);
-  const versionPressCount = useRef(0);
-  const versionPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
-  const handleVersionPress = () => {
+  const handleVersionLongPress = () => {
     if (!__DEV__) return;
-    versionPressCount.current += 1;
-    if (versionPressTimer.current) clearTimeout(versionPressTimer.current);
-    versionPressTimer.current = setTimeout(() => { versionPressCount.current = 0; }, 2000);
-    if (versionPressCount.current >= 5) {
-      versionPressCount.current = 0;
-      setDevPanelVisible(true);
-    }
+    setDevDaysLeft(daysLeft);
+    setDevPanelVisible(true);
   };
 
   const handleSetDevDays = async (days: number) => {
@@ -172,55 +165,70 @@ export default function ProfileScreen() {
           </Button>
         </View>
 
-        <Pressable onPress={handleVersionPress} style={styles.versionRow} testID="text-version-dev">
+        <Pressable
+          onLongPress={handleVersionLongPress}
+          style={styles.versionRow}
+          testID="text-version-dev"
+          delayLongPress={800}
+        >
           <ThemedText type="small" style={{ color: theme.textTertiary, textAlign: "center" }}>
             v{appVersion}
           </ThemedText>
         </Pressable>
 
-        {devPanelVisible && __DEV__ ? (
-          <View style={[styles.devPanel, { backgroundColor: theme.backgroundDefault, borderColor: "#E8614F" }]}>
-            <ThemedText type="h4" style={{ color: "#E8614F", marginBottom: Spacing.md }}>Dev Trial Panel</ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
-              Trial active: {isInTrial ? "yes" : "no"} | Expired: {trialExpired ? "yes" : "no"} | Days left: {daysLeft}
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
-              Override days left: {devDaysLeft}
-            </ThemedText>
-            <View style={styles.devStepperRow}>
-              <Pressable
-                style={[styles.devStepBtn, { backgroundColor: theme.backgroundSecondary }]}
-                onPress={() => handleSetDevDays(devDaysLeft - 1)}
-              >
-                <ThemedText type="body">-</ThemedText>
+        {__DEV__ ? (
+          <Modal
+            visible={devPanelVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setDevPanelVisible(false)}
+          >
+            <Pressable style={styles.devModalOverlay} onPress={() => setDevPanelVisible(false)}>
+              <Pressable style={[styles.devModalSheet, { backgroundColor: theme.backgroundDefault }]} onPress={() => {}}>
+                <View style={styles.devModalHandle} />
+                <ThemedText type="h4" style={{ color: "#E8614F", marginBottom: Spacing.md }}>Dev Trial Panel</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
+                  Trial active: {isInTrial ? "yes" : "no"} | Expired: {trialExpired ? "yes" : "no"} | Days left: {daysLeft}
+                </ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
+                  Override days left: {devDaysLeft}
+                </ThemedText>
+                <View style={styles.devStepperRow}>
+                  <Pressable
+                    style={[styles.devStepBtn, { backgroundColor: theme.backgroundSecondary }]}
+                    onPress={() => handleSetDevDays(devDaysLeft - 1)}
+                  >
+                    <ThemedText type="body">-</ThemedText>
+                  </Pressable>
+                  <ThemedText type="body" style={{ marginHorizontal: Spacing.lg }}>{devDaysLeft}</ThemedText>
+                  <Pressable
+                    style={[styles.devStepBtn, { backgroundColor: theme.backgroundSecondary }]}
+                    onPress={() => handleSetDevDays(devDaysLeft + 1)}
+                  >
+                    <ThemedText type="body">+</ThemedText>
+                  </Pressable>
+                </View>
+                <Pressable
+                  style={[styles.devActionBtn, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.md }]}
+                  onPress={handleClearDevOverride}
+                >
+                  <ThemedText type="small" style={{ color: theme.text }}>Clear override</ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[styles.devActionBtn, { backgroundColor: "#E8614F" + "20", marginTop: Spacing.sm }]}
+                  onPress={handleResetTrial}
+                >
+                  <ThemedText type="small" style={{ color: "#E8614F" }}>Reset trial start</ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[styles.devActionBtn, { marginTop: Spacing.sm }]}
+                  onPress={() => setDevPanelVisible(false)}
+                >
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>Close</ThemedText>
+                </Pressable>
               </Pressable>
-              <ThemedText type="body" style={{ marginHorizontal: Spacing.lg }}>{devDaysLeft}</ThemedText>
-              <Pressable
-                style={[styles.devStepBtn, { backgroundColor: theme.backgroundSecondary }]}
-                onPress={() => handleSetDevDays(devDaysLeft + 1)}
-              >
-                <ThemedText type="body">+</ThemedText>
-              </Pressable>
-            </View>
-            <Pressable
-              style={[styles.devActionBtn, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.md }]}
-              onPress={handleClearDevOverride}
-            >
-              <ThemedText type="small" style={{ color: theme.text }}>Clear override</ThemedText>
             </Pressable>
-            <Pressable
-              style={[styles.devActionBtn, { backgroundColor: "#E8614F" + "20", marginTop: Spacing.sm }]}
-              onPress={handleResetTrial}
-            >
-              <ThemedText type="small" style={{ color: "#E8614F" }}>Reset trial start</ThemedText>
-            </Pressable>
-            <Pressable
-              style={[styles.devActionBtn, { marginTop: Spacing.sm }]}
-              onPress={() => setDevPanelVisible(false)}
-            >
-              <ThemedText type="small" style={{ color: theme.textSecondary }}>Close</ThemedText>
-            </Pressable>
-          </View>
+          </Modal>
         ) : null}
       </KeyboardAwareScrollViewCompat>
     </ThemedView>
@@ -328,5 +336,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.sm,
     alignItems: "center",
+  },
+  devModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  devModalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: Spacing.xl,
+    paddingBottom: Spacing["3xl"],
+  },
+  devModalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#CCCCCC",
+    alignSelf: "center",
+    marginBottom: Spacing.lg,
   },
 });

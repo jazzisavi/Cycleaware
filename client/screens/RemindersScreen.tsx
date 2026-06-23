@@ -226,6 +226,34 @@ export default function RemindersScreen() {
   );
 
   const isCycleLocked = (item: LocalReminder) => cycleGated && item.reminderType === "cycle";
+  const hasCycleReminders = reminders.some((r) => r.reminderType === "cycle");
+  const [upsellDismissed, setUpsellDismissed] = useState(false);
+
+  const renderUpsellFooter = () => {
+    if (!cycleGated || !hasCycleReminders || upsellDismissed) return null;
+    return (
+      <View style={[styles.upsellCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
+        <View style={styles.upsellTop}>
+          <ThemedText type="body" style={[styles.upsellTitle, { color: theme.text }]}>{Copy.subscription.unlockProTitle}</ThemedText>
+          <Pressable onPress={() => setUpsellDismissed(true)} hitSlop={8}>
+            <Feather name="x" size={16} color={theme.textTertiary} />
+          </Pressable>
+        </View>
+        <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
+          {Copy.subscription.unlockProBody}
+        </ThemedText>
+        <Pressable
+          style={[styles.upsellButton, { backgroundColor: CORAL }]}
+          onPress={() => navigation.navigate("Paywall")}
+          testID="button-reminders-upsell"
+        >
+          <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 0.5 }}>
+            {Copy.subscription.upgradeButton}
+          </ThemedText>
+        </Pressable>
+      </View>
+    );
+  };
 
   const renderItem = ({ item }: { item: LocalReminder }) => {
     const locked = isCycleLocked(item);
@@ -378,6 +406,7 @@ export default function RemindersScreen() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderListHeader}
         ListEmptyComponent={renderEmpty}
+        ListFooterComponent={renderUpsellFooter}
         contentContainerStyle={[
           styles.listContent,
           {
@@ -485,6 +514,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     marginTop: Spacing.xs,
+  },
+  upsellCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginTop: Spacing.md,
+  },
+  upsellTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+  },
+  upsellTitle: {
+    fontFamily: FontFamily.sansSemiBold,
+    fontSize: 14,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  upsellButton: {
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
   },
   welcomeCard: {
     padding: Spacing.xl,

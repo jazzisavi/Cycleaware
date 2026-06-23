@@ -47,7 +47,7 @@ const CORAL = "#E8614F";
 
 export default function CreateReminderScreen() {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
@@ -579,20 +579,7 @@ export default function CreateReminderScreen() {
         </View>
 
         {frequency === "cycle" && cycleGated ? (
-          <View style={[styles.card, { backgroundColor: "#EBF6F8" }]}>
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: Spacing.sm }}>
-              <Feather name="lock" size={16} color={CORAL} style={{ marginRight: Spacing.sm }} />
-              <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, color: CORAL }}>{Copy.subscription.unlockProTitle}</ThemedText>
-            </View>
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>{Copy.subscription.unlockProBody}</ThemedText>
-            <Pressable
-              style={{ backgroundColor: CORAL, borderRadius: BorderRadius.md, paddingVertical: Spacing.md, alignItems: "center" }}
-              onPress={() => navigation.navigate("Paywall")}
-              testID="button-cycle-upgrade"
-            >
-              <ThemedText type="button" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansSemiBold }}>{Copy.subscription.unlockProCta}</ThemedText>
-            </Pressable>
-          </View>
+          <InlinePaywall onUpgrade={() => navigation.navigate("Paywall")} isDark={isDark} theme={theme} />
         ) : null}
 
         {frequency === "cycle" && !cycleGated ? (
@@ -1298,5 +1285,118 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     padding: Spacing.md,
     width: 150,
+  },
+});
+
+const TEAL_BG = "#EBF6F8";
+const TEAL_BG_DARK = "#1A3D44";
+
+function InlinePaywall({
+  onUpgrade,
+  isDark,
+  theme,
+}: {
+  onUpgrade: () => void;
+  isDark: boolean;
+  theme: ReturnType<typeof useTheme>["theme"];
+}) {
+  const cardBg = isDark ? TEAL_BG_DARK : TEAL_BG;
+  return (
+    <View style={inlinePaywallStyles.wrapper}>
+      <View style={inlinePaywallStyles.header}>
+        <Feather name="lock" size={16} color={CORAL} />
+        <ThemedText type="caption" style={[inlinePaywallStyles.headerLabel, { color: theme.textSecondary }]}>
+          {Copy.subscription.choosePlanLabel}
+        </ThemedText>
+      </View>
+      <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
+        {Copy.subscription.trialEndedBody}
+      </ThemedText>
+
+      {[
+        {
+          title: Copy.subscription.orbiaProTitle,
+          subtitle: Copy.subscription.orbiaProSubtitle,
+          features: Copy.subscription.orbiaProFeatures,
+        },
+        {
+          title: Copy.subscription.orbiaSupporterTitle,
+          subtitle: Copy.subscription.orbiaSupporterSubtitle,
+          features: Copy.subscription.orbiaSupporterFeatures,
+        },
+      ].map((plan) => (
+        <View key={plan.title} style={[inlinePaywallStyles.planCard, { backgroundColor: cardBg }]}>
+          <View style={inlinePaywallStyles.planHeader}>
+            <ThemedText type="body" style={[inlinePaywallStyles.planTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A" }]}>
+              {plan.title}
+            </ThemedText>
+            <ThemedText type="caption" style={[inlinePaywallStyles.planSubtitle, { color: isDark ? "#7BC9D5" : "#3A8A9A" }]}>
+              {plan.subtitle}
+            </ThemedText>
+          </View>
+          {plan.features.map((f: string) => (
+            <View key={f} style={inlinePaywallStyles.featureRow}>
+              <Feather name="check" size={12} color={CORAL} style={{ marginRight: Spacing.xs }} />
+              <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
+            </View>
+          ))}
+          <Pressable
+            style={[inlinePaywallStyles.upgradeBtn, { backgroundColor: CORAL }]}
+            onPress={onUpgrade}
+            testID={`button-inline-upgrade-${plan.title.toLowerCase().replace(" ", "-")}`}
+          >
+            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 0.5 }}>
+              {Copy.subscription.upgradeButton}
+            </ThemedText>
+          </Pressable>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const inlinePaywallStyles = StyleSheet.create({
+  wrapper: {
+    marginBottom: Spacing.xl,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  headerLabel: {
+    fontFamily: FontFamily.sansSemiBold,
+    letterSpacing: 1,
+    fontSize: 11,
+  },
+  planCard: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  planHeader: {
+    marginBottom: Spacing.sm,
+  },
+  planTitle: {
+    fontFamily: FontFamily.serifBold,
+    fontSize: 16,
+  },
+  planSubtitle: {
+    fontFamily: FontFamily.sansBold,
+    fontSize: 10,
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  upgradeBtn: {
+    marginTop: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    paddingVertical: Spacing.sm,
+    alignItems: "center",
   },
 });

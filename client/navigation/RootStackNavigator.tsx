@@ -127,10 +127,15 @@ export default function RootStackNavigator() {
         component={PaywallScreen}
         options={({ navigation }) => ({
           ...opaqueScreenOptions,
-          headerTitle: "",
+          headerTitle: "Upgrade",
           headerLeft: () => (
             <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
               <Feather name="arrow-left" size={24} color={theme.text} />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Feather name="x" size={24} color={theme.text} />
             </Pressable>
           ),
         })}
