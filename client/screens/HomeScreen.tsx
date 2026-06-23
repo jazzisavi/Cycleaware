@@ -300,7 +300,7 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        {isInTrial && !trialExpired ? (
+        {(isInTrial || trialExpired) && !isPro ? (
           <View style={[styles.trialBar, { backgroundColor: theme.backgroundDefault }]}>
             <View style={styles.trialBarLeft}>
               <Text style={[styles.trialBarLabel, { color: theme.textSecondary }]}>{Copy.subscription.trialBarLabel}</Text>
@@ -312,7 +312,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {isInTrial && !trialExpired && getActiveMilestone(daysLeft) !== null && getActiveMilestone(daysLeft) !== dismissedMilestone ? (
+        {!isPro && getActiveMilestone(daysLeft) !== null && getActiveMilestone(daysLeft) !== dismissedMilestone ? (
           <View style={[styles.trialWarningCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
             <View style={styles.trialWarningTop}>
               <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialWarningTitle(daysLeft)}</Text>
@@ -344,7 +344,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {trialExpired && !isPro && hasReminders && !trialExpiredDismissed ? (
+        {trialExpired && !isPro && hasReminders && !trialExpiredDismissed && !(getActiveMilestone(daysLeft) !== null && getActiveMilestone(daysLeft) !== dismissedMilestone) ? (
           <View style={[styles.trialExpiredCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
             <View style={styles.trialWarningTop}>
               <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialEndedTitle}</Text>
