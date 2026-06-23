@@ -13,6 +13,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 import { FontFamily, Spacing, BorderRadius } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
@@ -93,6 +96,7 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { rs } = useResponsive();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
   const nameInputRef = useRef<RNTextInput>(null);
@@ -160,7 +164,22 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   </View>
                 ))}
               </View>
-              <Pressable onPress={() => handleComplete(true)} style={{ marginTop: Spacing["2xl"] }}>
+              <Pressable
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (!reviewMode) {
+                    const trimmed = name.trim();
+                    if (trimmed) await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
+                    const alreadyStarted = await AsyncStorage.getItem(TRIAL_START_KEY);
+                    if (!alreadyStarted) {
+                      await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString());
+                      try { await scheduleTrialNotifications(); } catch {}
+                    }
+                  }
+                  navigation.navigate("Paywall");
+                }}
+                style={{ marginTop: Spacing["2xl"] }}
+              >
                 <Text style={[{ color: theme.saveButtonActive, fontFamily: FontFamily.sansSemiBold, fontSize: rs(14), textDecorationLine: "underline" }]}>
                   {Copy.subscription.trialPageSubscribeLink}
                 </Text>

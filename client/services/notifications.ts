@@ -1111,14 +1111,23 @@ export async function scheduleTrialNotifications(): Promise<void> {
 export async function cancelTrialNotifications(): Promise<void> {
   if (!isNotificationsAvailable()) return;
   try {
-    const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
-    if (!idsStr) return;
-    const ids: string[] = JSON.parse(idsStr);
     const Notifications = await import("expo-notifications");
-    for (const id of ids) {
-      try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+    const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+    if (idsStr) {
+      const ids: string[] = JSON.parse(idsStr);
+      for (const id of ids) {
+        try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+      }
+      await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
     }
-    await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
+    try {
+      const presented = await Notifications.getPresentedNotificationsAsync();
+      for (const n of presented) {
+        if (n.request.content.data?.type === "trial_reminder") {
+          try { await Notifications.dismissNotificationAsync(n.request.identifier); } catch {}
+        }
+      }
+    } catch {}
   } catch (err) {
     console.error("Error cancelling trial notifications:", err);
   }
@@ -1156,7 +1165,8 @@ export async function syncTrialNotificationState(): Promise<void> {
         const Notifications = await import("expo-notifications");
         const presented = await Notifications.getPresentedNotificationsAsync();
         for (const n of presented) {
-          if (n.request.content.data?.type === "trial_reminder") {
+          const d = n.request.content.data;
+          if (d?.type === "trial_reminder" && d?.daysRemaining !== activeMilestone) {
             try { await Notifications.dismissNotificationAsync(n.request.identifier); } catch {}
           }
         }
