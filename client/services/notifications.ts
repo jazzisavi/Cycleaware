@@ -40,6 +40,12 @@ TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?
     const scheduledTime: string | undefined = notificationData.scheduledTime ?? undefined;
 
     if (notificationData.type === "trial_reminder") {
+      if (notificationId) {
+        try {
+          const Notifications = await import("expo-notifications");
+          await Notifications.dismissNotificationAsync(notificationId);
+        } catch {}
+      }
       if (actionIdentifier === "trial_remind_later") {
         const daysRemaining = notificationData.daysRemaining ?? null;
         if (daysRemaining !== null) {
@@ -561,6 +567,7 @@ export async function checkLastNotificationResponse(
 
     const lastResponseNotifType = data?.type as string;
     if (lastResponseNotifType === "trial_reminder") {
+      try { await Notifications.dismissNotificationAsync(notificationId); } catch {}
       if (actionIdentifier === "trial_remind_later") {
         const daysRemaining = data?.daysRemaining ?? null;
         if (daysRemaining !== null) {
@@ -670,6 +677,7 @@ export async function setupNotificationResponseListener(
 
           const notifType = data?.type as string;
           if (notifType === "trial_reminder") {
+            try { await Notifications.dismissNotificationAsync(notificationId); } catch {}
             if (actionIdentifier === "trial_remind_later") {
               const daysRemaining = data?.daysRemaining ?? null;
               if (daysRemaining !== null) {
@@ -956,6 +964,8 @@ export async function syncAllNotifications(): Promise<void> {
   try {
     const Notifications = await import("expo-notifications");
     await Notifications.cancelAllScheduledNotificationsAsync();
+    await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
+    await scheduleTrialNotifications();
 
     LocalDatabase.initDatabase();
     const reminders = LocalDatabase.getAllReminders();
