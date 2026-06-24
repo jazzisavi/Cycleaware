@@ -11,8 +11,9 @@ description: Architecture of GoFlo/Orbia trial system, gating logic, and key dec
 ## Two-surface trial flow (HomeScreen)
 - **Trial reminder card** (active reminder): shown on exact milestone days 6/4/2/1/0 as first item in "Today's Active Reminders". 24h auto-dismiss for ALL milestones. Snooze = 24h then reappears.
 - **Upgrade CTA card** (promo): shown after trial ended (day 0) and reminder abandoned after 24h (or ended 1+ days ago). No push. Below active reminders, not inside them.
-- **Mutual exclusion**: `resolved` flag in `TrialReminderState` suppresses both surfaces for the current milestone. `endedAt` (trialStartDate+30days) tracks "ended today" vs "ended days ago".
-- **Upgrade action**: `clearTrialReminderState(milestone)` sets `resolved=true` + `day=milestone` and cancels all trial notifications. Prevents resurrection on recompute.
+- **Mutual exclusion**: `resolved` flag in `TrialReminderState` suppresses both surfaces permanently across all milestones once user taps Upgrade. `endedAt` (trialStartDate+30days) is used only for initial day-0 entry ("ended today" vs "ended days ago").
+- **Upgrade action**: `clearTrialReminderState(milestone)` sets `resolved=true` and cancels all trial notifications. Prevents all future trial reminders.
+- **Day-0 snooze**: after 24h snooze expiry, reminder resurfaces unconditionally (shownAt=now, abandoned=false). Only 24h no-action auto-dismiss triggers the upgrade CTA.
 
 ## Trial state computation (`useTrialStatus`)
 - Trial = 30 days from `trial_start_date`

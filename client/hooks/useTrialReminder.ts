@@ -69,8 +69,9 @@ export function useTrialReminder(
     const now = Date.now();
     let changed = false;
 
-    // A resolved reminder stays suppressed until the milestone changes.
-    if (s.resolved && s.day === milestone) {
+    // Once the user taps Upgrade, all trial reminders are permanently resolved
+    // across every milestone. Only becoming subscribed clears it.
+    if (s.resolved) {
       setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
       return;
     }
@@ -81,7 +82,6 @@ export function useTrialReminder(
       s.day = milestone;
       s.snoozeUntil = null;
       s.abandoned = false;
-      s.resolved = false;
       if (milestone === 0) {
         // Track when the trial ended (for "ended today" vs "ended days ago")
         if (s.endedAt === null) {
@@ -116,13 +116,8 @@ export function useTrialReminder(
     } else {
       if (s.snoozeUntil && now >= s.snoozeUntil) {
         s.snoozeUntil = null;
-        // If trial ended more than 24h ago, abandon immediately after snooze
-        if (milestone === 0 && s.endedAt && now - s.endedAt >= DAY_MS) {
-          s.abandoned = true;
-        } else {
-          s.shownAt = now;
-          s.abandoned = false;
-        }
+        s.shownAt = now;
+        s.abandoned = false;
         changed = true;
       }
 
