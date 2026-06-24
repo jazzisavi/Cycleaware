@@ -51,8 +51,8 @@ export default function HomeScreen() {
 
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
-  const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed } = useSubscription();
-  const trialReminder = useTrialReminder(daysLeft, isSubscribed, now.getTime());
+  const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed, trialStartDate } = useSubscription();
+  const trialReminder = useTrialReminder(daysLeft, isSubscribed, now.getTime(), trialStartDate);
 
   const hasReminders = reminders.length > 0;
   const showNotificationWarning = notificationsAvailable &&
@@ -341,7 +341,10 @@ export default function HomeScreen() {
                   </Pressable>
                   <Pressable
                     style={[styles.takeButton, { backgroundColor: theme.saveButtonActive }]}
-                    onPress={() => navigation.navigate("Paywall")}
+                    onPress={async () => {
+                      await trialReminder.upgrade();
+                      navigation.navigate("Paywall");
+                    }}
                     testID="button-trial-upgrade"
                   >
                     <Text style={[styles.takeButtonText, { color: "#FFFFFF" }]}>{Copy.subscription.trialWarningUpgrade}</Text>

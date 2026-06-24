@@ -23,6 +23,8 @@ export interface TrialReminderState {
   snoozeUntil: number | null;
   abandoned: boolean;
   upgradeCardDismissed: boolean;
+  endedAt: number | null;
+  resolved: boolean;
 }
 
 const DEFAULT_TRIAL_REMINDER_STATE: TrialReminderState = {
@@ -31,6 +33,8 @@ const DEFAULT_TRIAL_REMINDER_STATE: TrialReminderState = {
   snoozeUntil: null,
   abandoned: false,
   upgradeCardDismissed: false,
+  endedAt: null,
+  resolved: false,
 };
 
 export async function getTrialReminderState(): Promise<TrialReminderState> {
@@ -49,10 +53,10 @@ export async function setTrialReminderState(state: TrialReminderState): Promise<
 
 function trialNotifCopy(daysRemaining: number): { title: string; body: string } {
   const c = Copy.subscription;
-  if (daysRemaining >= 6) return { title: c.trialNotifDay6Title, body: c.trialNotifDay6Body };
-  if (daysRemaining >= 4) return { title: c.trialNotifDay4Title, body: c.trialNotifDay4Body };
-  if (daysRemaining >= 2) return { title: c.trialNotifDay2Title, body: c.trialNotifDay2Body };
-  if (daysRemaining >= 1) return { title: c.trialNotifDay1Title, body: c.trialNotifDay1Body };
+  if (daysRemaining === 6) return { title: c.trialNotifDay6Title, body: c.trialNotifDay6Body };
+  if (daysRemaining === 4) return { title: c.trialNotifDay4Title, body: c.trialNotifDay4Body };
+  if (daysRemaining === 2) return { title: c.trialNotifDay2Title, body: c.trialNotifDay2Body };
+  if (daysRemaining === 1) return { title: c.trialNotifDay1Title, body: c.trialNotifDay1Body };
   return { title: c.trialNotifDay0Title, body: c.trialNotifDay0Body };
 }
 
@@ -82,6 +86,30 @@ async function scheduleNextTrialReminderNotification(daysRemaining: number): Pro
  * "Remind me later" on a trial reminder: hide the in-app card for 24h, then
  * resurface it, and schedule a follow-up push for the next day.
  */
+/**
+ * Clear the trial reminder state and cancel all trial reminder notifications.
+ * Called when user taps Upgrade (resolves the reminder permanently).
+ */
+export async function clearTrialReminderState(milestone: number): Promise<void> {
+  const state = await getTrialReminderState();
+  state.day = milestone;
+  state.resolved = true;
+  state.snoozeUntil = null;
+  state.abandoned = false;
+  await setTrialReminderState(state);
+  const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+  if (idsStr) {
+    const ids: string[] = JSON.parse(idsStr);
+    try {
+      const Notifications = await import("expo-notifications");
+      for (const id of ids) {
+        try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+      }
+    } catch {}
+    try { await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY); } catch {}
+  }
+}
+
 export async function snoozeTrialReminder(daysRemaining: number): Promise<void> {
   const state = await getTrialReminderState();
   state.day = daysRemaining;
@@ -125,6 +153,7 @@ TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?
       if (actionIdentifier === "trial_remind_later") {
         await snoozeTrialReminder(notificationData.daysRemaining ?? 0);
       } else if (actionIdentifier === "trial_upgrade") {
+        await clearTrialReminderState(notificationData.daysRemaining ?? 0);
         await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall");
       }
       return;
@@ -644,6 +673,7 @@ export async function checkLastNotificationResponse(
       if (actionIdentifier === "trial_remind_later") {
         try { await snoozeTrialReminder(Number(data?.daysRemaining ?? 0)); } catch {}
       } else if (actionIdentifier === "trial_upgrade") {
+        try { await clearTrialReminderState(Number(data?.daysRemaining ?? 0)); } catch {}
         try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
       }
       return;
@@ -751,6 +781,7 @@ export async function setupNotificationResponseListener(
             if (actionIdentifier === "trial_remind_later") {
               try { await snoozeTrialReminder(Number(data?.daysRemaining ?? 0)); } catch {}
             } else if (actionIdentifier === "trial_upgrade") {
+              try { await clearTrialReminderState(Number(data?.daysRemaining ?? 0)); } catch {}
               try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
             }
             return;
@@ -1205,11 +1236,11 @@ export async function cancelTrialNotifications(): Promise<void> {
 }
 
 function getTrialActiveMilestone(daysLeft: number): number | null {
+  if (daysLeft === 6) return 6;
+  if (daysLeft === 4) return 4;
+  if (daysLeft === 2) return 2;
+  if (daysLeft === 1) return 1;
   if (daysLeft <= 0) return 0;
-  if (daysLeft <= 1) return 1;
-  if (daysLeft <= 2) return 2;
-  if (daysLeft <= 4) return 4;
-  if (daysLeft <= 6) return 6;
   return null;
 }
 

@@ -6,7 +6,13 @@ description: Architecture of GoFlo/Orbia trial system, gating logic, and key dec
 ## Key AsyncStorage keys
 - `@orbia/trial_start_date` — ISO string of when trial started (set on onboarding completion)
 - `@orbia/dev_trial_override` — dev-only: number of days to override daysLeft for testing
-- `@orbia/trial_reminder_state` — persisted state for the two-surface trial reminder / upgrade CTA flow (shownAt, snoozeUntil, lastDay, dismissed, abandoned, upgradeDismissed)
+- `@orbia/trial_reminder_state` — persisted state for the two-surface trial reminder / upgrade CTA flow (day, shownAt, snoozeUntil, abandoned, upgradeCardDismissed, endedAt, resolved)
+
+## Two-surface trial flow (HomeScreen)
+- **Trial reminder card** (active reminder): shown on exact milestone days 6/4/2/1/0 as first item in "Today's Active Reminders". 24h auto-dismiss for ALL milestones. Snooze = 24h then reappears.
+- **Upgrade CTA card** (promo): shown after trial ended (day 0) and reminder abandoned after 24h (or ended 1+ days ago). No push. Below active reminders, not inside them.
+- **Mutual exclusion**: `resolved` flag in `TrialReminderState` suppresses both surfaces for the current milestone. `endedAt` (trialStartDate+30days) tracks "ended today" vs "ended days ago".
+- **Upgrade action**: `clearTrialReminderState(milestone)` sets `resolved=true` + `day=milestone` and cancels all trial notifications. Prevents resurrection on recompute.
 
 ## Trial state computation (`useTrialStatus`)
 - Trial = 30 days from `trial_start_date`
