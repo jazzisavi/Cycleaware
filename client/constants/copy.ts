@@ -367,6 +367,8 @@ export const Copy = {
     trialNotifDay0Body: "Upgrade now to continue using cycle reminders.",
     trialNotifRemindLater: "Remind me later",
     trialNotifUpgrade: "Upgrade",
+    trialReminderTitle: (days: number) => (days > 0 ? `Your trial ends in ${days} day${days !== 1 ? "s" : ""}` : "Your trial has ended"),
+    trialReminderBody: (days: number) => (days > 0 ? "Subscribe now to continue receiving cycle reminders." : "Upgrade now to continue using cycle reminders."),
     subscribedMessage: "Thank you for supporting Orbia. You have access to all features.",
   },
 

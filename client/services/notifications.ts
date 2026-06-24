@@ -13,7 +13,83 @@ const DEFAULT_SNOOZE_DURATION = 60;
 const LAST_PROCESSED_NOTIFICATION_KEY = "@goflo/last_processed_notification";
 const processingNotificationIds = new Set<string>();
 const TRIAL_NOTIF_ACTIVE_DAY_KEY = "@orbia/trial_notif_active_day";
+const TRIAL_REMINDER_STATE_KEY = "@orbia/trial_reminder_state";
+const TRIAL_SNOOZE_MS = 24 * 60 * 60 * 1000;
 export const PENDING_NAV_KEY = "@orbia/pending_nav_target";
+
+export interface TrialReminderState {
+  day: number | null;
+  shownAt: number | null;
+  snoozeUntil: number | null;
+  abandoned: boolean;
+  upgradeCardDismissed: boolean;
+}
+
+const DEFAULT_TRIAL_REMINDER_STATE: TrialReminderState = {
+  day: null,
+  shownAt: null,
+  snoozeUntil: null,
+  abandoned: false,
+  upgradeCardDismissed: false,
+};
+
+export async function getTrialReminderState(): Promise<TrialReminderState> {
+  try {
+    const raw = await AsyncStorage.getItem(TRIAL_REMINDER_STATE_KEY);
+    if (raw) return { ...DEFAULT_TRIAL_REMINDER_STATE, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_TRIAL_REMINDER_STATE };
+}
+
+export async function setTrialReminderState(state: TrialReminderState): Promise<void> {
+  try {
+    await AsyncStorage.setItem(TRIAL_REMINDER_STATE_KEY, JSON.stringify(state));
+  } catch {}
+}
+
+function trialNotifCopy(daysRemaining: number): { title: string; body: string } {
+  const c = Copy.subscription;
+  if (daysRemaining >= 6) return { title: c.trialNotifDay6Title, body: c.trialNotifDay6Body };
+  if (daysRemaining >= 4) return { title: c.trialNotifDay4Title, body: c.trialNotifDay4Body };
+  if (daysRemaining >= 2) return { title: c.trialNotifDay2Title, body: c.trialNotifDay2Body };
+  if (daysRemaining >= 1) return { title: c.trialNotifDay1Title, body: c.trialNotifDay1Body };
+  return { title: c.trialNotifDay0Title, body: c.trialNotifDay0Body };
+}
+
+async function scheduleNextTrialReminderNotification(daysRemaining: number): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const Notifications = await import("expo-notifications");
+    const fireDate = new Date(Date.now() + TRIAL_SNOOZE_MS);
+    const { title, body } = trialNotifCopy(daysRemaining);
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { type: "trial_reminder", daysRemaining },
+        categoryIdentifier: "trial",
+      },
+      trigger: { type: "date", date: fireDate } as any,
+    });
+    const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+    const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
+    ids.push(id);
+    await AsyncStorage.setItem(TRIAL_NOTIF_IDS_KEY, JSON.stringify(ids));
+  } catch {}
+}
+
+/**
+ * "Remind me later" on a trial reminder: hide the in-app card for 24h, then
+ * resurface it, and schedule a follow-up push for the next day.
+ */
+export async function snoozeTrialReminder(daysRemaining: number): Promise<void> {
+  const state = await getTrialReminderState();
+  state.day = daysRemaining;
+  state.snoozeUntil = Date.now() + TRIAL_SNOOZE_MS;
+  state.abandoned = false;
+  await setTrialReminderState(state);
+  await scheduleNextTrialReminderNotification(daysRemaining);
+}
 
 TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?: any; error?: any }) => {
   if (error) {
@@ -47,10 +123,7 @@ TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?
         } catch {}
       }
       if (actionIdentifier === "trial_remind_later") {
-        const daysRemaining = notificationData.daysRemaining ?? null;
-        if (daysRemaining !== null) {
-          await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(daysRemaining));
-        }
+        await snoozeTrialReminder(notificationData.daysRemaining ?? 0);
       } else if (actionIdentifier === "trial_upgrade") {
         await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall");
       }
@@ -569,10 +642,7 @@ export async function checkLastNotificationResponse(
     if (lastResponseNotifType === "trial_reminder") {
       try { await Notifications.dismissNotificationAsync(notificationId); } catch {}
       if (actionIdentifier === "trial_remind_later") {
-        const daysRemaining = data?.daysRemaining ?? null;
-        if (daysRemaining !== null) {
-          try { await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(daysRemaining)); } catch {}
-        }
+        try { await snoozeTrialReminder(Number(data?.daysRemaining ?? 0)); } catch {}
       } else if (actionIdentifier === "trial_upgrade") {
         try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
       }
@@ -679,10 +749,7 @@ export async function setupNotificationResponseListener(
           if (notifType === "trial_reminder") {
             try { await Notifications.dismissNotificationAsync(notificationId); } catch {}
             if (actionIdentifier === "trial_remind_later") {
-              const daysRemaining = data?.daysRemaining ?? null;
-              if (daysRemaining !== null) {
-                try { await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(daysRemaining)); } catch {}
-              }
+              try { await snoozeTrialReminder(Number(data?.daysRemaining ?? 0)); } catch {}
             } else if (actionIdentifier === "trial_upgrade") {
               try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
             }
@@ -1067,7 +1134,6 @@ export async function stopAlarm(): Promise<void> {
 }
 
 const TRIAL_NOTIF_IDS_KEY = "@orbia/trial_notif_ids";
-const TRIAL_NOTIF_DISMISSED_KEY = "@orbia/trial_notif_dismissed";
 const TRIAL_START_KEY = "@orbia/trial_start_date";
 
 export async function scheduleTrialNotifications(): Promise<void> {
@@ -1132,6 +1198,7 @@ export async function cancelTrialNotifications(): Promise<void> {
         }
       }
     } catch {}
+    try { await AsyncStorage.removeItem(TRIAL_REMINDER_STATE_KEY); } catch {}
   } catch (err) {
     console.error("Error cancelling trial notifications:", err);
   }

@@ -26,18 +26,9 @@ import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useTrialReminder } from "@/hooks/useTrialReminder";
 
 const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
-const TRIAL_NOTIF_DISMISSED_KEY = "@orbia/trial_notif_dismissed";
-
-function getActiveMilestone(days: number): number | null {
-  if (days <= 0) return 0;
-  if (days <= 1) return 1;
-  if (days <= 2) return 2;
-  if (days <= 4) return 4;
-  if (days <= 6) return 6;
-  return null;
-}
 
 export default function HomeScreen() {
   const { theme, isDark } = useTheme();
@@ -61,8 +52,7 @@ export default function HomeScreen() {
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
   const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed } = useSubscription();
-  const [dismissedMilestone, setDismissedMilestone] = useState<number | null>(null);
-  const [trialExpiredDismissed, setTrialExpiredDismissed] = useState(false);
+  const trialReminder = useTrialReminder(daysLeft, isSubscribed, now.getTime());
 
   const hasReminders = reminders.length > 0;
   const showNotificationWarning = notificationsAvailable &&
@@ -78,9 +68,6 @@ export default function HomeScreen() {
       checkPermissionStatus();
       AsyncStorage.getItem(MISSED_DISMISSED_AT_KEY).then((val) => {
         setMissedDismissedAt(val ? new Date(val) : null);
-      });
-      AsyncStorage.getItem(TRIAL_NOTIF_DISMISSED_KEY).then((val) => {
-        setDismissedMilestone(val !== null ? parseInt(val, 10) : null);
       });
       AsyncStorage.getItem(PENDING_NAV_KEY).then((val) => {
         if (val === "Paywall") {
@@ -312,53 +299,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {(isInTrial || trialExpired) && !isSubscribed && getActiveMilestone(daysLeft) !== null && getActiveMilestone(daysLeft) !== dismissedMilestone ? (
-          <View style={[styles.trialWarningCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
-            <View style={styles.trialWarningTop}>
-              <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialWarningTitle(daysLeft)}</Text>
-              <Pressable onPress={async () => {
-                const m = getActiveMilestone(daysLeft);
-                if (m !== null) await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(m));
-                setDismissedMilestone(m);
-              }} hitSlop={8}>
-                <Feather name="x" size={16} color={theme.textTertiary} />
-              </Pressable>
-            </View>
-            <Text style={[styles.trialWarningBody, { color: theme.textSecondary }]}>{Copy.subscription.trialWarningBody}</Text>
-            <View style={styles.trialWarningActions}>
-              <Pressable onPress={async () => {
-                const m = getActiveMilestone(daysLeft);
-                if (m !== null) await AsyncStorage.setItem(TRIAL_NOTIF_DISMISSED_KEY, String(m));
-                setDismissedMilestone(m);
-              }}>
-                <Text style={[styles.trialWarningRemind, { color: theme.textSecondary }]}>{Copy.subscription.trialWarningRemind}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.trialWarningUpgrade, { backgroundColor: "#E8614F" }]}
-                onPress={() => navigation.navigate("Paywall")}
-                testID="button-trial-upgrade"
-              >
-                <Text style={styles.trialWarningUpgradeText}>{Copy.subscription.trialWarningUpgrade}</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
-
-        {trialExpired && !isSubscribed && hasReminders && !trialExpiredDismissed ? (
-          <View style={[styles.trialExpiredCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
-            <View style={styles.trialWarningTop}>
-              <Text style={[styles.trialWarningTitle, { color: theme.text }]}>{Copy.subscription.trialEndedTitle}</Text>
-              <Pressable onPress={() => setTrialExpiredDismissed(true)} hitSlop={8}>
-                <Feather name="x" size={16} color={theme.textTertiary} />
-              </Pressable>
-            </View>
-            <Text style={[styles.trialWarningBody, { color: theme.textSecondary }]}>{Copy.subscription.trialEndedBody}</Text>
-            <Pressable onPress={() => navigation.navigate("Paywall")} testID="button-trial-expired-upgrade">
-              <Text style={[styles.trialWarningRemind, { color: "#E8614F", textDecorationLine: "underline" }]}>{Copy.subscription.trialEndedLink}</Text>
-            </Pressable>
-          </View>
-        ) : null}
-
         {reminders.length === 0 ? (
           <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
             <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60) }]} />
@@ -375,20 +315,40 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {reminders.length === 0 && trialExpired && !isSubscribed ? (
-          <Pressable style={[styles.welcomeCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]} onPress={() => navigation.navigate("Paywall")} testID="button-expired-empty-upgrade">
-            <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60), backgroundColor: "#B8E4EC", opacity: 0.5 }]} />
-            <Text style={[styles.welcomeTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A", fontSize: rs(22) }]}>{Copy.subscription.unlockProTitle}</Text>
-            <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.subscription.unlockProBody}</Text>
-            <View style={[styles.ctaButton, { backgroundColor: "#E8614F" }]}>
-              <Text style={[styles.ctaButtonText, { color: "#FFFFFF" }]}>{Copy.subscription.unlockProCta}</Text>
-            </View>
-          </Pressable>
-        ) : null}
-
-        {todaysReminders.length > 0 ? (
+        {trialReminder.showReminder || todaysReminders.length > 0 ? (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>{Copy.home.todaysReminders}</Text>
+            {trialReminder.showReminder ? (
+              <View style={[styles.activeCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]} testID="card-trial-reminder">
+                <View style={styles.activeCardTop}>
+                  <View style={[styles.bellIconCircle, { backgroundColor: theme.ctaTeal + "25" }]}>
+                    <MaterialCommunityIcons name="bell-ring" size={18} color={theme.ctaTeal} />
+                  </View>
+                  <View style={styles.activeCardInfo}>
+                    <Text style={[styles.activeTitle, { color: theme.text }]}>{Copy.subscription.trialReminderTitle(daysLeft)}</Text>
+                    <Text style={[styles.activeNotes, { color: theme.textSecondary }]}>{Copy.subscription.trialReminderBody(daysLeft)}</Text>
+                  </View>
+                </View>
+                <View style={styles.actionRow}>
+                  <Pressable
+                    onPress={async () => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      await trialReminder.remindLater();
+                    }}
+                    testID="button-trial-remind-later"
+                  >
+                    <Text style={[styles.textActionButton, { color: theme.ctaTeal }]}>{Copy.subscription.trialWarningRemind}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.takeButton, { backgroundColor: theme.saveButtonActive }]}
+                    onPress={() => navigation.navigate("Paywall")}
+                    testID="button-trial-upgrade"
+                  >
+                    <Text style={[styles.takeButtonText, { color: "#FFFFFF" }]}>{Copy.subscription.trialWarningUpgrade}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
             {todaysReminders.filter((r) => !isActioned(r.expandedKey)).map((reminder) => {
               const snoozed = isSnoozed(reminder.expandedKey);
               const snoozeUntilDate = getSnoozedUntil(reminder.expandedKey);
@@ -444,6 +404,21 @@ export default function HomeScreen() {
                 </View>
               );
             })}
+          </View>
+        ) : null}
+
+        {trialReminder.showUpgradeCard ? (
+          <View style={[styles.upgradeCard, { backgroundColor: isDark ? theme.ctaCard : "#E3F1F4" }]} testID="card-upgrade-cta">
+            <View style={styles.upgradeCardTop}>
+              <Text style={[styles.upgradeCardTitle, { color: theme.saveButtonActive }]}>{Copy.subscription.trialEndedTitle}</Text>
+              <Pressable onPress={() => trialReminder.dismissUpgradeCard()} hitSlop={8} testID="button-dismiss-upgrade-cta">
+                <Feather name="x" size={18} color={theme.textTertiary} />
+              </Pressable>
+            </View>
+            <Text style={[styles.upgradeCardBody, { color: theme.textSecondary }]}>{Copy.subscription.trialEndedBody}</Text>
+            <Pressable onPress={() => navigation.navigate("Paywall")} testID="button-upgrade-cta-link">
+              <Text style={[styles.upgradeCardLink, { color: theme.saveButtonActive }]}>{`${Copy.subscription.trialEndedLink} →`}</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -800,53 +775,32 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: "#2E7D52",
   },
-  trialWarningCard: {
+  upgradeCard: {
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xl,
   },
-  trialExpiredCard: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-  },
-  trialWarningTop: {
+  upgradeCardTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
-  trialWarningTitle: {
-    fontFamily: FontFamily.sansSemiBold,
-    fontSize: 14,
+  upgradeCardTitle: {
+    fontFamily: FontFamily.serifBold,
+    fontSize: 22,
     flex: 1,
     marginRight: Spacing.sm,
   },
-  trialWarningBody: {
+  upgradeCardBody: {
     fontFamily: FontFamily.sansRegular,
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: Spacing.md,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: Spacing.xs,
   },
-  trialWarningActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  trialWarningRemind: {
+  upgradeCardLink: {
     fontFamily: FontFamily.sansSemiBold,
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  trialWarningUpgrade: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  trialWarningUpgradeText: {
-    fontFamily: FontFamily.sansBold,
-    fontSize: 11,
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
+    fontSize: 14,
+    marginTop: 2,
   },
 });
