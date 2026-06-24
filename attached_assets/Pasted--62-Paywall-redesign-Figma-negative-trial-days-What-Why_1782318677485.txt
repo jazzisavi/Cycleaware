@@ -1,0 +1,42 @@
+#62 - Paywall redesign (Figma) + negative trial days
+What & Why
+Two related changes to the trial/paywall flow:
+
+Rebuild the paywall to match the Figma design (GoFlo v3, node 277:133). The current PaywallScreen does not match the approved design at all — wrong card colors, wrong layout, both plan rows always show an UPGRADE button, no badges/decorative styling. Rebuild both plan cards to match the Figma spec exactly, including the single-CTA accordion behavior.
+Negative trial days in the dev testing module — the trial-days override is clamped at a minimum of 0, so the post-expiry state can't be tested. Allow the stepper to go negative (-1, -2, -3, ...) so what happens after the trial ends can be verified.
+Done looks like
+Paywall matches Figma
+Screen background is Warm Linen #F5F0E8.
+Two plan cards, each: rounded ~32px corners, ~25px padding, subtle border rgba(60,40,20,0.1), soft drop shadow, and a faint translucent decorative circle in the top-right corner.
+Orbia Pro card — light blue background, title "Orbia Pro" in Playfair Display Black ~30px colored Fired Terracotta #C03A2B, all-caps subtitle "THE CYCLE ENGINE", feature rows ("Cycle reminders", "Standard reminders") with small icons, and a supporting tagline in muted brown #6B5744.
+Orbia Supporter card — light green background #E3F4EC, title "Orbia Supporter" in Playfair Display Black ~30px colored Deep Emerald #2E7D52 with a small sparkle accent, all-caps subtitle "BACK THE MISSION", feature rows ("Everything in Premium", "Shape what gets built next"), a body paragraph, and a "See where we're headed →" link in coral #E8614F.
+Plan selector inside each card is an accordion with one CTA at a time:
+Selected plan (Yearly by default): white card with a 2px colored border (teal #3FA0B0), rounded 16px, ~22px padding. Shows the period name in Playfair Bold (~24px), sub-line "12 Months @ £12" in 12px #6B5744, the price (e.g. "£1/month") in bold right-aligned, a filled "BEST VALUE" pill badge floating on the top-right edge (white uppercase 9px text), and a full-width UPGRADE pill button — coral #E8614F, ~52px tall, white uppercase text with letter-spacing and a soft green drop-shadow.
+Collapsed plan (Monthly by default): bordered card with a faint 2px translucent border, rounded 16px, ~22px padding, showing only the period name (Playfair Bold ~20px) and the price right-aligned. No button.
+Tapping the collapsed plan expands it (revealing its UPGRADE button + BEST VALUE badge if applicable) and collapses the other plan. Only one UPGRADE button is visible per card at any time.
+Selection state is tracked independently for the Pro card and the Supporter card, so expanding Monthly on one doesn't affect the other.
+Typography matches the design: Playfair Display Black for card titles, Playfair Bold for plan period names, Plus Jakarta Sans (Regular/SemiBold/Bold) for body, labels, prices, and button text.
+Purchasing still works for whichever plan is currently expanded; restore-purchases, the "you're a Pro" state, and the web fallback all still function. Dark mode still renders correctly (use theme references; the colors above define the light theme).
+Negative trial days
+In the dev trial controls (More screen "Trial Control" section and the hidden Profile dev panel), the minus stepper keeps working below 0, showing -1, -2, -3, etc. (with a sensible floor around -7). The app reflects the expired state for these values (trial treated as expired, not active).
+Out of scope
+Changing prices, plan names, entitlements, or which features unlock.
+Changing the trial duration (stays 30 days) or production trial logic beyond allowing the override/steppers to represent negative/expired values.
+Any change to Task #61 (trial ending reminders) work.
+Steps
+Rebuild the two plan cards' visual shell — Match the Figma card styling: background colors (light blue for Pro, light green for Supporter), 32px radius, padding, subtle border, soft shadow, decorative translucent corner circle, titles/subtitles/feature rows/taglines with the correct fonts and colors per the Done section. Use the attached references @assets/1_Reminder_form_-_frequency_-_cycle_-_Payment_wall_1782317322634.png and @assets/Background+Border+Shadow_1782317563270.png.
+Build the accordion plan selector — Replace the always-two-CTA pricing rows with a single-selection accordion: selected plan renders as the white bordered card with price, BEST VALUE pill badge, and a full-width coral UPGRADE pill button; the other renders as a compact bordered row (period + price only) that is tappable to switch selection. Default selection is Yearly. Track selection independently per card.
+Preserve purchase/restore behavior — Wire the UPGRADE button of the currently-expanded plan to the existing purchase handler, keep the restore button, the subscribed ("You're a Pro") state, loading states, message banner, and the web fallback intact. Verify dark mode still reads well.
+Allow negative trial override — Update the trial-status computation so the dev override accepts negative integers (remove the lower-bound clamp at 0, keep the upper bound at 30); negative/zero values continue to report the trial as expired.
+Let the dev steppers go below zero — In both the More screen "Trial Control" stepper and the Profile hidden dev panel stepper, allow decrementing past 0 (remove the <= 0 disable and the 0 floor in their handlers), with a sensible lower limit (~-7), and display negative values correctly.
+Relevant files
+client/screens/PaywallScreen.tsx
+client/constants/copy.ts
+client/constants/theme.ts
+client/hooks/useTrialStatus.ts:55-83
+client/screens/MoreScreen.tsx:46-67,181-207
+client/screens/ProfileScreen.tsx:49-64,199-218
+client/contexts/SubscriptionContext.tsx:44,143
+Design reference
+Figma: GoFlo v3 — node 277:133 (https://www.figma.com/design/uvwmygJHhc3zyY3allL6WP/GoFlo-v3?node-id=277-133)
+Card colors observed in Figma: Supporter card bg #E3F4EC, selected-plan border + badge teal #3FA0B0, emerald title #2E7D52; UPGRADE button coral #E8614F; muted text #6B5744; screen bg #F5F0E8.

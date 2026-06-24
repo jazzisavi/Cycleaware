@@ -6,6 +6,7 @@ description: Architecture of GoFlo/Orbia trial system, gating logic, and key dec
 ## Key AsyncStorage keys
 - `@orbia/trial_start_date` — ISO string of when trial started (set on onboarding completion)
 - `@orbia/dev_trial_override` — dev-only: number of days to override daysLeft for testing
+- `@orbia/trial_reminder_state` — persisted state for the two-surface trial reminder / upgrade CTA flow (shownAt, snoozeUntil, lastDay, dismissed, abandoned, upgradeDismissed)
 
 ## Trial state computation (`useTrialStatus`)
 - Trial = 30 days from `trial_start_date`
