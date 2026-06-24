@@ -359,7 +359,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {reminders.length === 0 && (!trialExpired || isPro) ? (
+        {reminders.length === 0 ? (
           <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
             <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60) }]} />
             <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive, fontSize: rs(26) }]}>{Copy.home.welcomeTitle}</Text>
@@ -375,7 +375,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {reminders.length === 0 && trialExpired && !isPro ? (
+        {reminders.length === 0 && trialExpired && !isSubscribed ? (
           <Pressable style={[styles.welcomeCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]} onPress={() => navigation.navigate("Paywall")} testID="button-expired-empty-upgrade">
             <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60), backgroundColor: "#B8E4EC", opacity: 0.5 }]} />
             <Text style={[styles.welcomeTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A", fontSize: rs(22) }]}>{Copy.subscription.unlockProTitle}</Text>

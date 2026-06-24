@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -146,24 +147,20 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
 
         {page === 2 ? (
           <View style={styles.page}>
-            <View style={[styles.pageTwoContent, { paddingTop: rs(Spacing["3xl"]) }]}>
-              <Text style={[styles.trialLabel, { color: theme.saveButtonActive, fontSize: rs(11) }]}>
-                {Copy.subscription.trialPageLabel}
-              </Text>
-              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(28), lineHeight: rs(38), marginBottom: rs(Spacing.lg) }]}>
+            <ScrollView
+              style={styles.pageOneScroll}
+              contentContainerStyle={[styles.trialPageContent, { paddingBottom: rs(80) }]}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(28), lineHeight: rs(36), marginBottom: rs(Spacing.lg) }]}>
                 {Copy.subscription.trialPageTitle}
               </Text>
-              <Text style={[styles.nameExplanation, { color: theme.textSecondary, fontSize: rs(15), lineHeight: rs(22), marginBottom: rs(Spacing["3xl"]) }]}>
+              <Text style={[styles.trialLabel, { color: theme.textSecondary, fontSize: rs(11), marginBottom: rs(Spacing.md) }]}>
+                {Copy.subscription.trialPageLabel}
+              </Text>
+              <Text style={[styles.nameExplanation, { color: theme.text, fontSize: rs(15), lineHeight: rs(23), marginBottom: rs(Spacing.xl) }]}>
                 {Copy.subscription.trialPageBody}
               </Text>
-              <View style={[styles.trialFeatureList, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8", borderRadius: BorderRadius.lg, padding: Spacing.lg }]}>
-                {[...Copy.subscription.orbiaProFeatures, ...Copy.subscription.orbiaLiteFeatures].map((f, i) => (
-                  <View key={i} style={[styles.trialFeatureRow, i > 0 && { marginTop: Spacing.sm }]}>
-                    <Feather name="check" size={14} color={theme.saveButtonActive} style={{ marginRight: Spacing.sm }} />
-                    <Text style={[{ fontFamily: FontFamily.sansRegular, fontSize: rs(14), color: theme.text }]}>{f}</Text>
-                  </View>
-                ))}
-              </View>
               <Pressable
                 onPress={async () => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -173,19 +170,25 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   }
                   navigation.navigate("Paywall");
                 }}
-                style={{ marginTop: Spacing["2xl"] }}
+                style={{ marginBottom: rs(Spacing["2xl"]) }}
               >
-                <Text style={[{ color: theme.saveButtonActive, fontFamily: FontFamily.sansSemiBold, fontSize: rs(14), textDecorationLine: "underline" }]}>
+                <Text style={[styles.subscribeLink, { color: theme.saveButtonActive }]}>
                   {Copy.subscription.trialPageSubscribeLink}
+                  {" →"}
                 </Text>
               </Pressable>
-            </View>
-            <View style={styles.bottomRow}>
-              <View style={{ flex: 1 }} />
-              <Pressable style={[styles.arrowButton, { backgroundColor: theme.saveButtonActive }]} onPress={() => handleComplete()}>
-                <Feather name="arrow-right" size={24} color={theme.buttonText} />
-              </Pressable>
-            </View>
+              <Image
+                source={require("../assets/images/onboarding-hero.png")}
+                style={styles.heroImage}
+                resizeMode="cover"
+              />
+            </ScrollView>
+            <Pressable
+              style={[styles.arrowButton, styles.arrowButtonFloating, { backgroundColor: theme.saveButtonActive }]}
+              onPress={() => handleComplete()}
+            >
+              <Feather name="arrow-right" size={24} color={theme.buttonText} />
+            </Pressable>
           </View>
         ) : page === 0 ? (
           <View style={styles.page}>
@@ -295,10 +298,17 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     marginBottom: Spacing.md,
   },
-  trialFeatureList: {},
-  trialFeatureRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  trialPageContent: {
+    paddingTop: Spacing.lg,
+  },
+  subscribeLink: {
+    fontFamily: FontFamily.sansSemiBold,
+    fontSize: 15,
+  },
+  heroImage: {
+    width: "100%",
+    height: 260,
+    borderRadius: 20,
   },
   dotsRow: {
     flexDirection: "row",
