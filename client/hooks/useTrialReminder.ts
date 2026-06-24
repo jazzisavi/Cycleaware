@@ -27,15 +27,17 @@ export interface TrialReminderView {
 }
 
 /**
- * Drives the two mutually-exclusive trial surfaces on the Home screen:
- *  1. A trial-ending reminder card (active reminder, days 6/4/2/1/0).
- *  2. An upgrade CTA card (promo only) shown once the trial has ended and
- *     there is no active or snoozed trial reminder pending.
+ * Drives the two mutually-exclusive trial surfaces on the Home screen.
  *
- * 24h auto-dismiss applies to ALL milestone reminders (not just day 0).
- * For milestone 0 we track "ended today" vs "ended 1+ days ago" via the
- * trial start date so that users who open the app days after expiry see
- * the upgrade card immediately instead of a fresh reminder.
+ * A single "active reminder instance" is tracked in AsyncStorage (field `day`).
+ * It survives across days until it is:
+ *   - Replaced by a newer milestone reminder
+ *   - Resolved by the user tapping Upgrade
+ *   - Abandoned after 24h of no action
+ *   - Snoozed (hidden for 24h, then reappears with the same `day`)
+ *
+ * This makes push notifications and in-app reminders stay in lockstep: the
+ * push is always for the same `day` as the active reminder instance.
  */
 export function useTrialReminder(
   daysLeft: number,
@@ -59,31 +61,23 @@ export function useTrialReminder(
       return;
     }
 
-    const milestone = getActiveMilestone(daysLeft);
-    if (milestone === null) {
-      setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
-      return;
-    }
-
     const s = await getTrialReminderState();
     const now = Date.now();
-    let changed = false;
+    const currentMilestone = getActiveMilestone(daysLeft);
 
-    // Once the user taps Upgrade, all trial reminders are permanently resolved
-    // across every milestone. Only becoming subscribed clears it.
+    // 1. Resolved — user tapped Upgrade: suppress everything permanently.
     if (s.resolved) {
       setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
       return;
     }
 
-    // A different milestone means a fresh reminder instance. Older un-actioned
-    // reminders are replaced by the newer one.
-    if (s.day !== milestone) {
-      s.day = milestone;
+    // 2. A new milestone has been reached — replace the old instance.
+    if (currentMilestone !== null && s.day !== currentMilestone) {
+      s.day = currentMilestone;
       s.snoozeUntil = null;
       s.abandoned = false;
-      if (milestone === 0) {
-        // Track when the trial ended (for "ended today" vs "ended days ago")
+      s.shownAt = now;
+      if (currentMilestone === 0) {
         if (s.endedAt === null) {
           if (trialStartDate) {
             const trialEndDate = new Date(trialStartDate);
@@ -94,51 +88,56 @@ export function useTrialReminder(
             s.endedAt = now;
           }
         }
-        // If the trial ended more than 24h ago, don't show a fresh reminder.
         if (s.endedAt && now - s.endedAt >= DAY_MS) {
           s.abandoned = true;
           s.shownAt = null;
-        } else {
-          s.shownAt = now;
         }
-      } else {
-        s.shownAt = now;
       }
-      changed = true;
+      await setTrialReminderState(s);
     }
 
-    let showReminder = false;
-    let showUpgradeCard = false;
+    // 3. No active reminder instance at all.
+    if (s.day === null) {
+      setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
+      return;
+    }
 
+    // 4. Still snoozed.
     if (s.snoozeUntil && now < s.snoozeUntil) {
-      // Snoozed: hidden, and the upgrade card stays suppressed while a
-      // snoozed reminder is waiting to reappear.
-    } else {
-      if (s.snoozeUntil && now >= s.snoozeUntil) {
-        s.snoozeUntil = null;
-        s.shownAt = now;
-        s.abandoned = false;
-        changed = true;
-      }
-
-      // 24h auto-dismiss applies to all milestone reminders
-      if (!s.abandoned && s.shownAt && now - s.shownAt >= DAY_MS) {
-        s.abandoned = true;
-        changed = true;
-      }
-
-      if (s.abandoned) {
-        if (milestone === 0) {
-          showUpgradeCard = !s.upgradeCardDismissed;
-        }
-        // Non-0 milestones: nothing to show after abandon
-      } else if (s.shownAt) {
-        showReminder = true;
-      }
+      setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
+      return;
     }
 
-    if (changed) await setTrialReminderState(s);
-    setView({ showReminder, reminderDay: s.day, showUpgradeCard });
+    // 5. Snooze just expired — resurface the same instance.
+    if (s.snoozeUntil && now >= s.snoozeUntil) {
+      s.snoozeUntil = null;
+      s.shownAt = now;
+      s.abandoned = false;
+      await setTrialReminderState(s);
+    }
+
+    // 6. 24h auto-dismiss (no action).
+    if (!s.abandoned && s.shownAt && now - s.shownAt >= DAY_MS) {
+      s.abandoned = true;
+      await setTrialReminderState(s);
+    }
+
+    // 7. Decide what to render.
+    if (s.abandoned) {
+      if (s.day === 0) {
+        setView({
+          showReminder: false,
+          reminderDay: null,
+          showUpgradeCard: !s.upgradeCardDismissed,
+        });
+      } else {
+        setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
+      }
+      return;
+    }
+
+    // Active reminder is showing.
+    setView({ showReminder: true, reminderDay: s.day, showUpgradeCard: false });
   }, [daysLeft, isSubscribed, nowTick, trialStartDate]);
 
   useEffect(() => {
@@ -146,16 +145,18 @@ export function useTrialReminder(
   }, [recompute]);
 
   const remindLater = useCallback(async () => {
-    const milestone = getActiveMilestone(daysLeft);
-    await snoozeTrialReminder(milestone ?? 0);
+    const s = await getTrialReminderState();
+    const activeDay = s.day ?? 0;
+    await snoozeTrialReminder(activeDay);
     await recompute();
-  }, [daysLeft, recompute]);
+  }, [recompute]);
 
   const upgrade = useCallback(async () => {
-    const milestone = getActiveMilestone(daysLeft);
-    await clearTrialReminderState(milestone ?? 0);
+    const s = await getTrialReminderState();
+    const activeDay = s.day ?? 0;
+    await clearTrialReminderState(activeDay);
     await recompute();
-  }, [daysLeft, recompute]);
+  }, [recompute]);
 
   const dismissUpgradeCard = useCallback(async () => {
     const s = await getTrialReminderState();

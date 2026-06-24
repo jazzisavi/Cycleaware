@@ -75,10 +75,10 @@ async function scheduleNextTrialReminderNotification(daysRemaining: number): Pro
       },
       trigger: { type: "date", date: fireDate } as any,
     });
-    const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+    const idsStr = await AsyncStorage.getItem(TRIAL_FOLLOWUP_IDS_KEY);
     const ids: string[] = idsStr ? JSON.parse(idsStr) : [];
     ids.push(id);
-    await AsyncStorage.setItem(TRIAL_NOTIF_IDS_KEY, JSON.stringify(ids));
+    await AsyncStorage.setItem(TRIAL_FOLLOWUP_IDS_KEY, JSON.stringify(ids));
   } catch {}
 }
 
@@ -110,12 +110,33 @@ export async function clearTrialReminderState(milestone: number): Promise<void> 
   }
 }
 
+/**
+ * Cancel only queued trial follow-up notifications (not the state).
+ * Used when snoozing to replace the previous follow-up with a new one.
+ */
+async function cancelQueuedTrialFollowups(): Promise<void> {
+  if (!isNotificationsAvailable()) return;
+  try {
+    const Notifications = await import("expo-notifications");
+    const idsStr = await AsyncStorage.getItem(TRIAL_FOLLOWUP_IDS_KEY);
+    if (idsStr) {
+      const ids: string[] = JSON.parse(idsStr);
+      for (const id of ids) {
+        try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+      }
+      await AsyncStorage.removeItem(TRIAL_FOLLOWUP_IDS_KEY);
+    }
+  } catch {}
+}
+
 export async function snoozeTrialReminder(daysRemaining: number): Promise<void> {
   const state = await getTrialReminderState();
   state.day = daysRemaining;
   state.snoozeUntil = Date.now() + TRIAL_SNOOZE_MS;
   state.abandoned = false;
   await setTrialReminderState(state);
+  // Cancel any previously queued follow-up so only one trial push is ever pending.
+  await cancelQueuedTrialFollowups();
   await scheduleNextTrialReminderNotification(daysRemaining);
 }
 
@@ -150,10 +171,14 @@ TaskManager.defineTask(NOTIFICATION_ACTION_TASK, async ({ data, error }: { data?
           await Notifications.dismissNotificationAsync(notificationId);
         } catch {}
       }
+      // Always use the current stored instance day so stale pushes never
+      // overwrite the active milestone.
+      const state = await getTrialReminderState();
+      const activeDay = state.day ?? 0;
       if (actionIdentifier === "trial_remind_later") {
-        await snoozeTrialReminder(notificationData.daysRemaining ?? 0);
+        await snoozeTrialReminder(activeDay);
       } else if (actionIdentifier === "trial_upgrade") {
-        await clearTrialReminderState(notificationData.daysRemaining ?? 0);
+        await clearTrialReminderState(activeDay);
         await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall");
       }
       return;
@@ -670,10 +695,12 @@ export async function checkLastNotificationResponse(
     const lastResponseNotifType = data?.type as string;
     if (lastResponseNotifType === "trial_reminder") {
       try { await Notifications.dismissNotificationAsync(notificationId); } catch {}
+      const state = await getTrialReminderState();
+      const activeDay = state.day ?? 0;
       if (actionIdentifier === "trial_remind_later") {
-        try { await snoozeTrialReminder(Number(data?.daysRemaining ?? 0)); } catch {}
+        try { await snoozeTrialReminder(activeDay); } catch {}
       } else if (actionIdentifier === "trial_upgrade") {
-        try { await clearTrialReminderState(Number(data?.daysRemaining ?? 0)); } catch {}
+        try { await clearTrialReminderState(activeDay); } catch {}
         try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
       }
       return;
@@ -778,10 +805,12 @@ export async function setupNotificationResponseListener(
           const notifType = data?.type as string;
           if (notifType === "trial_reminder") {
             try { await Notifications.dismissNotificationAsync(notificationId); } catch {}
+            const state = await getTrialReminderState();
+            const activeDay = state.day ?? 0;
             if (actionIdentifier === "trial_remind_later") {
-              try { await snoozeTrialReminder(Number(data?.daysRemaining ?? 0)); } catch {}
+              try { await snoozeTrialReminder(activeDay); } catch {}
             } else if (actionIdentifier === "trial_upgrade") {
-              try { await clearTrialReminderState(Number(data?.daysRemaining ?? 0)); } catch {}
+              try { await clearTrialReminderState(activeDay); } catch {}
               try { await AsyncStorage.setItem(PENDING_NAV_KEY, "Paywall"); } catch {}
             }
             return;
@@ -1165,6 +1194,7 @@ export async function stopAlarm(): Promise<void> {
 }
 
 const TRIAL_NOTIF_IDS_KEY = "@orbia/trial_notif_ids";
+const TRIAL_FOLLOWUP_IDS_KEY = "@orbia/trial_followup_ids";
 const TRIAL_START_KEY = "@orbia/trial_start_date";
 
 export async function scheduleTrialNotifications(): Promise<void> {

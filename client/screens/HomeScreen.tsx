@@ -325,8 +325,8 @@ export default function HomeScreen() {
                     <MaterialCommunityIcons name="bell-ring" size={18} color={theme.ctaTeal} />
                   </View>
                   <View style={styles.activeCardInfo}>
-                    <Text style={[styles.activeTitle, { color: theme.text }]}>{Copy.subscription.trialReminderTitle(daysLeft)}</Text>
-                    <Text style={[styles.activeNotes, { color: theme.textSecondary }]}>{Copy.subscription.trialReminderBody(daysLeft)}</Text>
+                    <Text style={[styles.activeTitle, { color: theme.text }]}>{Copy.subscription.trialReminderTitle(trialReminder.reminderDay ?? daysLeft)}</Text>
+                    <Text style={[styles.activeNotes, { color: theme.textSecondary }]}>{Copy.subscription.trialReminderBody(trialReminder.reminderDay ?? daysLeft)}</Text>
                   </View>
                 </View>
                 <View style={styles.actionRow}>
