@@ -197,6 +197,19 @@ export const Copy = {
       `\n\nApp Version: ${version}\nDevice: ${platform}\n\n--- Describe the feature below ---\n\n`,
   },
 
+  trialControl: {
+    sectionTitle: "TRIAL DAYS",
+    cardTitle: "Trial days remaining",
+    helperText: "Adjust how many trial days are left. Changes apply instantly across the app.",
+    daysValue: (days: number) => `${days} ${days === 1 ? "day" : "days"}`,
+    decrease: "Decrease trial days",
+    increase: "Increase trial days",
+    clearOverrideTitle: "Clear override",
+    clearOverrideSubtitle: "Use the real calendar countdown",
+    resetTrialTitle: "Reset trial",
+    resetTrialSubtitle: "Start a fresh 30-day trial",
+  },
+
   profile: {
     title: "Profile",
     changePhoto: "Change Photo",

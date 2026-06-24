@@ -1,11 +1,11 @@
 {
-  "id": "cb9cc077-3b9b-4224-bedc-020eb7b1d8da",
-  "createdAt": "2026-06-24T11:52:59.221Z",
+  "id": "410aceb5-e6b5-4460-9d57-340db97d5e24",
+  "createdAt": "2026-06-24T12:00:56.194Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1782301979221-2506",
+    "key": "bundle-1782302456194-640",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1782301979221-2506/_expo/static/js/ios/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-84p0twdl.picard.replit.dev:5000/1782302456194-640/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -25,8 +25,7 @@
       "splash": {
         "image": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
-        "backgroundColor": "#EDE8E2",
-        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/splash-icon.png"
+        "backgroundColor": "#EDE8E2"
       },
       "ios": {
         "supportsTablet": true,
@@ -35,8 +34,7 @@
       "android": {
         "adaptiveIcon": {
           "backgroundColor": "#EDE8E2",
-          "foregroundImage": "./assets/images/android-icon-foreground.png",
-          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
+          "foregroundImage": "./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -125,11 +123,10 @@
       "androidStatusBar": {
         "backgroundColor": "#EDE8E2"
       },
-      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
-      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios"
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-84p0twdl.picard.replit.dev:5000/ios"
     },
     "expoGo": {
-      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios",
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-84p0twdl.picard.replit.dev:5000/ios",
       "developer": {
         "tool": "expo-cli",
         "projectRoot": "/home/runner/workspace"
@@ -139,6 +136,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-dd5ac099-2130-49d7-92d7-1512a0c51273"
+    "scopeKey": "@anonymous/goflo-b7ad1046-656e-40e4-b3bd-4852d6947e68"
   }
 }

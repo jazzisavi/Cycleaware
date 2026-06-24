@@ -52,20 +52,18 @@ export function useTrialStatus(): TrialStatus {
       const start = new Date(startStr);
       let effectiveDaysLeft: number;
 
-      if (__DEV__) {
-        const override = await AsyncStorage.getItem(DEV_OVERRIDE_KEY);
-        if (override !== null) {
-          const parsed = parseInt(override, 10);
-          if (!isNaN(parsed)) {
-            effectiveDaysLeft = Math.max(0, Math.min(TRIAL_DURATION_DAYS, parsed));
-            applyStatus({
-              isInTrial: effectiveDaysLeft > 0,
-              daysLeft: effectiveDaysLeft,
-              trialExpired: effectiveDaysLeft === 0,
-              trialStartDate: start,
-            });
-            return;
-          }
+      const override = await AsyncStorage.getItem(DEV_OVERRIDE_KEY);
+      if (override !== null) {
+        const parsed = parseInt(override, 10);
+        if (!isNaN(parsed)) {
+          effectiveDaysLeft = Math.max(0, Math.min(TRIAL_DURATION_DAYS, parsed));
+          applyStatus({
+            isInTrial: effectiveDaysLeft > 0,
+            daysLeft: effectiveDaysLeft,
+            trialExpired: effectiveDaysLeft === 0,
+            trialStartDate: start,
+          });
+          return;
         }
       }
 
