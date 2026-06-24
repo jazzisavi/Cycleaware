@@ -13,26 +13,43 @@ export interface TrialStatus {
   refreshTrial: () => Promise<void>;
 }
 
+interface CachedTrialStatus {
+  isInTrial: boolean;
+  daysLeft: number;
+  trialExpired: boolean;
+  trialStartDate: Date | null;
+}
+
+let cachedStatus: CachedTrialStatus = {
+  isInTrial: false,
+  daysLeft: 0,
+  trialExpired: false,
+  trialStartDate: null,
+};
+
 export function useTrialStatus(): TrialStatus {
-  const [isInTrial, setIsInTrial] = useState(false);
-  const [daysLeft, setDaysLeft] = useState(0);
-  const [trialExpired, setTrialExpired] = useState(false);
-  const [trialStartDate, setTrialStartDate] = useState<Date | null>(null);
+  const [isInTrial, setIsInTrial] = useState(cachedStatus.isInTrial);
+  const [daysLeft, setDaysLeft] = useState(cachedStatus.daysLeft);
+  const [trialExpired, setTrialExpired] = useState(cachedStatus.trialExpired);
+  const [trialStartDate, setTrialStartDate] = useState<Date | null>(cachedStatus.trialStartDate);
+
+  const applyStatus = useCallback((next: CachedTrialStatus) => {
+    cachedStatus = next;
+    setIsInTrial(next.isInTrial);
+    setDaysLeft(next.daysLeft);
+    setTrialExpired(next.trialExpired);
+    setTrialStartDate(next.trialStartDate);
+  }, []);
 
   const computeStatus = useCallback(async () => {
     try {
       const startStr = await AsyncStorage.getItem(TRIAL_START_KEY);
       if (!startStr) {
-        setIsInTrial(false);
-        setDaysLeft(0);
-        setTrialExpired(false);
-        setTrialStartDate(null);
+        applyStatus({ isInTrial: false, daysLeft: 0, trialExpired: false, trialStartDate: null });
         return;
       }
 
       const start = new Date(startStr);
-      setTrialStartDate(start);
-
       let effectiveDaysLeft: number;
 
       if (__DEV__) {
@@ -41,9 +58,12 @@ export function useTrialStatus(): TrialStatus {
           const parsed = parseInt(override, 10);
           if (!isNaN(parsed)) {
             effectiveDaysLeft = Math.max(0, Math.min(TRIAL_DURATION_DAYS, parsed));
-            setDaysLeft(effectiveDaysLeft);
-            setIsInTrial(effectiveDaysLeft > 0);
-            setTrialExpired(effectiveDaysLeft === 0);
+            applyStatus({
+              isInTrial: effectiveDaysLeft > 0,
+              daysLeft: effectiveDaysLeft,
+              trialExpired: effectiveDaysLeft === 0,
+              trialStartDate: start,
+            });
             return;
           }
         }
@@ -57,16 +77,16 @@ export function useTrialStatus(): TrialStatus {
       const elapsed = Math.floor((nowDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
       effectiveDaysLeft = Math.max(0, Math.min(TRIAL_DURATION_DAYS, TRIAL_DURATION_DAYS - elapsed));
 
-      setDaysLeft(effectiveDaysLeft);
-      setIsInTrial(effectiveDaysLeft > 0);
-      setTrialExpired(effectiveDaysLeft === 0);
+      applyStatus({
+        isInTrial: effectiveDaysLeft > 0,
+        daysLeft: effectiveDaysLeft,
+        trialExpired: effectiveDaysLeft === 0,
+        trialStartDate: start,
+      });
     } catch {
-      setIsInTrial(false);
-      setDaysLeft(0);
-      setTrialExpired(false);
-      setTrialStartDate(null);
+      applyStatus({ isInTrial: false, daysLeft: 0, trialExpired: false, trialStartDate: null });
     }
-  }, []);
+  }, [applyStatus]);
 
   useEffect(() => {
     computeStatus();

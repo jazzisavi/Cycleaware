@@ -300,14 +300,14 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        {(isInTrial || trialExpired) && !isSubscribed ? (
-          <View style={[styles.trialBar, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={styles.trialBarLeft}>
-              <Text style={[styles.trialBarLabel, { color: theme.textSecondary }]}>{Copy.subscription.trialBarLabel}</Text>
+        {isInTrial && !isSubscribed ? (
+          <View style={[styles.trialBar, { borderColor: theme.borderLight }]}>
+            <View style={styles.trialBarRow}>
+              <Text style={[styles.trialBarLabel, { color: theme.text }]}>{Copy.subscription.trialBarLabel}</Text>
               <Text style={[styles.trialBarDays, { color: theme.text }]}>{Copy.subscription.trialDaysLeft(daysLeft)}</Text>
             </View>
             <View style={styles.trialProgressTrack}>
-              <View style={[styles.trialProgressFill, { backgroundColor: theme.saveButtonActive, width: `${Math.round((daysLeft / 30) * 100)}%` }]} />
+              <View style={[styles.trialProgressFill, { width: `${Math.round((daysLeft / 30) * 100)}%` }]} />
             </View>
           </View>
         ) : null}
@@ -767,28 +767,29 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.sansSemiBold,
   },
   trialBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     marginBottom: Spacing.md,
-    gap: Spacing.md,
   },
-  trialBarLeft: {
-    minWidth: 80,
+  trialBarRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
   },
   trialBarLabel: {
     fontFamily: FontFamily.sansSemiBold,
-    fontSize: 11,
-    letterSpacing: 0.8,
-    marginBottom: 2,
+    fontSize: 14,
   },
   trialBarDays: {
     fontFamily: FontFamily.sansSemiBold,
-    fontSize: 13,
+    fontSize: 14,
   },
   trialProgressTrack: {
-    flex: 1,
+    width: "100%",
     height: 6,
     borderRadius: 3,
     backgroundColor: "#E0E0E0",
@@ -797,6 +798,7 @@ const styles = StyleSheet.create({
   trialProgressFill: {
     height: 6,
     borderRadius: 3,
+    backgroundColor: "#2E7D52",
   },
   trialWarningCard: {
     borderRadius: BorderRadius.lg,
