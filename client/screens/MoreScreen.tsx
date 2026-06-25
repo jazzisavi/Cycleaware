@@ -44,7 +44,7 @@ export default function MoreScreen() {
   const platformInfo = `${Platform.OS} ${Platform.Version}`;
 
   const handleSetTrialDays = async (days: number) => {
-    const clamped = Math.max(0, Math.min(TRIAL_DURATION_DAYS, days));
+    const clamped = Math.max(-7, Math.min(TRIAL_DURATION_DAYS, days));
     setTrialDays(clamped);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const existingStart = await AsyncStorage.getItem(TRIAL_START_KEY);
@@ -182,10 +182,10 @@ export default function MoreScreen() {
             <Pressable
               accessibilityLabel={Copy.trialControl.decrease}
               onPress={() => handleSetTrialDays(trialDays - 1)}
-              disabled={trialDays <= 0}
+              disabled={trialDays <= -7}
               style={[
                 styles.stepButton,
-                { backgroundColor: theme.backgroundSecondary, opacity: trialDays <= 0 ? 0.4 : 1 },
+                { backgroundColor: theme.backgroundSecondary, opacity: trialDays <= -7 ? 0.4 : 1 },
               ]}
               testID="button-trial-decrease"
             >

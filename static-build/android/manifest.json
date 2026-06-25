@@ -1,11 +1,11 @@
 {
-  "id": "cdc3409d-5f79-4ed5-a23c-b1fba16bead3",
-  "createdAt": "2026-06-24T17:00:55.051Z",
+  "id": "3aeeddf9-442a-4745-b361-7b5fdca8262e",
+  "createdAt": "2026-06-25T13:57:06.499Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1782320455051-6773",
+    "key": "bundle-1782395826499-2756",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1782320455051-6773/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1782395826499-2756/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -26,7 +26,7 @@
         "image": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#EDE8E2",
-        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/splash-icon.png"
+        "imageUrl": "http://127.0.0.1:8081/assets/./assets/images/splash-icon.png"
       },
       "ios": {
         "supportsTablet": true,
@@ -36,7 +36,7 @@
         "adaptiveIcon": {
           "backgroundColor": "#EDE8E2",
           "foregroundImage": "./assets/images/android-icon-foreground.png",
-          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
+          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -125,7 +125,7 @@
       "androidStatusBar": {
         "backgroundColor": "#EDE8E2"
       },
-      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
+      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
       "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android"
     },
     "expoGo": {
@@ -139,6 +139,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-94755d8f-a568-4ad9-8c22-a60b1902d0b5"
+    "scopeKey": "@anonymous/goflo-ab12589a-29f7-464f-b918-280766b1a303"
   }
 }

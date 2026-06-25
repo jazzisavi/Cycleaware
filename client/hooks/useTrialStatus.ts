@@ -56,11 +56,11 @@ export function useTrialStatus(): TrialStatus {
       if (override !== null) {
         const parsed = parseInt(override, 10);
         if (!isNaN(parsed)) {
-          effectiveDaysLeft = Math.max(0, Math.min(TRIAL_DURATION_DAYS, parsed));
+          effectiveDaysLeft = Math.min(TRIAL_DURATION_DAYS, parsed);
           applyStatus({
             isInTrial: effectiveDaysLeft > 0,
             daysLeft: effectiveDaysLeft,
-            trialExpired: effectiveDaysLeft === 0,
+            trialExpired: effectiveDaysLeft <= 0,
             trialStartDate: start,
           });
           return;
@@ -73,12 +73,12 @@ export function useTrialStatus(): TrialStatus {
       const nowDay = new Date(now);
       nowDay.setHours(0, 0, 0, 0);
       const elapsed = Math.floor((nowDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
-      effectiveDaysLeft = Math.max(0, Math.min(TRIAL_DURATION_DAYS, TRIAL_DURATION_DAYS - elapsed));
+      effectiveDaysLeft = Math.min(TRIAL_DURATION_DAYS, TRIAL_DURATION_DAYS - elapsed);
 
       applyStatus({
         isInTrial: effectiveDaysLeft > 0,
         daysLeft: effectiveDaysLeft,
-        trialExpired: effectiveDaysLeft === 0,
+        trialExpired: effectiveDaysLeft <= 0,
         trialStartDate: start,
       });
     } catch {

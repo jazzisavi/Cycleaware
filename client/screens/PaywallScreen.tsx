@@ -20,8 +20,15 @@ import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 
 const CORAL = "#E8614F";
-const TEAL_BG = "#EBF6F8";
-const TEAL_BG_DARK = "#1A3D44";
+const TEAL = "#3FA0B0";
+const TERRACOTTA = "#C03A2B";
+const EMERALD = "#2E7D52";
+const MUTED_BROWN = "#6B5744";
+const PRO_CARD_BG = "#EBF6F8";
+const SUPPORTER_CARD_BG = "#E3F4EC";
+const PRO_CARD_BG_DARK = "#1A2E33";
+const SUPPORTER_CARD_BG_DARK = "#1A2E28";
+const WARM_LINEN = "#F5F0E8";
 
 export default function PaywallScreen() {
   const insets = useSafeAreaInsets();
@@ -37,6 +44,10 @@ export default function PaywallScreen() {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Independent selection per card: "yearly" | "monthly"
+  const [proSelection, setProSelection] = useState<"yearly" | "monthly">("yearly");
+  const [supporterSelection, setSupporterSelection] = useState<"yearly" | "monthly">("yearly");
 
   const monthlyPackage = offering?.availablePackages.find(
     (p) => p.packageType === PACKAGE_TYPE.MONTHLY
@@ -96,7 +107,7 @@ export default function PaywallScreen() {
           </View>
           <ThemedText type="h2" style={styles.centeredTitle}>You're a Pro!</ThemedText>
           <ThemedText type="body" style={[styles.centeredText, { color: theme.textSecondary }]}>
-            Thank you for supporting Orbia. You have access to all features.
+            {Copy.subscription.subscribedMessage}
           </ThemedText>
           <Pressable
             style={[styles.manageButton, { borderColor: theme.border, borderWidth: 1 }]}
@@ -116,10 +127,8 @@ export default function PaywallScreen() {
     );
   }
 
-  const cardBg = isDark ? TEAL_BG_DARK : TEAL_BG;
-
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: isDark ? theme.backgroundRoot : WARM_LINEN }]}>
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -135,6 +144,7 @@ export default function PaywallScreen() {
           </View>
         ) : null}
 
+        {/* Current Plan */}
         <ThemedText type="caption" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
           {Copy.subscription.currentPlanLabel}
         </ThemedText>
@@ -156,89 +166,131 @@ export default function PaywallScreen() {
           ))}
         </View>
 
+        {/* Choose Plan */}
         <ThemedText type="caption" style={[styles.sectionLabel, { color: theme.textSecondary, marginTop: Spacing["2xl"] }]}>
           {Copy.subscription.choosePlanLabel}
         </ThemedText>
 
-        <View style={[styles.planCard, { backgroundColor: cardBg }]}>
-          <ThemedText type="h3" style={[styles.planTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A" }]}>
-            {Copy.subscription.orbiaProTitle}
+        {/* Orbia Pro Card */}
+        <View style={[styles.planCard, {
+          backgroundColor: isDark ? PRO_CARD_BG_DARK : PRO_CARD_BG,
+          borderColor: "rgba(60,40,20,0.1)",
+        }]}>
+          {/* Decorative circle */}
+          <View style={[styles.decorCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(60,40,20,0.04)" }]} />
+
+          <ThemedText type="h3" style={[styles.cardTitle, { color: isDark ? "#E07B5A" : TERRACOTTA, fontSize: 30 }]}>
+            {Copy.subscription.proCardTitle}
           </ThemedText>
-          <ThemedText type="caption" style={[styles.planSubtitleCaps, { color: isDark ? "#7BC9D5" : "#3A8A9A" }]}>
-            {Copy.subscription.orbiaProSubtitle}
+          <ThemedText type="caption" style={[styles.cardSubtitle, { color: isDark ? "#C4B8A8" : MUTED_BROWN }]}>
+            {Copy.subscription.proCardSubtitle}
           </ThemedText>
+
           {Copy.subscription.orbiaProFeatures.map((f, i) => (
             <View key={i} style={styles.featureRow}>
-              <Feather name="check" size={14} color={CORAL} style={{ marginRight: Spacing.sm }} />
+              <Feather name="check" size={14} color={isDark ? "#E07B5A" : TERRACOTTA} style={{ marginRight: Spacing.sm }} />
               <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
             </View>
           ))}
-          <ThemedText type="small" style={[styles.tagline, { color: theme.textSecondary }]}>
-            {Copy.subscription.orbiaProTagline}
+
+          <ThemedText type="small" style={[styles.tagline, { color: isDark ? theme.textSecondary : MUTED_BROWN }]}>
+            {Copy.subscription.proCardTagline}
           </ThemedText>
 
-          <View style={[styles.pricingRows, { backgroundColor: isDark ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.45)" }]}>
-            <PricingRow
-              label={Copy.subscription.bestValue}
-              period="Yearly"
-              priceDisplay={yearlyPackage ? yearlyPackage.product.priceString : "£12"}
-              subText={yearlyPackage ? Copy.subscription.yearlyPrice(yearlyPackage.product.priceString) : "12 Months @ £12"}
+          {/* Plan Accordion */}
+          <View style={{ marginTop: Spacing.sm }}>
+            <PlanSelector
+              isSelected={proSelection === "yearly"}
+              period={Copy.subscription.yearlyPeriod}
+              subLine={yearlyPackage ? `${Copy.subscription.yearlySubLine} ${yearlyPackage.product.priceString}` : "12 Months @ £12"}
+              price={yearlyPackage ? yearlyPackage.product.priceString : "£12"}
+              isBestValue
               loading={purchasing === "pro-yearly"}
+              onSelect={() => setProSelection("yearly")}
               onUpgrade={() => handlePurchase(yearlyPackage, "pro-yearly")}
               testID="button-pro-yearly"
+              theme={theme}
+              isDark={isDark}
             />
-            <View style={[styles.pricingDivider, { backgroundColor: isDark ? "#2A5560" : "#C8E8EC" }]} />
-            <PricingRow
-              period="Monthly"
-              priceDisplay={monthlyPackage ? monthlyPackage.product.priceString : "£2"}
-              subText={monthlyPackage ? Copy.subscription.monthlyPrice(monthlyPackage.product.priceString) : "£2/month"}
+            <View style={{ height: Spacing.sm }} />
+            <PlanSelector
+              isSelected={proSelection === "monthly"}
+              period={Copy.subscription.monthlyPeriod}
+              subLine={monthlyPackage ? `${monthlyPackage.product.priceString}/${Copy.subscription.monthlySubLine}` : "£2/month"}
+              price={monthlyPackage ? monthlyPackage.product.priceString : "£2"}
               loading={purchasing === "pro-monthly"}
+              onSelect={() => setProSelection("monthly")}
               onUpgrade={() => handlePurchase(monthlyPackage, "pro-monthly")}
               testID="button-pro-monthly"
+              theme={theme}
+              isDark={isDark}
             />
           </View>
         </View>
 
-        <View style={[styles.planCard, { backgroundColor: cardBg, marginTop: Spacing.md }]}>
-          <ThemedText type="h3" style={[styles.planTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A" }]}>
-            {Copy.subscription.orbiaSupporterTitle}
+        {/* Orbia Supporter Card */}
+        <View style={[styles.planCard, {
+          backgroundColor: isDark ? SUPPORTER_CARD_BG_DARK : SUPPORTER_CARD_BG,
+          borderColor: "rgba(60,40,20,0.1)",
+          marginTop: Spacing.md,
+        }]}>
+          {/* Decorative circle */}
+          <View style={[styles.decorCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(60,40,20,0.04)" }]} />
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+            <ThemedText type="h3" style={[styles.cardTitle, { color: isDark ? "#68D391" : EMERALD, fontSize: 30 }]}>
+              {Copy.subscription.supporterCardTitle}
+            </ThemedText>
+            <Feather name="star" size={18} color={isDark ? "#68D391" : EMERALD} />
+          </View>
+          <ThemedText type="caption" style={[styles.cardSubtitle, { color: isDark ? "#C4B8A8" : MUTED_BROWN }]}>
+            {Copy.subscription.supporterCardSubtitle}
           </ThemedText>
-          <ThemedText type="caption" style={[styles.planSubtitleCaps, { color: isDark ? "#7BC9D5" : "#3A8A9A" }]}>
-            {Copy.subscription.orbiaSupporterSubtitle}
-          </ThemedText>
+
           {Copy.subscription.orbiaSupporterFeatures.map((f, i) => (
             <View key={i} style={styles.featureRow}>
-              <Feather name="check" size={14} color={CORAL} style={{ marginRight: Spacing.sm }} />
+              <Feather name="check" size={14} color={isDark ? "#68D391" : EMERALD} style={{ marginRight: Spacing.sm }} />
               <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
             </View>
           ))}
-          <ThemedText type="small" style={[styles.tagline, { color: theme.textSecondary }]}>
-            {Copy.subscription.orbiaSupporterBody}
+
+          <ThemedText type="small" style={[styles.tagline, { color: isDark ? theme.textSecondary : MUTED_BROWN }]}>
+            {Copy.subscription.supporterCardBody}
           </ThemedText>
+
           <Pressable>
             <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>
-              {Copy.subscription.orbiaSupporterLink} →
+              {Copy.subscription.supporterCardLink} →
             </ThemedText>
           </Pressable>
 
-          <View style={[styles.pricingRows, { backgroundColor: isDark ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.45)" }]}>
-            <PricingRow
-              label={Copy.subscription.bestValue}
-              period="Yearly"
-              priceDisplay={yearlyPackage ? yearlyPackage.product.priceString : "£12"}
-              subText={yearlyPackage ? Copy.subscription.yearlyPrice(yearlyPackage.product.priceString) : "12 Months @ £12"}
+          {/* Plan Accordion */}
+          <View style={{ marginTop: Spacing.sm }}>
+            <PlanSelector
+              isSelected={supporterSelection === "yearly"}
+              period={Copy.subscription.yearlyPeriod}
+              subLine={yearlyPackage ? `${Copy.subscription.yearlySubLine} ${yearlyPackage.product.priceString}` : "12 Months @ £12"}
+              price={yearlyPackage ? yearlyPackage.product.priceString : "£12"}
+              isBestValue
               loading={purchasing === "supporter-yearly"}
+              onSelect={() => setSupporterSelection("yearly")}
               onUpgrade={() => handlePurchase(yearlyPackage, "supporter-yearly")}
               testID="button-supporter-yearly"
+              theme={theme}
+              isDark={isDark}
             />
-            <View style={[styles.pricingDivider, { backgroundColor: isDark ? "#2A5560" : "#C8E8EC" }]} />
-            <PricingRow
-              period="Monthly"
-              priceDisplay={monthlyPackage ? monthlyPackage.product.priceString : "£3"}
-              subText={monthlyPackage ? Copy.subscription.monthlyPrice(monthlyPackage.product.priceString) : "£3/month"}
+            <View style={{ height: Spacing.sm }} />
+            <PlanSelector
+              isSelected={supporterSelection === "monthly"}
+              period={Copy.subscription.monthlyPeriod}
+              subLine={monthlyPackage ? `${monthlyPackage.product.priceString}/${Copy.subscription.monthlySubLine}` : "£3/month"}
+              price={monthlyPackage ? monthlyPackage.product.priceString : "£3"}
               loading={purchasing === "supporter-monthly"}
+              onSelect={() => setSupporterSelection("monthly")}
               onUpgrade={() => handlePurchase(monthlyPackage, "supporter-monthly")}
               testID="button-supporter-monthly"
+              theme={theme}
+              isDark={isDark}
             />
           </View>
         </View>
@@ -272,49 +324,67 @@ export default function PaywallScreen() {
   );
 }
 
-function PricingRow({
-  label,
+function PlanSelector({
+  isSelected,
   period,
-  priceDisplay,
-  subText,
+  subLine,
+  price,
+  isBestValue,
   loading,
+  onSelect,
   onUpgrade,
   testID,
+  theme,
+  isDark,
 }: {
-  label?: string;
+  isSelected: boolean;
   period: string;
-  priceDisplay: string;
-  subText: string;
+  subLine: string;
+  price: string;
+  isBestValue?: boolean;
   loading: boolean;
+  onSelect: () => void;
   onUpgrade: () => void;
   testID: string;
+  theme: any;
+  isDark: boolean;
 }) {
-  const { theme } = useTheme();
-  return (
-    <View style={styles.pricingRow}>
-      <View style={styles.pricingInfo}>
-        <View style={styles.pricingPeriodRow}>
-          <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold }}>
-            {period}
+  if (isSelected) {
+    return (
+      <View style={[
+        styles.selectedPlanCard,
+        {
+          backgroundColor: isDark ? "#2C2118" : "#FFFFFF",
+          borderColor: isDark ? TEAL : TEAL,
+        },
+      ]}>
+        <View style={styles.selectedPlanHeader}>
+          <View style={{ flex: 1 }}>
+            <ThemedText type="h3" style={{ fontFamily: FontFamily.serifBold, fontSize: 24, color: theme.text }}>
+              {period}
+            </ThemedText>
+            <ThemedText type="caption" style={{ color: isDark ? theme.textSecondary : MUTED_BROWN, fontSize: 12, marginTop: 2 }}>
+              {subLine}
+            </ThemedText>
+          </View>
+          <ThemedText type="h3" style={{ fontFamily: FontFamily.sansBold, color: theme.text }}>
+            {price}
           </ThemedText>
-          {label ? (
-            <View style={styles.bestValueBadge}>
-              <ThemedText type="caption" style={{ color: CORAL, fontFamily: FontFamily.sansBold, fontSize: 10 }}>
-                {label}
-              </ThemedText>
-            </View>
-          ) : null}
         </View>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          {subText}
-        </ThemedText>
-      </View>
-      <View style={styles.pricingRight}>
-        <ThemedText type="h3" style={{ color: "#2A6E7A", fontFamily: FontFamily.serifBold }}>
-          {priceDisplay}
-        </ThemedText>
+
+        {isBestValue ? (
+          <View style={[styles.bestValuePill, { backgroundColor: isDark ? TEAL : TEAL }]}>
+            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, fontSize: 9, textTransform: "uppercase" }}>
+              {Copy.subscription.bestValue}
+            </ThemedText>
+          </View>
+        ) : null}
+
         <Pressable
-          style={[styles.upgradeButton, { backgroundColor: loading ? CORAL + "80" : CORAL }]}
+          style={[styles.upgradePill, {
+            backgroundColor: loading ? CORAL + "80" : CORAL,
+            shadowColor: isDark ? "#000" : "#52B07A",
+          }]}
           onPress={onUpgrade}
           disabled={loading}
           testID={testID}
@@ -322,13 +392,30 @@ function PricingRow({
           {loading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold }}>
+            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 1.5, textTransform: "uppercase" }}>
               {Copy.subscription.upgradeButton}
             </ThemedText>
           )}
         </Pressable>
       </View>
-    </View>
+    );
+  }
+
+  return (
+    <Pressable
+      style={[styles.collapsedPlanRow, {
+        backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.35)",
+        borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(60,40,20,0.08)",
+      }]}
+      onPress={onSelect}
+    >
+      <ThemedText type="body" style={{ fontFamily: FontFamily.serifBold, fontSize: 20, color: theme.text }}>
+        {period}
+      </ThemedText>
+      <ThemedText type="body" style={{ fontFamily: FontFamily.sansBold, color: theme.text }}>
+        {price}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -376,15 +463,36 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   planCard: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    padding: 25,
+    borderRadius: BorderRadius["2xl"],
+    borderWidth: 1,
+    overflow: "hidden",
+    position: "relative",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  planTitle: {
+  decorCircle: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  cardTitle: {
     fontFamily: FontFamily.serifBold,
-    fontSize: 20,
     marginBottom: 2,
   },
-  planSubtitleCaps: {
+  cardSubtitle: {
     fontFamily: FontFamily.sansBold,
     letterSpacing: 1,
     fontSize: 11,
@@ -397,35 +505,50 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  pricingRows: {
+  selectedPlanCard: {
     borderRadius: BorderRadius.md,
-    overflow: "hidden",
-    marginTop: Spacing.sm,
+    borderWidth: 2,
+    padding: 22,
+    position: "relative",
   },
-  pricingDivider: { height: 1 },
-  pricingRow: {
+  selectedPlanHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  bestValuePill: {
+    position: "absolute",
+    top: -10,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+  },
+  upgradePill: {
+    width: "100%",
+    height: 52,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  collapsedPlanRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: Spacing.md,
-  },
-  pricingInfo: { flex: 1 },
-  pricingPeriodRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
-  bestValueBadge: {
-    backgroundColor: CORAL + "20",
-    borderRadius: BorderRadius.xs,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  pricingRight: { alignItems: "flex-end", gap: Spacing.xs },
-  upgradeButton: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-    minWidth: 80,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 32,
+    padding: 22,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
   },
   loadingOverlay: { alignItems: "center", paddingVertical: Spacing.md },
   restoreButton: { paddingVertical: Spacing.lg, alignItems: "center" },

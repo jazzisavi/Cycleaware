@@ -47,7 +47,7 @@ export default function ProfileScreen() {
   };
 
   const handleSetDevDays = async (days: number) => {
-    const clamped = Math.max(0, Math.min(30, days));
+    const clamped = Math.max(-7, Math.min(30, days));
     setDevDaysLeft(clamped);
     await AsyncStorage.setItem(DEV_OVERRIDE_KEY, String(clamped));
     await refreshTrial();
