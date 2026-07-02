@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert, KeyboardAvoidingView, Keyboard } from "react-native";
+import { StyleSheet, View, Pressable, Platform, ScrollView, TextInput as RNTextInput, Modal, Alert, KeyboardAvoidingView, Keyboard, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,6 +9,7 @@ import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ThemedText } from "@/components/ThemedText";
+import { PlanSelector } from "@/components/PlanSelector";
 import { useTheme } from "@/hooks/useTheme";
 import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
@@ -581,7 +582,7 @@ export default function CreateReminderScreen() {
         </View>
 
         {frequency === "cycle" && cycleGated ? (
-          <InlinePaywall onUpgrade={() => navigation.navigate("Paywall")} isDark={isDark} theme={theme} />
+          <InlinePaywall isDark={isDark} theme={theme} />
         ) : null}
 
         {frequency === "cycle" && !cycleGated ? (
@@ -1290,20 +1291,28 @@ const styles = StyleSheet.create({
   },
 });
 
-const TEAL_BG = "#EBF6F8";
-const TEAL_BG_DARK = "#1A3D44";
+const PRO_CARD_BG = "#EBF6F8";
+const PRO_CARD_BG_DARK = "#1A2E33";
+const SUPPORTER_CARD_BG = "#E3F4EC";
+const SUPPORTER_CARD_BG_DARK = "#1A2E28";
+const TERRACOTTA = "#C03A2B";
+const EMERALD = "#2E7D52";
+const MUTED_BROWN = "#6B5744";
 
 function InlinePaywall({
-  onUpgrade,
   isDark,
   theme,
 }: {
-  onUpgrade: () => void;
   isDark: boolean;
   theme: ReturnType<typeof useTheme>["theme"];
 }) {
-  const { offering } = useSubscription();
+  const { offering, purchasePackage } = useSubscription();
   const { PACKAGE_TYPE } = require("react-native-purchases");
+
+  const [proSelection, setProSelection] = useState<"yearly" | "monthly">("yearly");
+  const [supporterSelection, setSupporterSelection] = useState<"yearly" | "monthly">("yearly");
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const monthlyPackage = offering?.availablePackages.find(
     (p: { packageType: string }) => p.packageType === PACKAGE_TYPE.MONTHLY
@@ -1312,80 +1321,152 @@ function InlinePaywall({
     (p: { packageType: string }) => p.packageType === PACKAGE_TYPE.ANNUAL
   );
 
-  const cardBg = isDark ? TEAL_BG_DARK : TEAL_BG;
-  const innerBg = isDark ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.45)";
-
-  const plans = [
-    {
-      title: Copy.subscription.orbiaProTitle,
-      subtitle: Copy.subscription.orbiaProSubtitle,
-      features: Copy.subscription.orbiaProFeatures,
-    },
-    {
-      title: Copy.subscription.orbiaSupporterTitle,
-      subtitle: Copy.subscription.orbiaSupporterSubtitle,
-      features: Copy.subscription.orbiaSupporterFeatures,
-    },
-  ];
+  const handlePurchase = async (pkg: any, planKey: string) => {
+    if (!pkg) {
+      setMessage({ text: Copy.subscription.storeUnavailable, type: "error" });
+      return;
+    }
+    setPurchasing(planKey);
+    setMessage(null);
+    const result = await purchasePackage(pkg);
+    setPurchasing(null);
+    if (result.success) {
+      setMessage({ text: Copy.subscription.purchaseSuccess, type: "success" });
+    } else if (result.error !== "cancelled") {
+      setMessage({ text: Copy.subscription.purchaseError, type: "error" });
+    }
+  };
 
   return (
     <View style={inlinePaywallStyles.wrapper}>
-      <View style={inlinePaywallStyles.headerRow}>
-        <Feather name="lock" size={14} color={CORAL} />
-        <ThemedText type="caption" style={[inlinePaywallStyles.headerLabel, { color: theme.textSecondary }]}>
-          {Copy.subscription.choosePlanLabel}
+      {/* Trial ended banner */}
+      <View style={[inlinePaywallStyles.bannerCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
+        <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, color: theme.text }}>
+          {Copy.subscription.cycleGatedExpiredHeading}
+        </ThemedText>
+        <ThemedText type="caption" style={[inlinePaywallStyles.choosePlanLabel, { color: theme.textSecondary }]}>
+          {Copy.subscription.cycleGatedChoosePlan}
         </ThemedText>
       </View>
-      <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.md }}>
-        {Copy.subscription.trialEndedBody}
-      </ThemedText>
 
-      {plans.map((plan) => (
-        <View key={plan.title} style={[inlinePaywallStyles.planCard, { backgroundColor: cardBg }]}>
-          <ThemedText type="body" style={[inlinePaywallStyles.planTitle, { color: isDark ? "#B8E4EC" : "#2A6E7A" }]}>
-            {plan.title}
+      {message ? (
+        <View style={[inlinePaywallStyles.messageBanner, { backgroundColor: message.type === "success" ? theme.success + "20" : theme.error + "20" }]}>
+          <ThemedText type="small" style={{ color: message.type === "success" ? theme.success : theme.error, textAlign: "center" }}>
+            {message.text}
           </ThemedText>
-          <ThemedText type="caption" style={[inlinePaywallStyles.planSubtitle, { color: isDark ? "#7BC9D5" : "#3A8A9A" }]}>
-            {plan.subtitle}
-          </ThemedText>
-          {plan.features.map((f: string) => (
-            <View key={f} style={inlinePaywallStyles.featureRow}>
-              <Feather name="check" size={12} color={CORAL} style={{ marginRight: Spacing.xs }} />
-              <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
-            </View>
-          ))}
-          <View style={[inlinePaywallStyles.pricingRows, { backgroundColor: innerBg }]}>
-            <View style={inlinePaywallStyles.pricingRow}>
-              <View style={inlinePaywallStyles.pricingInfo}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <ThemedText type="small" style={{ fontFamily: FontFamily.sansSemiBold, color: theme.text }}>Yearly</ThemedText>
-                  <View style={inlinePaywallStyles.bestValueBadge}>
-                    <ThemedText type="caption" style={{ color: CORAL, fontFamily: FontFamily.sansBold, fontSize: 9 }}>{Copy.subscription.bestValue}</ThemedText>
-                  </View>
-                </View>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {yearlyPackage ? Copy.subscription.yearlyPrice(yearlyPackage.product.priceString) : "12 Months @ £12"}
-                </ThemedText>
-              </View>
-              <Pressable style={[inlinePaywallStyles.upgradeBtn, { backgroundColor: CORAL }]} onPress={onUpgrade} testID={`button-inline-${plan.title.replace(" ", "-").toLowerCase()}-yearly`}>
-                <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, fontSize: 10 }}>{Copy.subscription.upgradeButton}</ThemedText>
-              </Pressable>
-            </View>
-            <View style={[inlinePaywallStyles.divider, { backgroundColor: isDark ? "#2A5560" : "#C8E8EC" }]} />
-            <View style={inlinePaywallStyles.pricingRow}>
-              <View style={inlinePaywallStyles.pricingInfo}>
-                <ThemedText type="small" style={{ fontFamily: FontFamily.sansSemiBold, color: theme.text }}>Monthly</ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {monthlyPackage ? Copy.subscription.monthlyPrice(monthlyPackage.product.priceString) : "£2/month"}
-                </ThemedText>
-              </View>
-              <Pressable style={[inlinePaywallStyles.upgradeBtn, { backgroundColor: CORAL }]} onPress={onUpgrade} testID={`button-inline-${plan.title.replace(" ", "-").toLowerCase()}-monthly`}>
-                <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, fontSize: 10 }}>{Copy.subscription.upgradeButton}</ThemedText>
-              </Pressable>
-            </View>
-          </View>
         </View>
-      ))}
+      ) : null}
+
+      {/* Orbia Pro Card */}
+      <View style={[inlinePaywallStyles.planCard, {
+        backgroundColor: isDark ? PRO_CARD_BG_DARK : PRO_CARD_BG,
+        borderColor: "rgba(60,40,20,0.1)",
+      }]}>
+        <View style={[inlinePaywallStyles.decorCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(60,40,20,0.04)" }]} />
+        <ThemedText type="h3" style={[inlinePaywallStyles.cardTitle, { color: isDark ? "#E07B5A" : TERRACOTTA }]}>
+          {Copy.subscription.proCardTitle}
+        </ThemedText>
+        <ThemedText type="caption" style={[inlinePaywallStyles.cardSubtitle, { color: isDark ? "#C4B8A8" : MUTED_BROWN }]}>
+          {Copy.subscription.proCardSubtitle}
+        </ThemedText>
+        {Copy.subscription.orbiaProFeatures.map((f: string) => (
+          <View key={f} style={inlinePaywallStyles.featureRow}>
+            <Feather name="check" size={14} color={isDark ? "#E07B5A" : TERRACOTTA} style={{ marginRight: Spacing.sm }} />
+            <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
+          </View>
+        ))}
+        <ThemedText type="small" style={[inlinePaywallStyles.tagline, { color: isDark ? theme.textSecondary : MUTED_BROWN }]}>
+          {Copy.subscription.proCardTagline}
+        </ThemedText>
+        <View style={{ marginTop: Spacing.sm }}>
+          <PlanSelector
+            isSelected={proSelection === "yearly"}
+            period={Copy.subscription.yearlyPeriod}
+            subLine={yearlyPackage ? `${Copy.subscription.yearlySubLine} ${yearlyPackage.product.priceString}` : "12 Months @ £12"}
+            price={yearlyPackage ? yearlyPackage.product.priceString : "£12"}
+            isBestValue
+            loading={purchasing === "inline-pro-yearly"}
+            onSelect={() => setProSelection("yearly")}
+            onUpgrade={() => handlePurchase(yearlyPackage, "inline-pro-yearly")}
+            testID="button-inline-pro-yearly"
+            theme={theme}
+            isDark={isDark}
+          />
+          <View style={{ height: Spacing.sm }} />
+          <PlanSelector
+            isSelected={proSelection === "monthly"}
+            period={Copy.subscription.monthlyPeriod}
+            subLine={monthlyPackage ? `${monthlyPackage.product.priceString}/${Copy.subscription.monthlySubLine}` : "£2/month"}
+            price={monthlyPackage ? monthlyPackage.product.priceString : "£2"}
+            loading={purchasing === "inline-pro-monthly"}
+            onSelect={() => setProSelection("monthly")}
+            onUpgrade={() => handlePurchase(monthlyPackage, "inline-pro-monthly")}
+            testID="button-inline-pro-monthly"
+            theme={theme}
+            isDark={isDark}
+          />
+        </View>
+      </View>
+
+      {/* Orbia Supporter Card */}
+      <View style={[inlinePaywallStyles.planCard, {
+        backgroundColor: isDark ? SUPPORTER_CARD_BG_DARK : SUPPORTER_CARD_BG,
+        borderColor: "rgba(60,40,20,0.1)",
+        marginTop: Spacing.md,
+      }]}>
+        <View style={[inlinePaywallStyles.decorCircle, { backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(60,40,20,0.04)" }]} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+          <ThemedText type="h3" style={[inlinePaywallStyles.cardTitle, { color: isDark ? "#68D391" : EMERALD }]}>
+            {Copy.subscription.supporterCardTitle}
+          </ThemedText>
+          <Feather name="star" size={18} color={isDark ? "#68D391" : EMERALD} />
+        </View>
+        <ThemedText type="caption" style={[inlinePaywallStyles.cardSubtitle, { color: isDark ? "#C4B8A8" : MUTED_BROWN }]}>
+          {Copy.subscription.supporterCardSubtitle}
+        </ThemedText>
+        {Copy.subscription.orbiaSupporterFeatures.map((f: string) => (
+          <View key={f} style={inlinePaywallStyles.featureRow}>
+            <Feather name="check" size={14} color={isDark ? "#68D391" : EMERALD} style={{ marginRight: Spacing.sm }} />
+            <ThemedText type="small" style={{ color: theme.text }}>{f}</ThemedText>
+          </View>
+        ))}
+        <ThemedText type="small" style={[inlinePaywallStyles.tagline, { color: isDark ? theme.textSecondary : MUTED_BROWN }]}>
+          {Copy.subscription.supporterCardBody}
+        </ThemedText>
+        <Pressable>
+          <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold, marginBottom: Spacing.md }}>
+            {Copy.subscription.supporterCardLink} →
+          </ThemedText>
+        </Pressable>
+        <View style={{ marginTop: Spacing.sm }}>
+          <PlanSelector
+            isSelected={supporterSelection === "yearly"}
+            period={Copy.subscription.yearlyPeriod}
+            subLine={yearlyPackage ? `${Copy.subscription.yearlySubLine} ${yearlyPackage.product.priceString}` : "12 Months @ £12"}
+            price={yearlyPackage ? yearlyPackage.product.priceString : "£12"}
+            isBestValue
+            loading={purchasing === "inline-supporter-yearly"}
+            onSelect={() => setSupporterSelection("yearly")}
+            onUpgrade={() => handlePurchase(yearlyPackage, "inline-supporter-yearly")}
+            testID="button-inline-supporter-yearly"
+            theme={theme}
+            isDark={isDark}
+          />
+          <View style={{ height: Spacing.sm }} />
+          <PlanSelector
+            isSelected={supporterSelection === "monthly"}
+            period={Copy.subscription.monthlyPeriod}
+            subLine={monthlyPackage ? `${monthlyPackage.product.priceString}/${Copy.subscription.monthlySubLine}` : "£3/month"}
+            price={monthlyPackage ? monthlyPackage.product.priceString : "£3"}
+            loading={purchasing === "inline-supporter-monthly"}
+            onSelect={() => setSupporterSelection("monthly")}
+            onUpgrade={() => handlePurchase(monthlyPackage, "inline-supporter-monthly")}
+            testID="button-inline-supporter-monthly"
+            theme={theme}
+            isDark={isDark}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -1394,67 +1475,70 @@ const inlinePaywallStyles = StyleSheet.create({
   wrapper: {
     marginBottom: Spacing.xl,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+  bannerCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
   },
-  headerLabel: {
+  choosePlanLabel: {
     fontFamily: FontFamily.sansSemiBold,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     fontSize: 11,
+    marginTop: 4,
+  },
+  messageBanner: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.md,
   },
   planCard: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    padding: 25,
+    borderRadius: BorderRadius["2xl"],
+    borderWidth: 1,
+    overflow: "hidden",
+    position: "relative",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  planTitle: {
+  decorCircle: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  cardTitle: {
     fontFamily: FontFamily.serifBold,
-    fontSize: 16,
+    fontSize: 30,
+    marginBottom: 2,
   },
-  planSubtitle: {
+  cardSubtitle: {
     fontFamily: FontFamily.sansBold,
-    fontSize: 10,
     letterSpacing: 1,
-    marginTop: 2,
-    marginBottom: Spacing.sm,
+    fontSize: 11,
+    marginBottom: Spacing.md,
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
   },
-  pricingRows: {
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
+  tagline: {
+    fontFamily: FontFamily.sansRegular,
+    fontSize: 13,
+    lineHeight: 18,
     marginTop: Spacing.sm,
-  },
-  pricingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: Spacing.sm,
-  },
-  pricingInfo: {
-    flex: 1,
-  },
-  bestValueBadge: {
-    backgroundColor: CORAL + "20",
-    borderRadius: BorderRadius.xs,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  divider: {
-    height: 1,
-  },
-  upgradeBtn: {
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 6,
-    paddingHorizontal: Spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 72,
+    marginBottom: Spacing.md,
   },
 });

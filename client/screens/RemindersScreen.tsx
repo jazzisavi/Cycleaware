@@ -236,18 +236,18 @@ export default function RemindersScreen() {
   const renderUpsellFooter = () => {
     if (!cycleGated || !hasCycleReminders || upsellDismissed) return null;
     return (
-      <View style={[styles.upsellCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8" }]}>
+      <View style={[styles.upsellCard, { backgroundColor: isDark ? "#1A3D44" : "#EBF6F8", borderWidth: 1, borderColor: theme.borderLight }]}>
         <View style={styles.upsellTop}>
           <ThemedText type="body" style={[styles.upsellTitle, { color: theme.text }]}>{Copy.subscription.unlockProTitle}</ThemedText>
           <Pressable onPress={() => setUpsellDismissed(true)} hitSlop={8}>
             <Feather name="x" size={16} color={theme.textTertiary} />
           </Pressable>
         </View>
+        <ThemedText type="caption" style={{ color: isDark ? "#7BC9D5" : "#3A8A9A", fontFamily: FontFamily.sansBold, letterSpacing: 1, fontSize: 10, marginBottom: Spacing.sm }}>
+          {Copy.subscription.orbiaProSubtitle}
+        </ThemedText>
         <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.lg }}>
           {Copy.subscription.unlockProBody}
-        </ThemedText>
-        <ThemedText type="caption" style={[{ color: isDark ? "#7BC9D5" : "#3A8A9A", fontFamily: FontFamily.sansBold, letterSpacing: 1, fontSize: 10, marginBottom: Spacing.sm }]}>
-          {Copy.subscription.orbiaProSubtitle}
         </ThemedText>
         <Pressable
           style={[styles.upsellButton, { backgroundColor: CORAL }]}
@@ -268,7 +268,7 @@ export default function RemindersScreen() {
       <Pressable
         style={[
           styles.card,
-          { backgroundColor: locked ? (isDark ? "#1A3D44" : "#EBF6F8") : theme.backgroundDefault, borderColor: locked ? CORAL + "40" : theme.borderLight },
+          { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight },
         ]}
         onPress={() => {
           if (!isSelecting) {

@@ -14,6 +14,7 @@ import { PurchasesPackage, PACKAGE_TYPE } from "react-native-purchases";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
+import { PlanSelector } from "@/components/PlanSelector";
 import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
@@ -324,100 +325,6 @@ export default function PaywallScreen() {
   );
 }
 
-function PlanSelector({
-  isSelected,
-  period,
-  subLine,
-  price,
-  isBestValue,
-  loading,
-  onSelect,
-  onUpgrade,
-  testID,
-  theme,
-  isDark,
-}: {
-  isSelected: boolean;
-  period: string;
-  subLine: string;
-  price: string;
-  isBestValue?: boolean;
-  loading: boolean;
-  onSelect: () => void;
-  onUpgrade: () => void;
-  testID: string;
-  theme: any;
-  isDark: boolean;
-}) {
-  if (isSelected) {
-    return (
-      <View style={[
-        styles.selectedPlanCard,
-        {
-          backgroundColor: isDark ? "#2C2118" : "#FFFFFF",
-          borderColor: isDark ? TEAL : TEAL,
-        },
-      ]}>
-        <View style={styles.selectedPlanHeader}>
-          <View style={{ flex: 1 }}>
-            <ThemedText type="h3" style={{ fontFamily: FontFamily.serifBold, fontSize: 24, color: theme.text }}>
-              {period}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: isDark ? theme.textSecondary : MUTED_BROWN, fontSize: 12, marginTop: 2 }}>
-              {subLine}
-            </ThemedText>
-          </View>
-          <ThemedText type="h3" style={{ fontFamily: FontFamily.sansBold, color: theme.text }}>
-            {price}
-          </ThemedText>
-        </View>
-
-        {isBestValue ? (
-          <View style={[styles.bestValuePill, { backgroundColor: isDark ? TEAL : TEAL }]}>
-            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, fontSize: 9, textTransform: "uppercase" }}>
-              {Copy.subscription.bestValue}
-            </ThemedText>
-          </View>
-        ) : null}
-
-        <Pressable
-          style={[styles.upgradePill, {
-            backgroundColor: loading ? CORAL + "80" : CORAL,
-            shadowColor: isDark ? "#000" : "#52B07A",
-          }]}
-          onPress={onUpgrade}
-          disabled={loading}
-          testID={testID}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 1.5, textTransform: "uppercase" }}>
-              {Copy.subscription.upgradeButton}
-            </ThemedText>
-          )}
-        </Pressable>
-      </View>
-    );
-  }
-
-  return (
-    <Pressable
-      style={[styles.collapsedPlanRow, {
-        backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.35)",
-        borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(60,40,20,0.08)",
-      }]}
-      onPress={onSelect}
-    >
-      <ThemedText type="body" style={{ fontFamily: FontFamily.serifBold, fontSize: 20, color: theme.text }}>
-        {period}
-      </ThemedText>
-      <ThemedText type="body" style={{ fontFamily: FontFamily.sansBold, color: theme.text }}>
-        {price}
-      </ThemedText>
-    </Pressable>
-  );
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
