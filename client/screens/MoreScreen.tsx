@@ -19,6 +19,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { clearTrialNotificationSuppression } from "@/services/notifications";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -58,6 +59,7 @@ export default function MoreScreen() {
     // trial surfaces fresh after changing the day count.
     await AsyncStorage.removeItem(TRIAL_REMINDER_STATE_KEY);
     await AsyncStorage.removeItem(TRIAL_BAR_DISMISSED_KEY);
+    await clearTrialNotificationSuppression();
     await refreshTrial();
   };
 
@@ -73,6 +75,7 @@ export default function MoreScreen() {
     await AsyncStorage.removeItem(DEV_OVERRIDE_KEY);
     await AsyncStorage.removeItem(TRIAL_REMINDER_STATE_KEY);
     await AsyncStorage.removeItem(TRIAL_BAR_DISMISSED_KEY);
+    await clearTrialNotificationSuppression();
     await refreshTrial();
   };
 

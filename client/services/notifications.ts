@@ -1196,6 +1196,11 @@ export async function stopAlarm(): Promise<void> {
 const TRIAL_NOTIF_IDS_KEY = "@orbia/trial_notif_ids";
 const TRIAL_FOLLOWUP_IDS_KEY = "@orbia/trial_followup_ids";
 const TRIAL_START_KEY = "@orbia/trial_start_date";
+const TRIAL_NOTIFS_SUPPRESSED_KEY = "@orbia/trial_notifs_suppressed";
+
+export async function clearTrialNotificationSuppression(): Promise<void> {
+  try { await AsyncStorage.removeItem(TRIAL_NOTIFS_SUPPRESSED_KEY); } catch {}
+}
 
 export async function scheduleTrialNotifications(): Promise<void> {
   if (!isNotificationsAvailable()) return;
@@ -1203,6 +1208,8 @@ export async function scheduleTrialNotifications(): Promise<void> {
     const Notifications = await import("expo-notifications");
     const startStr = await AsyncStorage.getItem(TRIAL_START_KEY);
     if (!startStr) return;
+    const suppressed = await AsyncStorage.getItem(TRIAL_NOTIFS_SUPPRESSED_KEY);
+    if (suppressed === "true") return;
     const reminderState = await getTrialReminderState();
     if (reminderState.resolved) return;
     const start = new Date(startStr);
@@ -1244,6 +1251,9 @@ export async function scheduleTrialNotifications(): Promise<void> {
 export async function cancelTrialNotifications(): Promise<void> {
   if (!isNotificationsAvailable()) return;
   try {
+    // Durable suppression: prevents syncAllNotifications() from re-scheduling
+    // trial pushes on later app launches after the user has subscribed.
+    try { await AsyncStorage.setItem(TRIAL_NOTIFS_SUPPRESSED_KEY, "true"); } catch {}
     const Notifications = await import("expo-notifications");
     const idsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
     if (idsStr) {

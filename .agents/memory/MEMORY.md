@@ -1,3 +1,4 @@
 - [Expo dev server port 8081](expo-dev-server-port.md) — preview/Expo Go "request timed out" = Expo stuck on port-8082 prompt; restart Start Frontend. In-IDE preview ≠ Xcode simulator.
 - [Static bundle deploy](static-bundle-deploy.md) — after any frontend change, run `node scripts/build.js` then restart `Start Backend`; mobile Expo Go reads static bundles, not Metro dev server.
 - [Subscription trial gating](subscription-trial-gating.md) — trial/cycle gating architecture, key AsyncStorage keys, and critical patterns to keep consistent.
+- [Static build timeout workaround](static-build-timeout.md) — warm Metro via Start Frontend workflow + curl production bundles before running scripts/build.js; cold/detached runs get killed and wipe static-build/.
