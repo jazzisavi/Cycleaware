@@ -96,15 +96,19 @@ export function useTrialReminder(
       await setTrialReminderState(s);
     }
 
+    // Whenever the trial has ended and the reminder card is NOT actively
+    // showing, the upgrade card takes its place (unless dismissed).
+    const upgradeCardEligible = daysLeft <= 0 && !s.upgradeCardDismissed;
+
     // 3. No active reminder instance at all.
     if (s.day === null) {
-      setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
+      setView({ showReminder: false, reminderDay: null, showUpgradeCard: upgradeCardEligible });
       return;
     }
 
     // 4. Still snoozed.
     if (s.snoozeUntil && now < s.snoozeUntil) {
-      setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
+      setView({ showReminder: false, reminderDay: null, showUpgradeCard: upgradeCardEligible });
       return;
     }
 
@@ -124,15 +128,7 @@ export function useTrialReminder(
 
     // 7. Decide what to render.
     if (s.abandoned) {
-      if (s.day === 0) {
-        setView({
-          showReminder: false,
-          reminderDay: null,
-          showUpgradeCard: !s.upgradeCardDismissed,
-        });
-      } else {
-        setView({ showReminder: false, reminderDay: null, showUpgradeCard: false });
-      }
+      setView({ showReminder: false, reminderDay: null, showUpgradeCard: upgradeCardEligible });
       return;
     }
 

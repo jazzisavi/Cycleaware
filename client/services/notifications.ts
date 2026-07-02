@@ -1090,13 +1090,13 @@ export async function syncAllNotifications(): Promise<void> {
 
   try {
     const Notifications = await import("expo-notifications");
-    const trialIdsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
-    const hadActiveTrialNotifs = trialIdsStr !== null;
     await Notifications.cancelAllScheduledNotificationsAsync();
-    if (hadActiveTrialNotifs) {
-      await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
-      await scheduleTrialNotifications();
-    }
+    await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
+    // Always (re)schedule trial pushes on sync so existing users who never
+    // had them scheduled (e.g. onboarded before this feature) get them too.
+    // scheduleTrialNotifications() is a no-op when there is no trial start
+    // date or the trial reminder flow has been resolved by upgrading.
+    await scheduleTrialNotifications();
 
     LocalDatabase.initDatabase();
     const reminders = LocalDatabase.getAllReminders();
@@ -1203,6 +1203,8 @@ export async function scheduleTrialNotifications(): Promise<void> {
     const Notifications = await import("expo-notifications");
     const startStr = await AsyncStorage.getItem(TRIAL_START_KEY);
     if (!startStr) return;
+    const reminderState = await getTrialReminderState();
+    if (reminderState.resolved) return;
     const start = new Date(startStr);
     const scheduledIds: string[] = [];
 
@@ -1217,7 +1219,7 @@ export async function scheduleTrialNotifications(): Promise<void> {
     for (const item of reminderDays) {
       const fireDate = new Date(start);
       fireDate.setDate(fireDate.getDate() + item.day - 1);
-      fireDate.setHours(9, 0, 0, 0);
+      fireDate.setHours(20, 0, 0, 0);
       if (fireDate <= new Date()) continue;
 
       try {

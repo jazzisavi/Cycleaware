@@ -29,6 +29,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useTrialReminder } from "@/hooks/useTrialReminder";
 
 const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
+const TRIAL_BAR_DISMISSED_KEY = "@orbia/trial_bar_dismissed";
 
 export default function HomeScreen() {
   const { theme, isDark } = useTheme();
@@ -42,6 +43,7 @@ export default function HomeScreen() {
   const [missedDismissedAt, setMissedDismissedAt] = useState<Date | null>(null);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [trialBarDismissed, setTrialBarDismissed] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -49,10 +51,18 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Recompute trial status when the calendar day rolls over (e.g. midnight)
+  // so milestone reminders and the countdown bar update without a remount.
+  const dayKey = now.toDateString();
+
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
-  const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed, trialStartDate } = useSubscription();
+  const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed, trialStartDate, refreshTrial } = useSubscription();
   const trialReminder = useTrialReminder(daysLeft, isSubscribed, now.getTime(), trialStartDate);
+
+  useEffect(() => {
+    refreshTrial();
+  }, [dayKey, refreshTrial]);
 
   const hasReminders = reminders.length > 0;
   const showNotificationWarning = notificationsAvailable &&
@@ -66,8 +76,12 @@ export default function HomeScreen() {
       refresh();
       refreshHistory();
       checkPermissionStatus();
+      refreshTrial();
       AsyncStorage.getItem(MISSED_DISMISSED_AT_KEY).then((val) => {
         setMissedDismissedAt(val ? new Date(val) : null);
+      });
+      AsyncStorage.getItem(TRIAL_BAR_DISMISSED_KEY).then((val) => {
+        setTrialBarDismissed(val === "true");
       });
       AsyncStorage.getItem(PENDING_NAV_KEY).then((val) => {
         if (val === "Paywall") {
@@ -77,6 +91,12 @@ export default function HomeScreen() {
       });
     }, [])
   );
+
+  const handleDismissTrialBar = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTrialBarDismissed(true);
+    await AsyncStorage.setItem(TRIAL_BAR_DISMISSED_KEY, "true");
+  };
 
   const handleDismissMissed = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -287,14 +307,23 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarHeight + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        {isInTrial && !isSubscribed ? (
-          <View style={[styles.trialBar, { borderColor: theme.borderLight }]}>
+        {(isInTrial || trialExpired) && !isSubscribed && !(trialExpired && trialBarDismissed) ? (
+          <View style={[styles.trialBar, { borderColor: theme.borderLight }]} testID="bar-trial-countdown">
             <View style={styles.trialBarRow}>
               <Text style={[styles.trialBarLabel, { color: theme.text }]}>{Copy.subscription.trialBarLabel}</Text>
-              <Text style={[styles.trialBarDays, { color: theme.text }]}>{Copy.subscription.trialDaysLeft(daysLeft)}</Text>
+              <View style={styles.trialBarRight}>
+                <Text style={[styles.trialBarDays, { color: theme.text }]}>
+                  {daysLeft > 0 ? Copy.subscription.trialDaysLeft(daysLeft) : Copy.subscription.trialBarEnded}
+                </Text>
+                {trialExpired ? (
+                  <Pressable onPress={handleDismissTrialBar} hitSlop={10} testID="button-dismiss-trial-bar">
+                    <Feather name="x" size={16} color={theme.textTertiary} />
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
             <View style={styles.trialProgressTrack}>
-              <View style={[styles.trialProgressFill, { width: `${Math.round((daysLeft / 30) * 100)}%` }]} />
+              <View style={[styles.trialProgressFill, { width: `${Math.max(0, Math.min(100, Math.round((daysLeft / 30) * 100)))}%` }]} />
             </View>
           </View>
         ) : null}
@@ -765,6 +794,11 @@ const styles = StyleSheet.create({
   trialBarDays: {
     fontFamily: FontFamily.sansSemiBold,
     fontSize: 14,
+  },
+  trialBarRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
   trialProgressTrack: {
     width: "100%",

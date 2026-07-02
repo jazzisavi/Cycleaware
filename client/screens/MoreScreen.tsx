@@ -25,6 +25,8 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const DEV_OVERRIDE_KEY = "@orbia/dev_trial_override";
 const TRIAL_START_KEY = "@orbia/trial_start_date";
+const TRIAL_REMINDER_STATE_KEY = "@orbia/trial_reminder_state";
+const TRIAL_BAR_DISMISSED_KEY = "@orbia/trial_bar_dismissed";
 const TRIAL_DURATION_DAYS = 30;
 
 export default function MoreScreen() {
@@ -52,6 +54,10 @@ export default function MoreScreen() {
       await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString());
     }
     await AsyncStorage.setItem(DEV_OVERRIDE_KEY, String(clamped));
+    // Reset trial reminder/bar dismissal state so testers always see the
+    // trial surfaces fresh after changing the day count.
+    await AsyncStorage.removeItem(TRIAL_REMINDER_STATE_KEY);
+    await AsyncStorage.removeItem(TRIAL_BAR_DISMISSED_KEY);
     await refreshTrial();
   };
 
@@ -65,6 +71,8 @@ export default function MoreScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString());
     await AsyncStorage.removeItem(DEV_OVERRIDE_KEY);
+    await AsyncStorage.removeItem(TRIAL_REMINDER_STATE_KEY);
+    await AsyncStorage.removeItem(TRIAL_BAR_DISMISSED_KEY);
     await refreshTrial();
   };
 

@@ -360,6 +360,7 @@ export const Copy = {
     trialEndedBody: "Your trial has ended. Subscribe to continue cycle reminders.",
     trialEndedLink: "Upgrade for £1 a month",
     trialBarLabel: "Free Trial",
+    trialBarEnded: "Trial ended",
     trialDaysLeft: (days: number) => `${days} day${days !== 1 ? "s" : ""} left`,
     trialWarningTitle: (days: number) => `Your trial ends in ${days} day${days !== 1 ? "s" : ""}`,
     trialWarningBody: "Subscribe now to continue receiving cycle reminders.",
