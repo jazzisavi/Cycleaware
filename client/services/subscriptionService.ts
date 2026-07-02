@@ -4,7 +4,46 @@ import Purchases, {
   PurchasesPackage,
   CustomerInfo,
   LOG_LEVEL,
+  PACKAGE_TYPE,
 } from "react-native-purchases";
+
+/**
+ * Derive a "per month" price string from the yearly package (price / 12),
+ * formatted in the store's currency. Returns null when no yearly package
+ * or price is available, so callers can fall back to generic copy.
+ */
+export function getMonthlyEquivalentPriceString(
+  offering: PurchasesOffering | null
+): string | null {
+  try {
+    const yearly = offering?.availablePackages.find(
+      (p) => p.packageType === PACKAGE_TYPE.ANNUAL
+    );
+    if (!yearly) return null;
+    const price = yearly.product.price;
+    if (!price || price <= 0) return null;
+    const monthly = price / 12;
+    const currencyCode = yearly.product.currencyCode;
+    if (currencyCode) {
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: "currency",
+          currency: currencyCode,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }).format(monthly);
+      } catch {}
+    }
+    // Fallback: reuse the currency symbol from the yearly price string.
+    const symbol = (yearly.product.priceString || "").replace(/[\d.,\s]/g, "");
+    if (!symbol) return null;
+    const rounded = Math.round(monthly * 100) / 100;
+    const numStr = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+    return `${symbol}${numStr}`;
+  } catch {
+    return null;
+  }
+}
 
 const ENTITLEMENT_ID = "pro";
 

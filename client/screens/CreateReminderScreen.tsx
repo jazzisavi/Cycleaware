@@ -16,7 +16,7 @@ import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { syncAllNotifications, cancelPendingNotificationsForReminder } from "@/services/notifications";
+import { syncAllNotifications, cancelPendingNotificationsForReminder, scheduleTrialNotifications } from "@/services/notifications";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { useLocalReminder } from "@/hooks/useLocalReminders";
 import { syncCycleConfigsToServer } from "@/services/pushSync";
@@ -386,6 +386,8 @@ export default function CreateReminderScreen() {
       await cancelPendingNotificationsForReminder(reminderId!);
       LocalDatabase.deleteReminder(reminderId!);
       syncCycleConfigsToServer();
+      // Re-evaluate trial push schedule (7/1/0 vs 7/0 depends on cycle reminder presence)
+      scheduleTrialNotifications().catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate("Main", { screen: "Reminders" });
     } catch (error) {

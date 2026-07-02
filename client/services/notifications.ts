@@ -53,11 +53,9 @@ export async function setTrialReminderState(state: TrialReminderState): Promise<
 
 function trialNotifCopy(daysRemaining: number): { title: string; body: string } {
   const c = Copy.subscription;
-  if (daysRemaining === 6) return { title: c.trialNotifDay6Title, body: c.trialNotifDay6Body };
-  if (daysRemaining === 4) return { title: c.trialNotifDay4Title, body: c.trialNotifDay4Body };
-  if (daysRemaining === 2) return { title: c.trialNotifDay2Title, body: c.trialNotifDay2Body };
-  if (daysRemaining === 1) return { title: c.trialNotifDay1Title, body: c.trialNotifDay1Body };
-  return { title: c.trialNotifDay0Title, body: c.trialNotifDay0Body };
+  if (daysRemaining === 1) return { title: c.trialNotifDay1Title, body: c.trialNotifBody };
+  if (daysRemaining <= 0) return { title: c.trialNotifDay0Title, body: c.trialNotifBody };
+  return { title: c.trialWarningTitle(daysRemaining), body: c.trialNotifBody };
 }
 
 async function scheduleNextTrialReminderNotification(daysRemaining: number): Promise<void> {
@@ -1215,13 +1213,31 @@ export async function scheduleTrialNotifications(): Promise<void> {
     const start = new Date(startStr);
     const scheduledIds: string[] = [];
 
-    const reminderDays = [
-      { day: 24, daysRemaining: 6, titleKey: "trialNotifDay6Title" as const, bodyKey: "trialNotifDay6Body" as const },
-      { day: 26, daysRemaining: 4, titleKey: "trialNotifDay4Title" as const, bodyKey: "trialNotifDay4Body" as const },
-      { day: 28, daysRemaining: 2, titleKey: "trialNotifDay2Title" as const, bodyKey: "trialNotifDay2Body" as const },
-      { day: 29, daysRemaining: 1, titleKey: "trialNotifDay1Title" as const, bodyKey: "trialNotifDay1Body" as const },
-      { day: 30, daysRemaining: 0, titleKey: "trialNotifDay0Title" as const, bodyKey: "trialNotifDay0Body" as const },
-    ];
+    // Cancel any previously scheduled trial pushes so re-running this after
+    // reminders are added/removed replaces (not duplicates) the schedule.
+    try {
+      const prevIdsStr = await AsyncStorage.getItem(TRIAL_NOTIF_IDS_KEY);
+      if (prevIdsStr) {
+        const prevIds: string[] = JSON.parse(prevIdsStr);
+        for (const id of prevIds) {
+          try { await Notifications.cancelScheduledNotificationAsync(id); } catch {}
+        }
+        await AsyncStorage.removeItem(TRIAL_NOTIF_IDS_KEY);
+      }
+    } catch {}
+
+    // Users with cycle reminders get pushes at 7, 1, and 0 days left;
+    // users without cycle reminders get pushes at 7 and 0 days left.
+    let hasCycleReminders = false;
+    try {
+      hasCycleReminders = LocalDatabase.getAllReminders().some((r) => r.reminderType === "cycle");
+    } catch {}
+
+    const remainingDays = hasCycleReminders ? [7, 1, 0] : [7, 0];
+    const reminderDays = remainingDays.map((daysRemaining) => ({
+      day: 30 - daysRemaining,
+      daysRemaining,
+    }));
 
     for (const item of reminderDays) {
       const fireDate = new Date(start);
@@ -1230,10 +1246,11 @@ export async function scheduleTrialNotifications(): Promise<void> {
       if (fireDate <= new Date()) continue;
 
       try {
+        const { title, body } = trialNotifCopy(item.daysRemaining);
         const id = await Notifications.scheduleNotificationAsync({
           content: {
-            title: Copy.subscription[item.titleKey],
-            body: Copy.subscription[item.bodyKey],
+            title,
+            body,
             data: { type: "trial_reminder", day: item.day, daysRemaining: item.daysRemaining },
             categoryIdentifier: "trial",
           },
@@ -1278,10 +1295,9 @@ export async function cancelTrialNotifications(): Promise<void> {
 }
 
 function getTrialActiveMilestone(daysLeft: number): number | null {
-  if (daysLeft === 6) return 6;
-  if (daysLeft === 4) return 4;
-  if (daysLeft === 2) return 2;
-  if (daysLeft === 1) return 1;
+  // Mirrors getActiveMilestone in useTrialReminder: daily from 7 days left
+  // through day 0.
+  if (daysLeft >= 1 && daysLeft <= 7) return daysLeft;
   if (daysLeft <= 0) return 0;
   return null;
 }

@@ -26,6 +26,7 @@ import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { getMonthlyEquivalentPriceString } from "@/services/subscriptionService";
 import { useTrialReminder } from "@/hooks/useTrialReminder";
 
 const MISSED_DISMISSED_AT_KEY = "@goflo/missed_dismissed_at";
@@ -57,7 +58,8 @@ export default function HomeScreen() {
 
   const { reminders, refresh } = useLocalReminders();
   const { history: notificationHistory, refresh: refreshHistory } = useLocalHistory();
-  const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed, trialStartDate, refreshTrial } = useSubscription();
+  const { isInTrial, daysLeft, trialExpired, isPro, isSubscribed, trialStartDate, refreshTrial, offering } = useSubscription();
+  const monthlyEquivalentPrice = getMonthlyEquivalentPriceString(offering);
   const trialReminder = useTrialReminder(daysLeft, isSubscribed, now.getTime(), trialStartDate);
 
   useEffect(() => {
@@ -313,7 +315,7 @@ export default function HomeScreen() {
               <Text style={[styles.trialBarLabel, { color: theme.text }]}>{Copy.subscription.trialBarLabel}</Text>
               <View style={styles.trialBarRight}>
                 <Text style={[styles.trialBarDays, { color: theme.text }]}>
-                  {daysLeft > 0 ? Copy.subscription.trialDaysLeft(daysLeft) : Copy.subscription.trialBarEnded}
+                  {Copy.subscription.trialDaysLeft(Math.max(daysLeft, 0))}
                 </Text>
                 {trialExpired ? (
                   <Pressable onPress={handleDismissTrialBar} hitSlop={10} testID="button-dismiss-trial-bar">
@@ -329,7 +331,7 @@ export default function HomeScreen() {
         ) : null}
 
         {reminders.length === 0 ? (
-          <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5" }]}>
+          <View style={[styles.welcomeCard, { backgroundColor: "#DDF1F5", borderColor: theme.borderLight }]}>
             <View style={[styles.welcomeDecorativeCircle, { width: rs(120), height: rs(120), borderRadius: rs(60) }]} />
             <Text style={[styles.welcomeTitle, { color: theme.saveButtonActive, fontSize: rs(26) }]}>{Copy.home.welcomeTitle}</Text>
             <Text style={[styles.welcomeText, { color: theme.text }]}>{Copy.home.welcomeText}</Text>
@@ -440,7 +442,7 @@ export default function HomeScreen() {
         ) : null}
 
         {trialReminder.showUpgradeCard ? (
-          <View style={[styles.upgradeCard, { backgroundColor: isDark ? theme.ctaCard : "#E3F1F4" }]} testID="card-upgrade-cta">
+          <View style={[styles.upgradeCard, { backgroundColor: isDark ? theme.ctaCard : "#E3F1F4", borderColor: theme.borderLight }]} testID="card-upgrade-cta">
             <View style={styles.upgradeCardTop}>
               <Text style={[styles.upgradeCardTitle, { color: theme.saveButtonActive }]}>{Copy.subscription.trialEndedTitle}</Text>
               <Pressable onPress={() => trialReminder.dismissUpgradeCard()} hitSlop={8} testID="button-dismiss-upgrade-cta">
@@ -449,7 +451,7 @@ export default function HomeScreen() {
             </View>
             <Text style={[styles.upgradeCardBody, { color: theme.textSecondary }]}>{Copy.subscription.trialEndedBody}</Text>
             <Pressable onPress={() => navigation.navigate("Paywall")} testID="button-upgrade-cta-link">
-              <Text style={[styles.upgradeCardLink, { color: theme.saveButtonActive }]}>{`${Copy.subscription.trialEndedLink} →`}</Text>
+              <Text style={[styles.upgradeCardLink, { color: theme.saveButtonActive }]}>{`${Copy.subscription.trialEndedLink(monthlyEquivalentPrice)} →`}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -537,6 +539,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 32,
+    borderWidth: 1,
     marginBottom: Spacing.lg,
     overflow: "hidden",
   },
@@ -813,7 +816,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#2E7D52",
   },
   upgradeCard: {
-    borderRadius: BorderRadius.lg,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 32,
+    borderWidth: 1,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
   },

@@ -9,10 +9,10 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function getActiveMilestone(days: number): number | null {
-  if (days === 6) return 6;
-  if (days === 4) return 4;
-  if (days === 2) return 2;
-  if (days === 1) return 1;
+  // Daily reminders from 7 days left through day 0. Each new day creates a
+  // fresh reminder instance; all other mechanics (24h auto-dismiss, snooze,
+  // upgrade resolution) are unchanged.
+  if (days >= 1 && days <= 7) return days;
   if (days <= 0) return 0;
   return null;
 }

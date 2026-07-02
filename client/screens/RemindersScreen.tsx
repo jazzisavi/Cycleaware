@@ -28,11 +28,12 @@ import { Copy } from "@/constants/copy";
 import { useLocalReminders } from "@/hooks/useLocalReminders";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import type { LocalReminder } from "@/services/LocalDatabase";
-import { cancelPendingNotificationsForReminder, scheduleAllTimesForReminder } from "@/services/notifications";
+import { cancelPendingNotificationsForReminder, scheduleAllTimesForReminder, scheduleTrialNotifications } from "@/services/notifications";
 import { syncCycleConfigsToServer } from "@/services/pushSync";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { Text } from "react-native";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { getMonthlyEquivalentPriceString } from "@/services/subscriptionService";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -44,7 +45,8 @@ export default function RemindersScreen() {
   const { theme, isDark } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
-  const { isPro, trialExpired } = useSubscription();
+  const { isPro, trialExpired, offering } = useSubscription();
+  const monthlyEquivalentPrice = getMonthlyEquivalentPriceString(offering);
   const cycleGated = trialExpired && !isPro;
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -129,6 +131,8 @@ export default function RemindersScreen() {
       if (hasCycle) {
         syncCycleConfigsToServer();
       }
+      // Re-evaluate trial push schedule (7/1/0 vs 7/0 depends on cycle reminder presence)
+      scheduleTrialNotifications().catch(() => {});
       refresh();
       setSelectedIds(new Set());
       setIsSelecting(false);
@@ -251,7 +255,7 @@ export default function RemindersScreen() {
           testID="button-reminders-upsell"
         >
           <ThemedText type="caption" style={{ color: "#FFFFFF", fontFamily: FontFamily.sansBold, letterSpacing: 0.5 }}>
-            {Copy.subscription.unlockProCta}
+            {Copy.subscription.unlockProCta(monthlyEquivalentPrice)}
           </ThemedText>
         </Pressable>
       </View>
@@ -267,9 +271,7 @@ export default function RemindersScreen() {
           { backgroundColor: locked ? (isDark ? "#1A3D44" : "#EBF6F8") : theme.backgroundDefault, borderColor: locked ? CORAL + "40" : theme.borderLight },
         ]}
         onPress={() => {
-          if (locked) {
-            navigation.navigate("Paywall");
-          } else if (!isSelecting) {
+          if (!isSelecting) {
             handleEditPress(item);
           }
         }}
@@ -304,9 +306,15 @@ export default function RemindersScreen() {
             {formatReminderDescription(item)}
           </ThemedText>
           {locked ? (
-            <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold, marginTop: 2 }}>
-              {Copy.subscription.upgradeReactivate}
-            </ThemedText>
+            <Pressable
+              onPress={() => navigation.navigate("Paywall")}
+              hitSlop={8}
+              testID={`link-upgrade-reactivate-${item.id}`}
+            >
+              <ThemedText type="small" style={{ color: CORAL, fontFamily: FontFamily.sansSemiBold, marginTop: 2 }}>
+                {Copy.subscription.upgradeReactivate}
+              </ThemedText>
+            </Pressable>
           ) : null}
           {showNotificationWarning && !locked ? (
             <Text style={[styles.notificationsDisabledText, { color: theme.error }]}>

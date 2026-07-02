@@ -19,7 +19,7 @@ import { Copy } from "@/constants/copy";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { useLocalReminder } from "@/hooks/useLocalReminders";
 import type { LocalReminder } from "@/services/LocalDatabase";
-import { scheduleReminderNotification, cancelPendingNotificationsForReminder } from "@/services/notifications";
+import { scheduleReminderNotification, cancelPendingNotificationsForReminder, scheduleTrialNotifications } from "@/services/notifications";
 import { syncCycleConfigsToServer } from "@/services/pushSync";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -49,6 +49,8 @@ export default function ReminderDetailScreen() {
       if (wasType === "cycle") {
         syncCycleConfigsToServer();
       }
+      // Re-evaluate trial push schedule (7/1/0 vs 7/0 depends on cycle reminder presence)
+      scheduleTrialNotifications().catch(() => {});
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error) {
