@@ -62,6 +62,7 @@ export default function CreateReminderScreen() {
 
   const [title, setTitle] = useState("");
   const [frequency, setFrequency] = useState<FrequencyType>(null);
+  const showInlinePaywall = cycleGated && frequency === "cycle";
 
   const [cycleLength, setCycleLength] = useState(28);
   const [cycleDayStart, setCycleDayStart] = useState(14);
@@ -745,26 +746,28 @@ export default function CreateReminderScreen() {
           </View>
         ) : null}
 
-        {isEditMode ? (
+        {isEditMode && !showInlinePaywall ? (
           <Pressable style={styles.deleteButton} onPress={handleDelete} testID="button-delete">
             <ThemedText type="body" style={{ color: theme.error, fontFamily: FontFamily.sansSemiBold }}>{Copy.createReminder.deleteReminder}</ThemedText>
           </Pressable>
         ) : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg, backgroundColor: theme.backgroundRoot }]}>
-        <Pressable
-          style={[
-            styles.saveButton,
-            { backgroundColor: canSave ? theme.saveButtonActive : theme.saveButtonDisabled, height: rs(56) },
-          ]}
-          onPress={handleSave}
-          disabled={!canSave || isSaving}
-          testID="button-save"
-        >
-          <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>{Copy.createReminder.saveButton}</ThemedText>
-        </Pressable>
-      </View>
+      {!showInlinePaywall ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg, backgroundColor: theme.backgroundRoot }]}>
+          <Pressable
+            style={[
+              styles.saveButton,
+              { backgroundColor: canSave ? theme.saveButtonActive : theme.saveButtonDisabled, height: rs(56) },
+            ]}
+            onPress={handleSave}
+            disabled={!canSave || isSaving}
+            testID="button-save"
+          >
+            <ThemedText type="button" style={[styles.saveButtonText, { color: theme.buttonText }]}>{Copy.createReminder.saveButton}</ThemedText>
+          </Pressable>
+        </View>
+      ) : null}
 
       {showTimePicker && Platform.OS === "android" ? (
         <DateTimePicker value={tempTime} mode="time" display="default" onChange={handleTimeChange} accentColor={theme.saveButtonActive} />
@@ -1336,6 +1339,21 @@ function InlinePaywall({
       setMessage({ text: Copy.subscription.purchaseError, type: "error" });
     }
   };
+
+  if (Platform.OS === "web") {
+    return (
+      <View style={inlinePaywallStyles.wrapper}>
+        <View style={[inlinePaywallStyles.bannerCard, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}>
+          <ThemedText type="body" style={{ fontFamily: FontFamily.sansSemiBold, color: theme.text }}>
+            {Copy.subscription.cycleGatedExpiredHeading}
+          </ThemedText>
+          <ThemedText type="caption" style={[inlinePaywallStyles.choosePlanLabel, { color: theme.textSecondary }]}>
+            {Copy.subscription.webNotice}
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={inlinePaywallStyles.wrapper}>
