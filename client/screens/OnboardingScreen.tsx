@@ -23,6 +23,7 @@ import { Copy } from "@/constants/copy";
 import { useTheme } from "@/hooks/useTheme";
 import { useResponsive } from "@/hooks/useResponsive";
 import { scheduleTrialNotifications } from "@/services/notifications";
+import { useUserName } from "@/hooks/useUserName";
 
 const ONBOARDING_KEY = "@goflo/onboarding_complete";
 const USER_NAME_KEY = "@goflo/user_name";
@@ -98,6 +99,7 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
   const { theme, isDark } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { setName: setGlobalName } = useUserName();
   const [page, setPage] = useState(0);
   const [name, setName] = useState("");
   const nameInputRef = useRef<RNTextInput>(null);
@@ -119,7 +121,7 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
     if (!reviewMode) {
       const trimmed = name.trim();
       if (trimmed) {
-        await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
+        await setGlobalName(trimmed);
       }
       const alreadyStarted = await AsyncStorage.getItem(TRIAL_START_KEY);
       if (!alreadyStarted) {
@@ -166,7 +168,7 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   if (!reviewMode) {
                     const trimmed = name.trim();
-                    if (trimmed) await AsyncStorage.setItem(USER_NAME_KEY, trimmed);
+                    if (trimmed) await setGlobalName(trimmed);
                   }
                   navigation.navigate("Paywall");
                 }}

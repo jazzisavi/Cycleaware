@@ -1,11 +1,11 @@
 {
-  "id": "7b148b53-9318-4739-9477-a95ec098f87c",
-  "createdAt": "2026-07-06T17:40:52.036Z",
+  "id": "de072a7b-3e6d-4af3-9c29-aef7de24d34e",
+  "createdAt": "2026-07-06T17:43:42.635Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1783359652036-1686",
+    "key": "bundle-1783359822635-2463",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1783359652036-1686/_expo/static/js/ios/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1783359822635-2463/_expo/static/js/ios/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -26,7 +26,7 @@
         "image": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#EDE8E2",
-        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/splash-icon.png"
+        "imageUrl": "http://127.0.0.1:8081/assets/./assets/images/splash-icon.png"
       },
       "ios": {
         "supportsTablet": true,
@@ -36,7 +36,7 @@
         "adaptiveIcon": {
           "backgroundColor": "#EDE8E2",
           "foregroundImage": "./assets/images/android-icon-foreground.png",
-          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
+          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -125,7 +125,7 @@
       "androidStatusBar": {
         "backgroundColor": "#EDE8E2"
       },
-      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev/assets/./assets/images/icon.png",
+      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
       "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/ios"
     },
     "expoGo": {

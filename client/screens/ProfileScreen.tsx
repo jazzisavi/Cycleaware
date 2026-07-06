@@ -42,7 +42,7 @@ export default function ProfileScreen() {
     if (!nameLoading) {
       setDisplayName(name);
     }
-  }, [nameLoading]);
+  }, [name, nameLoading]);
 
   const [devPanelVisible, setDevPanelVisible] = useState(false);
   const [devDaysLeft, setDevDaysLeft] = useState(daysLeft);
