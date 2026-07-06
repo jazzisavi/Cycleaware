@@ -23,6 +23,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LocalDatabase } from "@/services/LocalDatabase";
 import { ActionConfirmationProvider, useActionConfirmation } from "@/contexts/ActionConfirmationContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { UserNameProvider } from "@/contexts/UserNameContext";
 import { ActionConfirmationToast } from "@/components/ActionConfirmationToast";
 import { 
   bootstrapNotifications,
@@ -118,11 +119,13 @@ export default function App() {
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
-            <SubscriptionProvider>
-              <ActionConfirmationProvider>
-                <AppContent />
-              </ActionConfirmationProvider>
-            </SubscriptionProvider>
+            <UserNameProvider>
+              <SubscriptionProvider>
+                <ActionConfirmationProvider>
+                  <AppContent />
+                </ActionConfirmationProvider>
+              </SubscriptionProvider>
+            </UserNameProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>
