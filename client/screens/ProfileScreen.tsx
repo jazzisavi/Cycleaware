@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Image, Pressable, Modal } from "react-native";
+import { StyleSheet, View, Pressable, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,6 +18,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { Spacing, BorderRadius, FontFamily } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useUserName } from "@/hooks/useUserName";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 const DEV_OVERRIDE_KEY = "@orbia/dev_trial_override";
@@ -32,9 +33,17 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { isSubscribed, currentPlan, daysLeft, isInTrial, trialExpired, refreshStatus, refreshTrial } = useSubscription();
 
+  const { name, setName, isLoading: nameLoading } = useUserName();
   const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(name);
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (!nameLoading) {
+      setDisplayName(name);
+    }
+  }, [nameLoading]);
+
   const [devPanelVisible, setDevPanelVisible] = useState(false);
   const [devDaysLeft, setDevDaysLeft] = useState(daysLeft);
 
@@ -68,8 +77,8 @@ export default function ProfileScreen() {
 
   const handleSave = async () => {
     setIsLoading(true);
-    // Save logic will be implemented in Phase 2
-    setTimeout(() => setIsLoading(false), 1000);
+    await setName(displayName.trim());
+    setTimeout(() => setIsLoading(false), 600);
   };
 
   return (
@@ -96,16 +105,6 @@ export default function ProfileScreen() {
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <View style={styles.avatarSection}>
-          <Image
-            source={require("../../assets/images/default-avatar.png")}
-            style={styles.avatar}
-          />
-          <ThemedText type="link" style={styles.changePhoto}>
-            {Copy.profile.changePhoto}
-          </ThemedText>
-        </View>
-
         <SectionHeader title={Copy.profile.personalInfoSection} />
         <TextInput
           label={Copy.profile.displayNameLabel}
@@ -148,19 +147,6 @@ export default function ProfileScreen() {
             {isSubscribed ? Copy.paywall.manageSubscription : Copy.profile.viewPlans}
           </Button>
         </View>
-
-        <SectionHeader title="General" />
-        <Pressable
-          style={[styles.reviewOnboardingRow, { backgroundColor: theme.backgroundDefault, borderColor: theme.borderLight }]}
-          onPress={() => navigation.navigate("Onboarding")}
-          testID="button-review-onboarding"
-        >
-          <View style={[styles.reviewOnboardingIcon, { backgroundColor: theme.backgroundSecondary }]}>
-            <Feather name="book-open" size={18} color={theme.text} />
-          </View>
-          <ThemedText type="body" style={{ flex: 1 }}>Review onboarding</ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-        </Pressable>
 
         <View style={styles.saveSection}>
           <Button onPress={handleSave} loading={isLoading} testID="button-save">
@@ -264,19 +250,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
   },
-  avatarSection: {
-    alignItems: "center",
-    marginBottom: Spacing["2xl"],
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: Spacing.md,
-  },
-  changePhoto: {
-    fontWeight: "500",
-  },
   subscriptionCard: {
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
@@ -291,22 +264,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
     borderRadius: BorderRadius.xs,
-  },
-  reviewOnboardingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    marginBottom: Spacing.sm,
-  },
-  reviewOnboardingIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.md,
   },
   saveSection: {
     marginTop: Spacing["3xl"],
