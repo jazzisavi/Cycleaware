@@ -139,6 +139,7 @@ export const Copy = {
     deleteCount: (count: number) => `Delete (${count})`,
     deleteConfirmTitle: "Delete Reminders",
     deleteConfirmMessage: (count: number) => `Are you sure you want to delete ${count} reminder${count > 1 ? "s" : ""}?`,
+    deleteOneConfirmMessage: "Are you sure you want to delete this reminder?",
   },
 
   reminderDetail: {

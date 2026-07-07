@@ -114,6 +114,32 @@ export default function RemindersScreen() {
     setSelectedIds(newSelected);
   };
 
+  const handleDeleteOne = async (reminder: LocalReminder) => {
+    const message = Copy.remindersScreen.deleteOneConfirmMessage;
+
+    const performDelete = async () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      await cancelPendingNotificationsForReminder(reminder.id);
+      LocalDatabase.deleteReminder(reminder.id);
+      if (reminder.reminderType === "cycle") {
+        syncCycleConfigsToServer();
+      }
+      scheduleTrialNotifications().catch(() => {});
+      refresh();
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm(message)) {
+        await performDelete();
+      }
+    } else {
+      Alert.alert(Copy.remindersScreen.deleteConfirmTitle, message, [
+        { text: Copy.common.cancel, style: "cancel" },
+        { text: Copy.common.delete, style: "destructive", onPress: performDelete },
+      ]);
+    }
+  };
+
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
 
@@ -332,6 +358,16 @@ export default function RemindersScreen() {
             thumbColor={locked ? theme.textTertiary + "60" : (item.isActive ? theme.saveButtonActive : theme.textTertiary)}
             style={[styles.switch, locked && { opacity: 0.4 }]}
           />
+          {!isSelecting ? (
+            <Pressable
+              onPress={() => handleDeleteOne(item)}
+              hitSlop={8}
+              style={[styles.deleteButton, locked && { opacity: 0.4 }]}
+              testID={`button-delete-${item.id}`}
+            >
+              <Feather name="trash-2" size={16} color={theme.textTertiary} />
+            </Pressable>
+          ) : null}
         </View>
       </Pressable>
     );
@@ -453,7 +489,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "stretch",
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
@@ -461,6 +497,7 @@ const styles = StyleSheet.create({
   },
   selectCheckbox: {
     marginRight: Spacing.md,
+    justifyContent: "center",
   },
   checkbox: {
     width: 22,
@@ -478,10 +515,14 @@ const styles = StyleSheet.create({
   },
   cardActions: {
     alignItems: "flex-end",
-    gap: Spacing.xs,
+    justifyContent: "space-between",
+    alignSelf: "stretch",
   },
   switch: {
     transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
+  },
+  deleteButton: {
+    padding: 2,
   },
   notificationBanner: {
     marginHorizontal: Spacing.lg,

@@ -1,11 +1,11 @@
 {
-  "id": "4da3a1f3-73d4-4fc6-910f-fcc33e483575",
-  "createdAt": "2026-07-06T17:43:42.635Z",
+  "id": "052591eb-70ef-4331-9b5d-cb980029b9a0",
+  "createdAt": "2026-07-07T10:30:09.452Z",
   "runtimeVersion": "exposdk:54.0.0",
   "launchAsset": {
-    "key": "bundle-1783359822635-2463",
+    "key": "bundle-1783420209452-853",
     "contentType": "application/javascript",
-    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/1783359822635-2463/_expo/static/js/android/bundle.js"
+    "url": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-uyzhauby.picard.replit.dev:5000/1783420209452-853/_expo/static/js/android/bundle.js"
   },
   "assets": [],
   "metadata": {},
@@ -26,7 +26,7 @@
         "image": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#EDE8E2",
-        "imageUrl": "http://127.0.0.1:8081/assets/./assets/images/splash-icon.png"
+        "imageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-uyzhauby.picard.replit.dev/assets/./assets/images/splash-icon.png"
       },
       "ios": {
         "supportsTablet": true,
@@ -36,7 +36,7 @@
         "adaptiveIcon": {
           "backgroundColor": "#EDE8E2",
           "foregroundImage": "./assets/images/android-icon-foreground.png",
-          "foregroundImageUrl": "http://127.0.0.1:8081/assets/./assets/images/android-icon-foreground.png"
+          "foregroundImageUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-uyzhauby.picard.replit.dev/assets/./assets/images/android-icon-foreground.png"
         },
         "edgeToEdgeEnabled": true,
         "predictiveBackGestureEnabled": false,
@@ -125,11 +125,11 @@
       "androidStatusBar": {
         "backgroundColor": "#EDE8E2"
       },
-      "iconUrl": "http://127.0.0.1:8081/assets/./assets/images/icon.png",
-      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android"
+      "iconUrl": "https://15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-uyzhauby.picard.replit.dev/assets/./assets/images/icon.png",
+      "hostUri": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-uyzhauby.picard.replit.dev:5000/android"
     },
     "expoGo": {
-      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0.picard.replit.dev:5000/android",
+      "debuggerHost": "15885903-bd9b-4559-913e-c0704c366e11-00-oyhv89gemvm0-uyzhauby.picard.replit.dev:5000/android",
       "developer": {
         "tool": "expo-cli",
         "projectRoot": "/home/runner/workspace"
@@ -139,6 +139,6 @@
       },
       "mainModuleName": "client/index"
     },
-    "scopeKey": "@anonymous/goflo-dc7ba98b-b46f-4775-8709-dfcc99c0fd58"
+    "scopeKey": "@anonymous/goflo-aefaeaa0-e769-4b57-9cbf-0c2a921f5988"
   }
 }
