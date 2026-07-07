@@ -18,7 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
-import { FontFamily, Spacing, BorderRadius } from "@/constants/theme";
+import { FontFamily, Spacing } from "@/constants/theme";
 import { Copy } from "@/constants/copy";
 import { useTheme } from "@/hooks/useTheme";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -56,39 +56,15 @@ function DotIndicators({ active, total }: { active: number; total: number }) {
   );
 }
 
-function ExampleCard({
-  categoryLabel,
-  categoryColor,
-  bgColor,
-  iconName,
-  iconColor,
-  title,
-  detail,
-}: {
-  categoryLabel: string;
-  categoryColor: string;
-  bgColor: string;
-  iconName: keyof typeof Feather.glyphMap;
-  iconColor: string;
-  title: string;
-  detail: string;
-}) {
-  const { theme } = useTheme();
-  const { rs } = useResponsive();
+function ReminderPreviewCard({ title, detail }: { title: string; detail: string }) {
   return (
-    <View style={[styles.exampleCardOuter, { backgroundColor: bgColor }]}>
-      <Text style={[styles.exampleCategoryLabel, { color: categoryColor, fontSize: rs(22) }]}>
-        {categoryLabel}
-      </Text>
-      <View style={[styles.exampleCardInner, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={[styles.exampleIconCircle, { backgroundColor: iconColor + "20" }]}>
-          <Feather name={iconName} size={16} color={iconColor} />
-        </View>
-        <View style={styles.exampleCardText}>
-          <Text style={[styles.exampleTitle, { color: theme.text }]}>{title}</Text>
-          <Text style={[styles.exampleDetail, { color: theme.textSecondary }]}>{detail}</Text>
-        </View>
-        <Text style={[styles.exampleNow, { color: theme.textTertiary }]}>{Copy.onboarding.now}</Text>
+    <View style={styles.reminderCard}>
+      <View style={styles.reminderCardText}>
+        <Text style={styles.reminderCardTitle}>{title}</Text>
+        <Text style={styles.reminderCardDetail}>{detail}</Text>
+      </View>
+      <View style={styles.takeButton}>
+        <Text style={styles.takeButtonLabel}>{Copy.onboarding.takeButton}</Text>
       </View>
     </View>
   );
@@ -96,7 +72,7 @@ function ExampleCard({
 
 export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setName: setGlobalName } = useUserName();
@@ -135,17 +111,13 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
     onComplete();
   };
 
-  const cycleCardBg = isDark ? "#1E3D2E" : "#E3F4EC";
-  const dailyCardBg = isDark ? "#3D2A1E" : "#F5E7D1";
-  const setDaysCardBg = isDark ? "#1E3040" : "#D6EFF5";
-
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={[styles.content, { paddingTop: insets.top + Spacing.lg, paddingBottom: insets.bottom + Spacing["2xl"] }]}>
-        <DotIndicators active={Math.min(page, 2)} total={3} />
+        <DotIndicators active={Math.min(page + 1, 3)} total={4} />
 
         {page === 2 ? (
           <View style={styles.page}>
@@ -200,42 +172,17 @@ export default function OnboardingScreen({ onComplete, reviewMode }: OnboardingS
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(26), lineHeight: rs(34), marginBottom: rs(Spacing.sm) }]}>
+              <Text style={[styles.bigTitle, { color: theme.text, fontSize: rs(32), lineHeight: rs(40), marginBottom: rs(Spacing.sm) }]}>
                 {Copy.onboarding.pageOneTitle}
-                <Text style={styles.brandHighlight}>{Copy.onboarding.pageOneBrand}</Text>
               </Text>
-              <Text style={[styles.pageOneSubtitle, { color: theme.textSecondary, fontSize: rs(16), lineHeight: rs(22), marginBottom: rs(Spacing["3xl"]) }]}>{Copy.onboarding.pageOneSubtitle}</Text>
+              <Text style={[styles.pageOneSubtitle, { color: theme.textSecondary, fontSize: rs(15), lineHeight: rs(22), marginBottom: rs(Spacing["2xl"]) }]}>{Copy.onboarding.pageOneSubtitle}</Text>
 
-              <View style={[styles.cardsContainer, { gap: rs(Spacing.lg) }]}>
-                <ExampleCard
-                  categoryLabel={Copy.onboarding.cycleAligned}
-                  categoryColor={theme.accentMint}
-                  bgColor={cycleCardBg}
-                  iconName="circle"
-                  iconColor={theme.accentMint}
-                  title={Copy.onboarding.cycleExample}
-                  detail={Copy.onboarding.cycleDetail}
-                />
-
-                <ExampleCard
-                  categoryLabel={Copy.onboarding.dailyRhythm}
-                  categoryColor={theme.accentCoral}
-                  bgColor={dailyCardBg}
-                  iconName="sunrise"
-                  iconColor={theme.saveButtonActive}
-                  title={Copy.onboarding.dailyExample}
-                  detail={Copy.onboarding.dailyDetail}
-                />
-
-                <ExampleCard
-                  categoryLabel={Copy.onboarding.setDays}
-                  categoryColor={theme.info}
-                  bgColor={setDaysCardBg}
-                  iconName="star"
-                  iconColor={theme.info}
-                  title={Copy.onboarding.setDaysExample}
-                  detail={Copy.onboarding.setDaysDetail}
-                />
+              <View style={styles.cardsContainer}>
+                <ReminderPreviewCard title={Copy.onboarding.reminderCard1Title} detail={Copy.onboarding.reminderCard1Detail} />
+                <ReminderPreviewCard title={Copy.onboarding.reminderCard2Title} detail={Copy.onboarding.reminderCard2Detail} />
+                <ReminderPreviewCard title={Copy.onboarding.reminderCard3Title} detail={Copy.onboarding.reminderCard3Detail} />
+                <ReminderPreviewCard title={Copy.onboarding.reminderCard4Title} detail={Copy.onboarding.reminderCard4Detail} />
+                <ReminderPreviewCard title={Copy.onboarding.reminderCard5Title} detail={Copy.onboarding.reminderCard5Detail} />
               </View>
             </ScrollView>
 
@@ -338,10 +285,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing["3xl"],
     lineHeight: 52,
   },
-  brandHighlight: {
-    fontFamily: FontFamily.serifBold,
-    color: "#E8614F",
-  },
   pageOneSubtitle: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 16,
@@ -349,55 +292,47 @@ const styles = StyleSheet.create({
     marginBottom: Spacing["3xl"],
   },
   cardsContainer: {
-    justifyContent: "flex-start",
-    gap: Spacing.lg,
+    gap: 18,
   },
-  exampleCardOuter: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 16,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 32,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xl,
-    overflow: "hidden",
-  },
-  exampleCategoryLabel: {
-    fontFamily: FontFamily.serifBold,
-    fontSize: 22,
-    marginBottom: Spacing.sm,
-  },
-  exampleCardInner: {
+  reminderCard: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 16,
+    height: 70,
+    paddingHorizontal: Spacing.lg,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  exampleIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
+  reminderCardText: {
+    flex: 1,
     marginRight: Spacing.md,
   },
-  exampleCardText: {
-    flex: 1,
+  reminderCardTitle: {
+    fontFamily: FontFamily.sansBold,
+    fontSize: 14,
+    color: "#111827",
   },
-  exampleTitle: {
-    fontFamily: FontFamily.sansSemiBold,
-    fontSize: 15,
-  },
-  exampleDetail: {
-    fontFamily: FontFamily.sansRegular,
-    fontSize: 13,
-    marginTop: 2,
-  },
-  exampleNow: {
+  reminderCardDetail: {
     fontFamily: FontFamily.sansRegular,
     fontSize: 12,
-    marginLeft: Spacing.sm,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  takeButton: {
+    backgroundColor: "#3FA0B0",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  takeButtonLabel: {
+    fontFamily: FontFamily.sansBold,
+    fontSize: 12,
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
   },
   pageTwoContent: {
     flex: 1,
