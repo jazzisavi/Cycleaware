@@ -30,8 +30,10 @@ const TRIAL_REMINDER_STATE_KEY = "@orbia/trial_reminder_state";
 const TRIAL_BAR_DISMISSED_KEY = "@orbia/trial_bar_dismissed";
 const TRIAL_DURATION_DAYS = 30;
 
-const IOS_STORE_URL = "itms-apps://itunes.apple.com/app/orbia";
-const ANDROID_STORE_URL = "market://details?id=com.orbia.app";
+const ANDROID_PACKAGE = "com.swopzshop.goflo.app";
+const IOS_BUNDLE_ID = "com.swopzshop.goflo.app";
+const IOS_STORE_URL = `itms-apps://itunes.apple.com/app/${IOS_BUNDLE_ID}`;
+const ANDROID_STORE_URL = `market://details?id=${ANDROID_PACKAGE}`;
 
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
