@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Platform } from "react-native";
+import { StyleSheet, View, ScrollView, Pressable, Platform, Share } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -30,12 +30,15 @@ const TRIAL_REMINDER_STATE_KEY = "@orbia/trial_reminder_state";
 const TRIAL_BAR_DISMISSED_KEY = "@orbia/trial_bar_dismissed";
 const TRIAL_DURATION_DAYS = 30;
 
+const IOS_STORE_URL = "itms-apps://itunes.apple.com/app/orbia";
+const ANDROID_STORE_URL = "market://details?id=com.orbia.app";
+
 export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { rs } = useResponsive();
   const navigation = useNavigation<NavigationProp>();
-  const { isSubscribed, currentPlan, daysLeft, refreshTrial } = useSubscription();
+  const { daysLeft, refreshTrial } = useSubscription();
 
   const [trialDays, setTrialDays] = useState(daysLeft);
 
@@ -55,8 +58,6 @@ export default function MoreScreen() {
       await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString());
     }
     await AsyncStorage.setItem(DEV_OVERRIDE_KEY, String(clamped));
-    // Reset trial reminder/bar dismissal state so testers always see the
-    // trial surfaces fresh after changing the day count.
     await AsyncStorage.removeItem(TRIAL_REMINDER_STATE_KEY);
     await AsyncStorage.removeItem(TRIAL_BAR_DISMISSED_KEY);
     await clearTrialNotificationSuppression();
@@ -93,9 +94,21 @@ export default function MoreScreen() {
       type === "issue"
         ? Copy.more.issueEmailBody(appVersion, platformInfo)
         : Copy.more.featureEmailBody(appVersion, platformInfo);
-
     const mailto = `mailto:${Copy.more.supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     Linking.openURL(mailto);
+  };
+
+  const handleRateApp = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const url = Platform.OS === "ios" ? IOS_STORE_URL : ANDROID_STORE_URL;
+    Linking.openURL(url).catch(() => {});
+  };
+
+  const handleShare = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Share.share({ message: Copy.more.shareMessage });
+    } catch (_e) {}
   };
 
   return (
@@ -115,42 +128,18 @@ export default function MoreScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          {
-            paddingBottom: insets.bottom + Spacing["2xl"],
-          },
+          { paddingBottom: insets.bottom + Spacing["2xl"] },
         ]}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
       >
-        <Pressable
-          onPress={() => navigation.navigate("Paywall")}
-          style={[styles.subscriptionCard, { backgroundColor: theme.backgroundDefault }]}
-          testID="card-subscription"
-        >
-          <View style={styles.subscriptionHeader}>
-            <ThemedText type="h3">
-              {isSubscribed ? Copy.subscription.orbiaProTitle : Copy.more.freeTrialTitle}
-            </ThemedText>
-            <View style={[styles.badge, { backgroundColor: theme.success + "20" }]}>
-              <ThemedText type="caption" style={[styles.badgeText, { color: theme.success }]}>
-                {isSubscribed ? (currentPlan === "yearly" ? Copy.paywall.yearlyLabel : Copy.paywall.monthlyLabel) : Copy.more.activeBadge}
-              </ThemedText>
-            </View>
-          </View>
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            {isSubscribed ? Copy.subscription.subscribedMessage : Copy.more.freeTrialSubtitle}
-          </ThemedText>
-        </Pressable>
-
         <SettingsRow
           icon="user"
-          iconColor={theme.warning}
+          iconColor={theme.primary}
           title={Copy.more.profileTitle}
           subtitle={Copy.more.profileSubtitle}
           onPress={() => navigation.navigate("Profile")}
           testID="row-profile"
         />
-
-        <SectionHeader title={Copy.more.settingsSection} />
 
         <SettingsRow
           icon="clock"
@@ -160,8 +149,6 @@ export default function MoreScreen() {
           onPress={() => navigation.navigate("History")}
           testID="row-history"
         />
-
-        <SectionHeader title={Copy.more.supportSection} />
 
         <SettingsRow
           icon="alert-circle"
@@ -173,12 +160,39 @@ export default function MoreScreen() {
         />
 
         <SettingsRow
+          icon="star"
+          iconColor={theme.primary}
+          title={Copy.more.rateAppTitle}
+          subtitle={Copy.more.rateAppSubtitle}
+          onPress={handleRateApp}
+          testID="row-rate-app"
+        />
+
+        <SettingsRow
+          icon="share-2"
+          iconColor={theme.success}
+          title={Copy.more.shareTitle}
+          subtitle={Copy.more.shareSubtitle}
+          onPress={handleShare}
+          testID="row-share"
+        />
+
+        <SettingsRow
           icon="message-circle"
           iconColor={theme.info}
           title={Copy.more.requestFeatureTitle}
           subtitle={Copy.more.requestFeatureSubtitle}
           onPress={() => handleSupportEmail("feature")}
           testID="row-request-feature"
+        />
+
+        <SettingsRow
+          icon="info"
+          iconColor="#6B5744"
+          title={Copy.more.aboutTitle}
+          subtitle={Copy.more.aboutSubtitle}
+          onPress={() => navigation.navigate("About")}
+          testID="row-about"
         />
 
         <SectionHeader title={Copy.trialControl.sectionTitle} />
@@ -299,25 +313,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
-  },
-  subscriptionCard: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.md,
-  },
-  subscriptionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Spacing.xs,
-  },
-  badge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.xs,
-  },
-  badgeText: {
-    fontWeight: "600",
   },
   trialCard: {
     padding: Spacing.lg,

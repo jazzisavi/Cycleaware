@@ -15,6 +15,7 @@ import AlarmSoundsScreen from "@/screens/AlarmSoundsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
+import AboutScreen from "@/screens/AboutScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Paywall: undefined;
   Onboarding: undefined;
+  About: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -142,6 +144,13 @@ export default function RootStackNavigator() {
         options={{
           headerShown: false,
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{
+          headerShown: false,
         }}
       />
     </Stack.Navigator>
